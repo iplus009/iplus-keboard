@@ -54,7 +54,6 @@
             <meta-data android:name="NothingKey" android:value="test"/>
         </service>
 
-        <!--
         <service android:name=".spellcheck.AndroidSpellCheckerService"
              android:label="@string/spell_checker_service_name"
              android:permission="android.permission.BIND_TEXT_SERVICE"
@@ -65,7 +64,6 @@
             <meta-data android:name="android.view.textservice.scs"
                  android:resource="@xml/spellchecker"/>
         </service>
-        -->
 
         <!-- Activities -->
         <activity android:name=".uix.settings.SettingsActivity"
