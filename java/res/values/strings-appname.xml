@@ -22,6 +22,7 @@
     <!-- Application name for opensource Android keyboard. AOSP(Android Open Source Project) should not be translated.
          This resource should be copied from msgid="8250992613616792321" -->
     <string name="english_ime_name">iPlus Keyboard</string>
+    <string name="custom_photo_theme">My Photo</string>
 
     <!-- Name of Android spell checker service. AOSP(Android Open Source Project) should not be translated.
          This resource should be copied from msgid="511950477199948048" -->
