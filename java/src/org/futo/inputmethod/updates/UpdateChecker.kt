@@ -50,16 +50,14 @@ object UpdateChecker {
                 return@withContext Result.success(releasesUpdate)
             }
 
-            // If neither returned an update, report that app is on current version (up to date)
-            val upToDate = AppUpdate(
-                versionName = currentVersion,
-                releaseTitle = "iPlus Keyboard",
-                releaseNotes = "Already on latest version.",
-                downloadUrl = "",
-                isUpdateAvailable = false
-            )
-            _latestUpdate.value = upToDate
-            Result.success(upToDate)
+            // A missing response is not proof that the app is up to date.
+            // Both sources may be unavailable because of network, HTTP, or parsing errors.
+            val failure = rawResult.exceptionOrNull()
+                ?: releasesResult.exceptionOrNull()
+                ?: IOException("Unable to check for updates. Please check your internet connection and try again.")
+
+            _latestUpdate.value = null
+            Result.failure(failure)
         } catch (e: Exception) {
             Result.failure(e)
         } finally {
