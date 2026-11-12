@@ -137,19 +137,19 @@ object UpdateChecker {
                             }
                         }
                     }
-                    if (hasKbdApk || relTitle.contains("iplus-keyboard") || relTitle.contains("orbit board") ||
+                    if (hasKbdApk || relTitle.contains("iplus-keyboard") || relTitle.contains("iplus keyboard") ||
                         relTitle.contains("ipluskeyboard") || tag.contains("iplus-keyboard") || tag.contains("ipluskeyboard")) {
                         matchedObj = rel
                         break
                     }
                 }
-                // Never fall back to index 0 (which may be Orbit Music)
+                // Never fall back to index 0 (which may belong to another app)
                 matchedObj ?: return null
             } else {
                 val singleObj = JSONObject(responseBody)
                 val relTitle = singleObj.optString("name", "").lowercase()
                 val tag = singleObj.optString("tag_name", "").lowercase()
-                if (relTitle.contains("iplus-keyboard") || relTitle.contains("orbit board") ||
+                if (relTitle.contains("iplus-keyboard") || relTitle.contains("iplus keyboard") ||
                     relTitle.contains("ipluskeyboard") || tag.contains("iplus-keyboard") || tag.contains("ipluskeyboard")) {
                     singleObj
                 } else {
@@ -163,7 +163,7 @@ object UpdateChecker {
                 "Bug fixes and performance improvements."
             }
             val body = cleanReleaseNotes(rawBody)
-            val htmlUrl = targetRelease.optString("html_url", "https://github.com/fahitakrim/my-artifacts/releases")
+            val htmlUrl = targetRelease.optString("html_url", "https://github.com/iplus009/iplus-keboard/releases")
 
             var downloadUrl = htmlUrl
             val assets = targetRelease.optJSONArray("assets")
