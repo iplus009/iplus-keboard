@@ -21,7 +21,7 @@ Upstream: https://github.com/fahitakrim/Orbit-Board
 - Existing preset identifiers remain in the theme registry. Preserve these IDs and serialized preference values.
 - The original Orbit preset uses the internal key `OrbitTheme`; the user-facing preset label is already `Matte Bauhaus`. Keep the internal key unless a tested migration is designed.
 - The Custom Photo picker is already wired using Android's document picker. It persists the image URI in `CustomKeyboardBackgroundUriSetting`, selects `CustomPhotoTheme`, and the theme provider renders the image with a fixed dark overlay.
-- This is only a basic photo-background feature. Crop/zoom/position controls, adjustable dim/blur, key styling controls specific to custom themes, multiple saved user themes and theme management are not yet implemented.
+- The iPlus working branch adds an adjustable photo-background dim setting (0–85%), stored in DataStore and consumed by BasicThemeProvider. Crop/zoom/position controls, blur, custom key styling, multiple saved user themes and theme management are not yet implemented.
 
 ## iPlus changes made on this branch
 
@@ -30,6 +30,7 @@ Upstream: https://github.com/fahitakrim/Orbit-Board
 - Replaced the Home update-status toast text that named Orbit Board with iPlus Keyboard.
 - Changed the Home section heading from About Developer to About iPlus.
 - Replaced the previous developer-profile card with iPlus Apps Store links to the official Telegram channel and this GitHub repository.
+- Added a Custom Photo background dim slider and connected its persisted value to the keyboard background overlay.
 - Credits screen keeps a distinct upstream-source attribution section and third-party credits. This is intentional: removing legally required attribution would be incorrect.
 
 ## Permission / privacy audit
