@@ -1,5 +1,6 @@
 package org.futo.inputmethod.latin.uix.theme.selector
 
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,6 +28,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +44,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundUriSetting
+import org.futo.inputmethod.latin.uix.setSettingBlocking
 import org.futo.inputmethod.latin.uix.KeyBordersSetting
 import org.futo.inputmethod.latin.uix.SpacebarColorSetting
 import org.futo.inputmethod.latin.uix.settings.SettingRadio
@@ -51,6 +56,7 @@ import org.futo.inputmethod.latin.uix.THEME_KEY
 import org.futo.inputmethod.latin.uix.settings.SettingSlider
 import org.futo.inputmethod.latin.uix.settings.SettingToggleDataStore
 import org.futo.inputmethod.latin.uix.settings.useDataStore
+import org.futo.inputmethod.latin.uix.theme.CustomPhotoTheme
 import org.futo.inputmethod.latin.uix.theme.ThemeOption
 import org.futo.inputmethod.latin.uix.theme.ThemeOptionKeys
 import org.futo.inputmethod.latin.uix.theme.ThemeOptions
@@ -233,6 +239,18 @@ fun AddCustomThemeButton(onClick: () -> Unit = { }) {
 @Composable
 fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
     val context = LocalContext.current
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
+            context.setSettingBlocking(CustomKeyboardBackgroundUriSetting.key, uri.toString())
+            onSelected(CustomPhotoTheme)
+        }
+    }
 
     val currentTheme = useDataStore(THEME_KEY.key, "").value
 
@@ -274,13 +292,7 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
 
                 item {
                     AddCustomThemeButton {
-                        // TODO: Custom themes
-                        val toast = Toast.makeText(
-                            context,
-                            "Custom themes coming eventually",
-                            Toast.LENGTH_SHORT
-                        )
-                        toast.show()
+                        photoPicker.launch(arrayOf("image/*"))
                     }
                 }
 
