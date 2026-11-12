@@ -45,6 +45,7 @@ val KeyboardFontSetting = SettingsKey(stringPreferencesKey("keyboard_font"), "no
 val KeyHintColorSetting = SettingsKey(stringPreferencesKey("key_hint_color"), "subtle")
 val SpacebarColorSetting = SettingsKey(stringPreferencesKey("spacebar_color"), "default")
 val CustomKeyboardBackgroundUriSetting = SettingsKey(stringPreferencesKey("custom_keyboard_background_uri"), "")
+val CustomKeyboardBackgroundDimSetting = SettingsKey(floatPreferencesKey("custom_keyboard_background_dim"), 0.33f)
 
 val KeyboardHeightMultiplierSetting = SettingsKey(floatPreferencesKey("keyboardHeightMultiplier"), 1.0f)
 val KeyboardBottomOffsetSetting = SettingsKey(floatPreferencesKey("keyboardOffset"), 0.0f)
@@ -76,7 +77,7 @@ fun<T> Preferences.get(key: SettingsKey<T>): T {
     return this[key.key] ?: key.default
 }
 
-private fun loadCustomPhotoBackground(context: Context, uriValue: String): Drawable? {
+private fun loadCustomPhotoBackground(context: Context, uriValue: String, dimAmount: Float): Drawable? {
     if (uriValue.isBlank()) return null
 
     return runCatching {
@@ -107,7 +108,7 @@ private fun loadCustomPhotoBackground(context: Context, uriValue: String): Drawa
             arrayOf(
                 photo,
                 android.graphics.drawable.GradientDrawable().apply {
-                    setColor(0x55000000)
+                    setColor(android.graphics.Color.argb((dimAmount.coerceIn(0f, 0.85f) * 255).roundToInt(), 0, 0, 0))
                 }
             )
         )
@@ -211,6 +212,7 @@ class BasicThemeProvider(
     val keyboardFont: String
     val spacebarColorPref: String
     val customKeyboardBackgroundUri: String
+    val customKeyboardBackgroundDim: Float
     override val keyboardTypeface: Typeface?
 
     fun hasUpdated(np: Preferences): Boolean {
@@ -222,6 +224,7 @@ class BasicThemeProvider(
                 || np.get(KeyboardFontSetting) != keyboardFont
                 || np.get(SpacebarColorSetting) != spacebarColorPref
                 || np.get(CustomKeyboardBackgroundUriSetting) != customKeyboardBackgroundUri
+                || np.get(CustomKeyboardBackgroundDimSetting) != customKeyboardBackgroundDim
     }
 
 
@@ -257,6 +260,7 @@ class BasicThemeProvider(
         keyboardFont = context.getSettingBlocking(KeyboardFontSetting)
         spacebarColorPref = context.getSettingBlocking(SpacebarColorSetting)
         customKeyboardBackgroundUri = context.getSettingBlocking(CustomKeyboardBackgroundUriSetting)
+        customKeyboardBackgroundDim = context.getSettingBlocking(CustomKeyboardBackgroundDimSetting)
         val customSpaceColor = when (spacebarColorPref) {
             "red" -> OrbitThemeHelper.COLOR_RED
             "blue" -> OrbitThemeHelper.COLOR_BLUE
@@ -387,7 +391,7 @@ class BasicThemeProvider(
         }
 
         keyboardBackground = if (currentThemeKey == "CustomPhotoTheme") {
-            loadCustomPhotoBackground(context, customKeyboardBackgroundUri)
+            loadCustomPhotoBackground(context, customKeyboardBackgroundUri, customKeyboardBackgroundDim)
                 ?: coloredRectangle(primaryKeyboardColor)
         } else if (isOrbitTheme) {
             coloredRectangle(0xFF000000.toInt())
