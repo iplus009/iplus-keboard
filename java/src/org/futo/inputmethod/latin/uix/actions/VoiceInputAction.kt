@@ -101,9 +101,10 @@ private class VoiceInputActionWindow(
 
         val primaryModel = model
         val languageSpecificModels = mutableMapOf<Language, ModelLoader>()
+        val englishEnabled = enableEnglish.await()
         val allowedLanguages = buildSet {
             add(getLanguageFromWhisperString(locale.language)!!)
-            if (enableEnglish.await() && !locale.language.equals("en", ignoreCase = true)) {
+            if (englishEnabled && !locale.language.equals("en", ignoreCase = true)) {
                 add(Language.English)
             }
         }
