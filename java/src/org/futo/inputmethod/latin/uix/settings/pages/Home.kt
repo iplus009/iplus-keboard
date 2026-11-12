@@ -160,8 +160,8 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
     val isProbhatActive = currentSubtypes.contains(probhatSubtype)
 
     fun toggleSubtype(subtypeStr: String, enabled: Boolean) {
-        if (enabled && currentSubtypes.size >= 4) {
-            Toast.makeText(context, "Maximum 4 keyboards can be selected at a time", Toast.LENGTH_SHORT).show()
+        if (enabled && currentSubtypes.size >= Subtypes.MAX_ACTIVE_KEYBOARDS) {
+            Toast.makeText(context, "Maximum 5 keyboards can be selected at a time", Toast.LENGTH_SHORT).show()
             return
         }
         val newSubtypes = if (enabled) {
@@ -283,7 +283,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
             Spacer(modifier = Modifier.height(14.dp))
 
             // 2. BENGALI KEYBOARD LAYOUTS
-            SectionHeader(title = "Bengali Layouts (Max 4 Active)", modifier = Modifier.padding(horizontal = 16.dp))
+            SectionHeader(title = "Bengali Layouts (4 layouts available)", modifier = Modifier.padding(horizontal = 16.dp))
             NeuCard(
                 modifier = Modifier
                     .fillMaxWidth()
