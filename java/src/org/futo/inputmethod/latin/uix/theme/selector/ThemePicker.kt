@@ -51,6 +51,7 @@ import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundXSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundYSetting
 import org.futo.inputmethod.latin.uix.setSettingBlocking
 import org.futo.inputmethod.latin.uix.KeyBordersSetting
+import org.futo.inputmethod.latin.uix.KeyOpacitySetting
 import org.futo.inputmethod.latin.uix.SpacebarColorSetting
 import org.futo.inputmethod.latin.uix.settings.SettingRadio
 import org.futo.inputmethod.latin.uix.KeyHintsSetting
@@ -375,6 +376,14 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
                             SettingToggleDataStore(
                                 title = "Key borders",
                                 setting = KeyBordersSetting
+                            )
+                            SettingSlider(
+                                title = "Key background opacity",
+                                setting = KeyOpacitySetting,
+                                range = 0.15f..1.0f,
+                                transform = { it.coerceIn(0.15f, 1.0f) },
+                                indicator = { "${(it * 100).roundToInt()}%" },
+                                subtitle = "Adjust key transparency over your keyboard background"
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                         }
