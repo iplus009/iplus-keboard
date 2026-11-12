@@ -1,40 +1,42 @@
 # iPlus Keyboard
 
-A Bangla and English Android keyboard project. The goal is to preserve the upstream typing engine and language behavior while building a distinct iPlus app experience.
+Bangla and English Android keyboard project. The iPlus app identity and settings experience are being developed around the existing keyboard engine.
 
-## Current development status
+## Project goals
 
-- Upstream source: imported from the public [Orbit Board repository](https://github.com/fahitakrim/Orbit-Board), which documents its public source through v1.0.8.
-- App branding: initial iPlus app label, settings title and home-screen branding changes are in progress.
-- Existing themes: theme IDs and original presets are to be retained.
-- Custom photo themes: not implemented yet; the public source currently contains a placeholder button.
-- APK: not yet built or tested from this fork.
+- Preserve the upstream typing engine and supported language layouts.
+- Keep all existing built-in themes available; new themes must be additive.
+- Keep core typing usable offline.
+- Add an improved Custom Theme Studio for personal photo backgrounds.
+- Publish source and reproducible APK builds.
 
-## Product goals
+## Current implementation status
 
-- **App name:** iPlus Keyboard
-- **Languages:** Bangla and English, preserving supported upstream layouts and typing behavior.
-- **Offline-first typing:** core typing must not depend on a network connection.
-- **Optional online features:** isolated from the typing pipeline and clearly disclosed.
-- **Themes:** keep existing themes unchanged and add new themes separately.
-- **Custom Theme Studio:** select a personal photo, crop/position it, adjust background and key appearance, preview and save locally.
-- **Official channel:** [iPlus Apps Store on Telegram](https://t.me/ismailq01appsstore)
+- [x] iPlus app label and settings title.
+- [x] iPlus home-screen branding and About section.
+- [x] iPlus project links for the Telegram channel and GitHub repository.
+- [x] Existing theme registry retained.
+- [x] Custom photo selection, persisted image URI and keyboard background rendering already exist in the imported source.
+- [ ] Full Custom Theme Studio controls (crop, zoom, position, brightness, blur, key opacity and saved theme presets).
+- [ ] Complete app-facing branding and permission audit.
+- [ ] Clean Android build and device regression tests.
+- [ ] Release signing and public APK workflow.
 
-## Source and licensing
+## Custom photo theme: current behavior
 
-This is a derivative project based on the publicly available source of [Orbit Board](https://github.com/fahitakrim/Orbit-Board). The upstream repository states that newer releases after its public v1.0.8 source are maintained privately; this fork uses the public source, not private release code.
+The current code uses Android's document picker to select an image, persists read access to the selected URI where supported, stores the URI in app preferences and renders it as the keyboard background with a fixed dark overlay. This is a useful baseline, but it is not yet the full editor described in the product goals.
 
-The upstream project is distributed under Apache License 2.0. Required copyright notices, the complete license, NOTICE contents and third-party attributions must remain in the repository and in redistributed source/binaries as required. App-facing Orbit Board branding is being replaced, but legal provenance and required attribution are not removed. See [LICENSE.md](LICENSE.md) and [NOTICE](NOTICE).
+## Upstream source and legal notices
 
-## Build
+This fork is based on the public source of [Orbit Board](https://github.com/fahitakrim/Orbit-Board). Its typing engine and third-party components have upstream provenance. Required copyright notices, Apache-2.0 license terms, NOTICE content and third-party attributions must remain available. App-facing branding is iPlus; legal attribution is kept separately in the Credits / Open Source Notices screen and license files.
 
-The project uses Android Gradle Plugin, Kotlin, Jetpack Compose and native C++ components. Before publishing an APK, verify the build with JDK 17+, Android SDK 34 and the NDK version required by the native build.
+The public upstream README states that source is available through v1.0.8 while later releases are distributed as binaries from private development. This project therefore works from the available public source and does not claim to contain the private source for later upstream releases.
 
-The current source build configuration is at the repository root. The upstream README's historical build instructions should not be assumed correct without testing this fork.
+## Official links
 
-## Development notes
+- Telegram: https://t.me/ismailq01appsstore
+- GitHub: https://github.com/iplus009/iplus-keboard
 
-- Keep the original namespace and JNI bindings until a complete package/native compatibility audit proves they can safely change.
-- Do not delete or rename existing theme keys or preset resources.
-- Never commit personal signing keys, keystore passwords or private API credentials.
-- Do not describe a feature or APK as complete until it has been implemented and tested.
+## Build status
+
+No release APK is claimed by this repository until a clean build and device tests have passed. Keep signing keys and passwords outside Git.
