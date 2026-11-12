@@ -160,8 +160,8 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
     val isProbhatActive = currentSubtypes.contains(probhatSubtype)
 
     fun toggleSubtype(subtypeStr: String, enabled: Boolean) {
-        if (enabled && currentSubtypes.size >= 3) {
-            Toast.makeText(context, "Maximum 3 keyboards can be selected at a time", Toast.LENGTH_SHORT).show()
+        if (enabled && currentSubtypes.size >= 4) {
+            Toast.makeText(context, "Maximum 4 keyboards can be selected at a time", Toast.LENGTH_SHORT).show()
             return
         }
         val newSubtypes = if (enabled) {
@@ -283,7 +283,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
             Spacer(modifier = Modifier.height(14.dp))
 
             // 2. BENGALI KEYBOARD LAYOUTS
-            SectionHeader(title = "Bengali Layouts (Max 3 Active)", modifier = Modifier.padding(horizontal = 16.dp))
+            SectionHeader(title = "Bengali Layouts (Max 4 Active)", modifier = Modifier.padding(horizontal = 16.dp))
             NeuCard(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -468,11 +468,11 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
                                         ).show()
                                     }
                                 },
-                                onFailure = {
+                                onFailure = { error ->
                                     Toast.makeText(
                                         context,
-                                        "iPlus Keyboard is up to date (v${BuildConfig.VERSION_NAME})",
-                                        Toast.LENGTH_SHORT
+                                        error.message?.let { "Update check failed: $it" } ?: "Couldn't check for updates. Check your internet connection.",
+                                        Toast.LENGTH_LONG
                                     ).show()
                                 }
                             )
