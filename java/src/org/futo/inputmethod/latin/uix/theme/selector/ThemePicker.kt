@@ -45,6 +45,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundUriSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundDimSetting
+import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundZoomSetting
+import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundXSetting
+import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundYSetting
 import org.futo.inputmethod.latin.uix.setSettingBlocking
 import org.futo.inputmethod.latin.uix.KeyBordersSetting
 import org.futo.inputmethod.latin.uix.SpacebarColorSetting
@@ -309,6 +312,33 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
                                     transform = { it.coerceIn(0.0f, 0.85f) },
                                     indicator = { "${(it * 100).roundToInt()}%" },
                                     subtitle = "Adjust image darkness so key labels stay readable"
+                                )
+
+                                SettingSlider(
+                                    title = "Photo zoom",
+                                    setting = CustomKeyboardBackgroundZoomSetting,
+                                    range = 1.0f..2.5f,
+                                    transform = { it.coerceIn(1.0f, 2.5f) },
+                                    indicator = { "${"%.1f".format(it)}x" },
+                                    subtitle = "Zoom in to frame the photo"
+                                )
+
+                                SettingSlider(
+                                    title = "Photo horizontal position",
+                                    setting = CustomKeyboardBackgroundXSetting,
+                                    range = -1.0f..1.0f,
+                                    transform = { it.coerceIn(-1.0f, 1.0f) },
+                                    indicator = { "${(it * 100).roundToInt()}%" },
+                                    subtitle = "Move the photo left or right"
+                                )
+
+                                SettingSlider(
+                                    title = "Photo vertical position",
+                                    setting = CustomKeyboardBackgroundYSetting,
+                                    range = -1.0f..1.0f,
+                                    transform = { it.coerceIn(-1.0f, 1.0f) },
+                                    indicator = { "${(it * 100).roundToInt()}%" },
+                                    subtitle = "Move the photo up or down"
                                 )
                             }
                         }
