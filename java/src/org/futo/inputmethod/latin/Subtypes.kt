@@ -227,12 +227,12 @@ object Subtypes {
         }
     }
 
-    const val MAX_ACTIVE_KEYBOARDS = 3
+    const val MAX_ACTIVE_KEYBOARDS = 5
 
     fun addLanguage(context: Context, language: Locale, layout: String): Boolean {
         val currentSetting = context.getSettingBlocking(SubtypesSetting)
         if (currentSetting.size >= MAX_ACTIVE_KEYBOARDS) {
-            Toast.makeText(context, "Maximum 3 keyboards can be selected at a time", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Maximum 5 keyboards can be selected at a time", Toast.LENGTH_SHORT).show()
             return false
         }
         val value = subtypeToString(
