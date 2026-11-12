@@ -1,6 +1,10 @@
 package org.futo.inputmethod.latin.uix
 
 import android.content.Context
+import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
+import android.net.Uri
+import android.view.Gravity
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
@@ -40,6 +44,7 @@ val KeyHintsSetting   = SettingsKey(booleanPreferencesKey("keyHints"), true)
 val KeyboardFontSetting = SettingsKey(stringPreferencesKey("keyboard_font"), "nothing")
 val KeyHintColorSetting = SettingsKey(stringPreferencesKey("key_hint_color"), "subtle")
 val SpacebarColorSetting = SettingsKey(stringPreferencesKey("spacebar_color"), "default")
+val CustomKeyboardBackgroundUriSetting = SettingsKey(stringPreferencesKey("custom_keyboard_background_uri"), "")
 
 val KeyboardHeightMultiplierSetting = SettingsKey(floatPreferencesKey("keyboardHeightMultiplier"), 1.0f)
 val KeyboardBottomOffsetSetting = SettingsKey(floatPreferencesKey("keyboardOffset"), 0.0f)
@@ -69,6 +74,44 @@ fun adjustColorBrightnessForContrast(bgColor: Int, fgColor: Int, desiredContrast
 
 fun<T> Preferences.get(key: SettingsKey<T>): T {
     return this[key.key] ?: key.default
+}
+
+private fun loadCustomPhotoBackground(context: Context, uriValue: String): Drawable? {
+    if (uriValue.isBlank()) return null
+
+    return runCatching {
+        val uri = Uri.parse(uriValue)
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        context.contentResolver.openInputStream(uri)?.use { stream ->
+            BitmapFactory.decodeStream(stream, null, bounds)
+        } ?: return null
+
+        val targetWidth = context.resources.displayMetrics.widthPixels.coerceAtLeast(720)
+        val targetHeight = (targetWidth * 0.7f).toInt()
+        var sampleSize = 1
+        while (bounds.outWidth / sampleSize > targetWidth * 2 ||
+            bounds.outHeight / sampleSize > targetHeight * 2
+        ) {
+            sampleSize *= 2
+        }
+
+        val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+        val bitmap = context.contentResolver.openInputStream(uri)?.use { stream ->
+            BitmapFactory.decodeStream(stream, null, options)
+        } ?: return null
+
+        val photo = BitmapDrawable(context.resources, bitmap).apply {
+            gravity = Gravity.FILL
+        }
+        android.graphics.drawable.LayerDrawable(
+            arrayOf(
+                photo,
+                android.graphics.drawable.GradientDrawable().apply {
+                    setColor(0x55000000)
+                }
+            )
+        )
+    }.getOrNull()
 }
 
 class BasicThemeProvider(
@@ -167,6 +210,7 @@ class BasicThemeProvider(
     val keyboardHeight: Float
     val keyboardFont: String
     val spacebarColorPref: String
+    val customKeyboardBackgroundUri: String
     override val keyboardTypeface: Typeface?
 
     fun hasUpdated(np: Preferences): Boolean {
@@ -177,6 +221,7 @@ class BasicThemeProvider(
                 || np.get(KeyboardHeightMultiplierSetting) != keyboardHeight
                 || np.get(KeyboardFontSetting) != keyboardFont
                 || np.get(SpacebarColorSetting) != spacebarColorPref
+                || np.get(CustomKeyboardBackgroundUriSetting) != customKeyboardBackgroundUri
     }
 
 
@@ -211,6 +256,7 @@ class BasicThemeProvider(
         keyboardHeight = context.getSettingBlocking(KeyboardHeightMultiplierSetting)
         keyboardFont = context.getSettingBlocking(KeyboardFontSetting)
         spacebarColorPref = context.getSettingBlocking(SpacebarColorSetting)
+        customKeyboardBackgroundUri = context.getSettingBlocking(CustomKeyboardBackgroundUriSetting)
         val customSpaceColor = when (spacebarColorPref) {
             "red" -> OrbitThemeHelper.COLOR_RED
             "blue" -> OrbitThemeHelper.COLOR_BLUE
@@ -340,7 +386,10 @@ class BasicThemeProvider(
             colors[R.styleable.Keyboard_Key_functionalTextColor] = onBackgroundThird
         }
 
-        keyboardBackground = if (isOrbitTheme) {
+        keyboardBackground = if (currentThemeKey == "CustomPhotoTheme") {
+            loadCustomPhotoBackground(context, customKeyboardBackgroundUri)
+                ?: coloredRectangle(primaryKeyboardColor)
+        } else if (isOrbitTheme) {
             coloredRectangle(0xFF000000.toInt())
         } else {
             coloredRectangle(primaryKeyboardColor)
