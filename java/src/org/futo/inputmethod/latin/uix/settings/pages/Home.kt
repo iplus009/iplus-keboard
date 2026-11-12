@@ -176,18 +176,9 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
     }
 
     LaunchedEffect(Unit) {
+        // Keep initial setup local. Online update checks are available only
+        // when the user explicitly requests them from the settings screen.
         Subtypes.addDefaultSubtypesIfNecessary(context)
-
-        // Check for updates in background
-        val result = UpdateChecker.checkForUpdate()
-        val update = result.getOrNull()
-        if (update != null && update.isUpdateAvailable) {
-            availableUpdate = update
-            showUpdateSheet = true
-        }
-
-        // Check for announcements in background
-        announcementManager.checkForAnnouncements(coroutineScope, forceShow = false)
     }
 
     Column(
