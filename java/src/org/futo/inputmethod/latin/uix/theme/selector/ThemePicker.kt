@@ -1,6 +1,7 @@
 package org.futo.inputmethod.latin.uix.theme.selector
 
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -229,7 +230,7 @@ fun AddCustomThemeButton(onClick: () -> Unit = { }) {
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Icon(
-                Icons.Default.Add, contentDescription = "", modifier = Modifier
+                Icons.Default.Add, contentDescription = "Add custom photo theme", modifier = Modifier
                     .size(48.dp)
                     .align(
                         Alignment.Center
@@ -244,12 +245,22 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
     val context = LocalContext.current
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            runCatching {
+            val permissionPersisted = runCatching {
                 context.contentResolver.takePersistableUriPermission(
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
+            }.isSuccess
+
+            if (!permissionPersisted) {
+                Toast.makeText(
+                    context,
+                    "Couldn't keep access to this photo. Please choose another image.",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@rememberLauncherForActivityResult
             }
+
             context.setSettingBlocking(CustomKeyboardBackgroundUriSetting.key, uri.toString())
             onSelected(CustomPhotoTheme)
         }
