@@ -463,7 +463,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
                                     } else {
                                         Toast.makeText(
                                             context,
-                                            "Orbit Board is up to date (v${BuildConfig.VERSION_NAME})",
+                                            "iPlus Keyboard is up to date (v${BuildConfig.VERSION_NAME})",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
@@ -471,7 +471,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
                                 onFailure = {
                                     Toast.makeText(
                                         context,
-                                        "Orbit Board is up to date (v${BuildConfig.VERSION_NAME})",
+                                        "iPlus Keyboard is up to date (v${BuildConfig.VERSION_NAME})",
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
