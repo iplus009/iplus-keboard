@@ -20,6 +20,7 @@ Bangla and English Android keyboard project. The iPlus app identity and settings
 - [x] Adjustable photo-background dim control, saved locally in DataStore and applied by the keyboard theme provider.
 - [x] Photo zoom and horizontal/vertical positioning controls, persisted locally and applied by the keyboard background renderer.
 - [x] Reset action for custom photo adjustments.
+- [x] Corrected image-bounds decoding so selected photos can proceed to bitmap decoding.
 - [ ] Remaining Custom Theme Studio controls (blur, key opacity and saved theme presets).
 - [ ] Complete app-facing branding and permission audit.
 - [ ] Clean Android build and device regression tests.
@@ -27,7 +28,7 @@ Bangla and English Android keyboard project. The iPlus app identity and settings
 
 ## Custom photo theme: current behavior
 
-The current code uses Android's document picker to select an image, persists read access to the selected URI where supported, stores the URI in app preferences and renders it as the keyboard background with a fixed dark overlay. Photo dim, zoom and horizontal/vertical positioning controls are available while the Custom Photo theme is selected. Values are saved locally and applied by the keyboard background renderer; a reset action restores defaults. This is still not the full editor described in the product goals.
+The current code uses Android's document picker to select an image, persists read access to the selected URI where supported, stores the URI in app preferences and renders it as the keyboard background. The image-bounds decode path was corrected so the bounds-only decode is not mistaken for a failed image load. Photo dim, zoom and horizontal/vertical positioning controls are available while the Custom Photo theme is selected. Values are saved locally and applied by the keyboard background renderer; a reset action restores defaults. This is still not the full editor described in the product goals.
 
 ## Upstream source and legal notices
 
