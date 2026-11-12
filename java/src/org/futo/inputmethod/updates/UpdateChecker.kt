@@ -22,8 +22,8 @@ data class AppUpdate(
 )
 
 object UpdateChecker {
-    const val RAW_UPDATE_URL = "https://raw.githubusercontent.com/fahitakrim/my-artifacts/main/apps/orbitboard/update.json"
-    const val GITHUB_API_URL = "https://api.github.com/repos/fahitakrim/my-artifacts/releases?per_page=15"
+    const val RAW_UPDATE_URL = "https://raw.githubusercontent.com/iplus009/iplus-keboard/main/update.json"
+    const val GITHUB_API_URL = "https://api.github.com/repos/iplus009/iplus-keboard/releases?per_page=15"
 
     private val _isChecking = MutableStateFlow(false)
     val isChecking: StateFlow<Boolean> = _isChecking.asStateFlow()
@@ -42,7 +42,7 @@ object UpdateChecker {
                 return@withContext Result.success(rawUpdate)
             }
 
-            // 2. Fallback to GitHub Releases API with strict filtering for Orbit Board
+            // 2. Fallback to GitHub Releases API with strict filtering for iPlus Keyboard
             val releasesResult = runCatching { fetchFromReleasesApi(GITHUB_API_URL, currentVersion) }
             val releasesUpdate = releasesResult.getOrNull()
             if (releasesUpdate != null) {
@@ -53,7 +53,7 @@ object UpdateChecker {
             // If neither returned an update, report that app is on current version (up to date)
             val upToDate = AppUpdate(
                 versionName = currentVersion,
-                releaseTitle = "Orbit Board",
+                releaseTitle = "iPlus Keyboard",
                 releaseNotes = "Already on latest version.",
                 downloadUrl = "",
                 isUpdateAvailable = false
@@ -73,7 +73,7 @@ object UpdateChecker {
             requestMethod = "GET"
             connectTimeout = 5000
             readTimeout = 5000
-            setRequestProperty("User-Agent", "OrbitBoard/$currentVersion")
+            setRequestProperty("User-Agent", "iPlusKeyboard/$currentVersion")
             setRequestProperty("Accept", "application/json")
         }
         return try {
@@ -90,7 +90,7 @@ object UpdateChecker {
             } else {
                 json.optString("releaseNotes", "Bug fixes and performance improvements.")
             }
-            val title = json.optString("title", "Orbit Board v$latestVer (Stable)")
+            val title = json.optString("title", "iPlus Keyboard v$latestVer (Stable)")
             val isAvailable = isNewerVersion(remote = latestVer, current = currentVersion)
             AppUpdate(
                 versionName = latestVer,
@@ -110,7 +110,7 @@ object UpdateChecker {
             requestMethod = "GET"
             connectTimeout = 6000
             readTimeout = 6000
-            setRequestProperty("User-Agent", "OrbitBoard/$currentVersion")
+            setRequestProperty("User-Agent", "iPlusKeyboard/$currentVersion")
             setRequestProperty("Accept", "application/vnd.github.v3+json")
         }
         return try {
@@ -130,15 +130,15 @@ object UpdateChecker {
                     if (assets != null) {
                         for (j in 0 until assets.length()) {
                             val assetName = assets.optJSONObject(j)?.optString("name", "")?.lowercase() ?: ""
-                            if ((assetName.contains("orbit-board") || assetName.contains("orbitboard") ||
-                                assetName.contains("orbit_board") || assetName.contains("nth-kbd")) && assetName.endsWith(".apk")) {
+                            if ((assetName.contains("iplus-keyboard") || assetName.contains("ipluskeyboard") ||
+                                assetName.contains("iplus_keyboard") || assetName.contains("iplus-keyboard")) && assetName.endsWith(".apk")) {
                                 hasKbdApk = true
                                 break
                             }
                         }
                     }
-                    if (hasKbdApk || relTitle.contains("orbit-board") || relTitle.contains("orbit board") ||
-                        relTitle.contains("orbitboard") || tag.contains("orbit-board") || tag.contains("orbitboard")) {
+                    if (hasKbdApk || relTitle.contains("iplus-keyboard") || relTitle.contains("orbit board") ||
+                        relTitle.contains("ipluskeyboard") || tag.contains("iplus-keyboard") || tag.contains("ipluskeyboard")) {
                         matchedObj = rel
                         break
                     }
@@ -149,8 +149,8 @@ object UpdateChecker {
                 val singleObj = JSONObject(responseBody)
                 val relTitle = singleObj.optString("name", "").lowercase()
                 val tag = singleObj.optString("tag_name", "").lowercase()
-                if (relTitle.contains("orbit-board") || relTitle.contains("orbit board") ||
-                    relTitle.contains("orbitboard") || tag.contains("orbit-board") || tag.contains("orbitboard")) {
+                if (relTitle.contains("iplus-keyboard") || relTitle.contains("orbit board") ||
+                    relTitle.contains("ipluskeyboard") || tag.contains("iplus-keyboard") || tag.contains("ipluskeyboard")) {
                     singleObj
                 } else {
                     return null
@@ -171,9 +171,9 @@ object UpdateChecker {
                 for (i in 0 until assets.length()) {
                     val asset = assets.optJSONObject(i)
                     val assetName = asset?.optString("name", "") ?: ""
-                    if ((assetName.contains("orbit-board", ignoreCase = true) ||
-                         assetName.contains("orbitboard", ignoreCase = true) ||
-                         assetName.contains("nth-kbd", ignoreCase = true)) &&
+                    if ((assetName.contains("iplus-keyboard", ignoreCase = true) ||
+                         assetName.contains("ipluskeyboard", ignoreCase = true) ||
+                         assetName.contains("iplus-keyboard", ignoreCase = true)) &&
                         assetName.endsWith(".apk", ignoreCase = true)) {
                         val apkUrl = asset.optString("browser_download_url", "")
                         if (apkUrl.isNotBlank()) {
