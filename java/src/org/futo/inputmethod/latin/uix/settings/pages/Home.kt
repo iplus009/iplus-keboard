@@ -204,7 +204,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Header: ORBIT BOARD & Version Tag
+            // Header: iPlus Keyboard & Version Tag
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -214,7 +214,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
             ) {
                 Column {
                     Text(
-                        "ORBIT BOARD",
+                        "iPlus Keyboard",
                         fontFamily = Doto,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
@@ -222,7 +222,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
                         color = Color.White
                     )
                     Text(
-                        "Crafted for Nothing OS",
+                        "Bangla & English Keyboard",
                         fontFamily = Inter,
                         fontSize = 12.sp,
                         color = TextSecondary
