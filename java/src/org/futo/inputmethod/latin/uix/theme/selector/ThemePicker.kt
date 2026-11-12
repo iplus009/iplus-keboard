@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundUriSetting
+import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundDimSetting
 import org.futo.inputmethod.latin.uix.setSettingBlocking
 import org.futo.inputmethod.latin.uix.KeyBordersSetting
 import org.futo.inputmethod.latin.uix.SpacebarColorSetting
@@ -296,6 +297,23 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
                 }
 
                 item(span = { GridItemSpan(maxCurrentLineSpan) }) { }
+
+                if (currentTheme == CustomPhotoTheme.key) {
+                    item(span = { GridItemSpan(maxCurrentLineSpan) }) {
+                        CompositionLocalProvider(LocalLayoutDirection provides originalDirection) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                SettingSlider(
+                                    title = "Photo background dim",
+                                    setting = CustomKeyboardBackgroundDimSetting,
+                                    range = 0.0f..0.85f,
+                                    transform = { it.coerceIn(0.0f, 0.85f) },
+                                    indicator = { "${(it * 100).roundToInt()}%" },
+                                    subtitle = "Adjust image darkness so key labels stay readable"
+                                )
+                            }
+                        }
+                    }
+                }
 
                 item(span = { GridItemSpan(maxCurrentLineSpan) }) {
                     CompositionLocalProvider(LocalLayoutDirection provides originalDirection) {
