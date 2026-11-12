@@ -20,7 +20,7 @@ Upstream: https://github.com/fahitakrim/Orbit-Board
 - Theme rendering provider: `java/src/org/futo/inputmethod/latin/uix/BasicThemeProvider.kt`.
 - Existing preset identifiers remain in the theme registry. Preserve these IDs and serialized preference values.
 - The original Orbit preset uses the internal key `OrbitTheme`; the user-facing preset label is already `Matte Bauhaus`. Keep the internal key unless a tested migration is designed.
-- The Custom Photo picker is already wired using Android's document picker. It persists the image URI in `CustomKeyboardBackgroundUriSetting`, selects `CustomPhotoTheme`, and the theme provider renders the image with a fixed dark overlay.
+- The Custom Photo picker uses Android's document picker. It persists the image URI in `CustomKeyboardBackgroundUriSetting` and selects `CustomPhotoTheme`. The iPlus branch corrects the bounds-only bitmap decode check (which otherwise returns null by design), then down-samples and center-crops the image before rendering it with the configurable dark overlay.
 - The iPlus working branch adds photo-background dim (0–85%), zoom (1.0x–2.5x), and horizontal/vertical positioning (-100% to +100%), stored in DataStore and consumed by BasicThemeProvider. A reset action restores all four controls to defaults. Blur, custom key styling, multiple saved user themes and theme management are not yet implemented.
 
 ## iPlus changes made on this branch
@@ -32,6 +32,7 @@ Upstream: https://github.com/fahitakrim/Orbit-Board
 - Replaced the previous developer-profile card with iPlus Apps Store links to the official Telegram channel and this GitHub repository.
 - Added Custom Photo background dim, zoom and horizontal/vertical position sliders; their persisted values are applied to the rendered keyboard background.
 - Added a reset action for the four photo adjustment settings.
+- Fixed the bounds-only decode path so it checks decoded dimensions instead of treating the expected null bitmap as a load failure.
 - Credits screen keeps a distinct upstream-source attribution section and third-party credits. This is intentional: removing legally required attribution would be incorrect.
 
 ## Permission / privacy audit
