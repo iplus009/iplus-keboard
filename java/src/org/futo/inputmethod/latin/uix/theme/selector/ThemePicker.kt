@@ -340,6 +340,19 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
                                     indicator = { "${(it * 100).roundToInt()}%" },
                                     subtitle = "Move the photo up or down"
                                 )
+
+                                Text(
+                                    text = "Reset photo adjustments",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .clickable {
+                                            context.setSettingBlocking(CustomKeyboardBackgroundDimSetting.key, CustomKeyboardBackgroundDimSetting.default)
+                                            context.setSettingBlocking(CustomKeyboardBackgroundZoomSetting.key, CustomKeyboardBackgroundZoomSetting.default)
+                                            context.setSettingBlocking(CustomKeyboardBackgroundXSetting.key, CustomKeyboardBackgroundXSetting.default)
+                                            context.setSettingBlocking(CustomKeyboardBackgroundYSetting.key, CustomKeyboardBackgroundYSetting.default)
+                                        }
+                                        .padding(12.dp)
+                                )
                             }
                         }
                     }
