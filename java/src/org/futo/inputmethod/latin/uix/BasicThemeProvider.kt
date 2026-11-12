@@ -90,9 +90,11 @@ private fun loadCustomPhotoBackground(context: Context, uriValue: String, dimAmo
     return runCatching {
         val uri = Uri.parse(uriValue)
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        context.contentResolver.openInputStream(uri)?.use { stream ->
+        val boundsStream = context.contentResolver.openInputStream(uri) ?: return null
+        boundsStream.use { stream ->
             BitmapFactory.decodeStream(stream, null, bounds)
-        } ?: return null
+        }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
 
         val targetWidth = context.resources.displayMetrics.widthPixels.coerceAtLeast(720)
         val targetHeight = (targetWidth * 0.7f).toInt()
