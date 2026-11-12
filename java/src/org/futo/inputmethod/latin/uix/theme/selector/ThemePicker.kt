@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundUriSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundDimSetting
+import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundBlurSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundZoomSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundXSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundYSetting
@@ -327,6 +328,15 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
                                 )
 
                                 SettingSlider(
+                                    title = "Photo background blur",
+                                    setting = CustomKeyboardBackgroundBlurSetting,
+                                    range = 0.0f..20.0f,
+                                    transform = { it.coerceIn(0.0f, 20.0f) },
+                                    indicator = { it.roundToInt().toString() },
+                                    subtitle = "Soften the photo behind the keys"
+                                )
+
+                                SettingSlider(
                                     title = "Photo zoom",
                                     setting = CustomKeyboardBackgroundZoomSetting,
                                     range = 1.0f..2.5f,
@@ -359,6 +369,7 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
                                     modifier = Modifier
                                         .clickable {
                                             context.setSettingBlocking(CustomKeyboardBackgroundDimSetting.key, CustomKeyboardBackgroundDimSetting.default)
+                                            context.setSettingBlocking(CustomKeyboardBackgroundBlurSetting.key, CustomKeyboardBackgroundBlurSetting.default)
                                             context.setSettingBlocking(CustomKeyboardBackgroundZoomSetting.key, CustomKeyboardBackgroundZoomSetting.default)
                                             context.setSettingBlocking(CustomKeyboardBackgroundXSetting.key, CustomKeyboardBackgroundXSetting.default)
                                             context.setSettingBlocking(CustomKeyboardBackgroundYSetting.key, CustomKeyboardBackgroundYSetting.default)
