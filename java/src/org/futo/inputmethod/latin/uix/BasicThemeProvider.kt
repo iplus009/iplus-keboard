@@ -43,6 +43,7 @@ import org.futo.inputmethod.latin.uix.theme.DarkColorScheme
 import kotlin.math.roundToInt
 
 val KeyBordersSetting = SettingsKey(booleanPreferencesKey("keyBorders"), true)
+val KeyOpacitySetting = SettingsKey(floatPreferencesKey("key_opacity"), 1.0f)
 val HiddenKeysSetting = SettingsKey(booleanPreferencesKey("hiddenKeys"), false)
 val KeyHintsSetting   = SettingsKey(booleanPreferencesKey("keyHints"), true)
 val KeyboardFontSetting = SettingsKey(stringPreferencesKey("keyboard_font"), "nothing")
@@ -223,6 +224,7 @@ class BasicThemeProvider(
 
     val expertMode: Boolean
     val keyBorders: Boolean
+    val keyOpacity: Float
     val showKeyHints: Boolean
     val keyHintColor: String
     val keyboardHeight: Float
@@ -238,6 +240,7 @@ class BasicThemeProvider(
     fun hasUpdated(np: Preferences): Boolean {
         return np.get(HiddenKeysSetting) != expertMode
                 || np.get(KeyBordersSetting) != keyBorders
+                || np.get(KeyOpacitySetting) != keyOpacity
                 || np.get(KeyHintsSetting) != showKeyHints
                 || np.get(KeyHintColorSetting) != keyHintColor
                 || np.get(KeyboardHeightMultiplierSetting) != keyboardHeight
@@ -277,6 +280,7 @@ class BasicThemeProvider(
 
         expertMode = context.getSettingBlocking(HiddenKeysSetting)
         keyBorders = context.getSettingBlocking(KeyBordersSetting)
+        keyOpacity = context.getSettingBlocking(KeyOpacitySetting).coerceIn(0.15f, 1.0f)
         showKeyHints = context.getSettingBlocking(KeyHintsSetting)
         keyHintColor = context.getSettingBlocking(KeyHintColorSetting)
         keyboardHeight = context.getSettingBlocking(KeyboardHeightMultiplierSetting)
@@ -337,7 +341,7 @@ class BasicThemeProvider(
                 // May happen if the color is already 100% white
                 c = adjustColorBrightnessForContrast(primaryKeyboardColor, primaryKeyboardColor, 1.0f / (ratio / 2.0f + 0.5f))
             }
-            c
+            ColorUtils.setAlphaComponent(c, (keyOpacity * 255).roundToInt())
         } else {
             transparent
         }
@@ -345,7 +349,10 @@ class BasicThemeProvider(
         this.keyColor = keyColor
 
         val functionalKeyColor = if(keyBorders) {
-            adjustColorBrightnessForContrast(primaryKeyboardColor, primaryKeyboardColor, ratio / 2.0f + 0.5f, adjustSaturation = true)
+            ColorUtils.setAlphaComponent(
+                adjustColorBrightnessForContrast(primaryKeyboardColor, primaryKeyboardColor, ratio / 2.0f + 0.5f, adjustSaturation = true),
+                (keyOpacity * 255).roundToInt()
+            )
         } else {
             transparent
         }
