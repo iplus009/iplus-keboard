@@ -31,6 +31,9 @@ import org.futo.inputmethod.latin.uix.AUDIO_FOCUS
 import org.futo.inputmethod.latin.uix.Action
 import org.futo.inputmethod.latin.uix.ActionWindow
 import org.futo.inputmethod.latin.uix.DISALLOW_SYMBOLS
+import org.futo.inputmethod.latin.uix.ENABLE_ENGLISH
+import org.futo.inputmethod.latin.uix.ENABLE_LIVE_TRANSCRIPTION
+import org.futo.inputmethod.latin.uix.VOICE_PUNCTUATION
 import org.futo.inputmethod.latin.uix.ENABLE_SOUND
 import org.futo.inputmethod.latin.uix.KeyboardManagerForAction
 import org.futo.inputmethod.latin.uix.PREFER_BLUETOOTH
@@ -90,19 +93,25 @@ private class VoiceInputActionWindow(
         val enableSound = async { context.getSetting(ENABLE_SOUND) }
         val verboseFeedback = async { context.getSetting(VERBOSE_PROGRESS) }
         val disallowSymbols = async { context.getSetting(DISALLOW_SYMBOLS) }
+        val enableEnglish = async { context.getSetting(ENABLE_ENGLISH) }
+        val enableLiveTranscription = async { context.getSetting(ENABLE_LIVE_TRANSCRIPTION) }
+        val voicePunctuation = async { context.getSetting(VOICE_PUNCTUATION) }
         val useBluetoothAudio = async { context.getSetting(PREFER_BLUETOOTH) }
         val requestAudioFocus = async { context.getSetting(AUDIO_FOCUS) }
 
         val primaryModel = model
         val languageSpecificModels = mutableMapOf<Language, ModelLoader>()
-        val allowedLanguages = setOf(
-            getLanguageFromWhisperString(locale.language)!!
-        )
+        val allowedLanguages = buildSet {
+            add(getLanguageFromWhisperString(locale.language)!!)
+            if (enableEnglish.await() && !locale.language.equals("en", ignoreCase = true)) {
+                add(Language.English)
+            }
+        }
 
         shouldPlaySounds = enableSound.await()
 
         return@coroutineScope RecognizerViewSettings(
-            shouldShowInlinePartialResult = false,
+            shouldShowInlinePartialResult = enableLiveTranscription.await(),
             shouldShowVerboseFeedback = verboseFeedback.await(),
             modelRunConfiguration = MultiModelRunConfiguration(
                 primaryModel = primaryModel,
@@ -111,7 +120,7 @@ private class VoiceInputActionWindow(
             decodingConfiguration = DecodingConfiguration(
                 glossary = state.userDictionaryObserver.getWords().map { it.word },
                 languages = allowedLanguages,
-                suppressSymbols = disallowSymbols.await()
+                suppressSymbols = disallowSymbols.await() && !voicePunctuation.await()
             ),
             recordingConfiguration = RecordingSettings(
                 preferBluetoothMic = useBluetoothAudio.await(),
