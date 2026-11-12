@@ -25,12 +25,16 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundUriSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundDimSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundBlurSetting
+import org.futo.inputmethod.latin.uix.SavedCustomPhotoThemesSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundZoomSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundXSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundYSetting
@@ -269,6 +274,28 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
     }
 
     val currentTheme = useDataStore(THEME_KEY.key, "").value
+    val savedThemes = useDataStore(SavedCustomPhotoThemesSetting.key, SavedCustomPhotoThemesSetting.default)
+    val photoUri = useDataStore(CustomKeyboardBackgroundUriSetting.key, CustomKeyboardBackgroundUriSetting.default)
+    val photoDim = useDataStore(CustomKeyboardBackgroundDimSetting.key, CustomKeyboardBackgroundDimSetting.default)
+    val photoBlur = useDataStore(CustomKeyboardBackgroundBlurSetting.key, CustomKeyboardBackgroundBlurSetting.default)
+    val photoZoom = useDataStore(CustomKeyboardBackgroundZoomSetting.key, CustomKeyboardBackgroundZoomSetting.default)
+    val photoX = useDataStore(CustomKeyboardBackgroundXSetting.key, CustomKeyboardBackgroundXSetting.default)
+    val photoY = useDataStore(CustomKeyboardBackgroundYSetting.key, CustomKeyboardBackgroundYSetting.default)
+    val newThemeName = remember { mutableStateOf("") }
+    val renameTarget = remember { mutableStateOf<String?>(null) }
+    val renameName = remember { mutableStateOf("") }
+
+    fun applyPhotoTheme(record: String) {
+        val p = record.split("|")
+        if (p.size != 7) return
+        context.setSettingBlocking(CustomKeyboardBackgroundUriSetting.key, android.net.Uri.decode(p[1]))
+        context.setSettingBlocking(CustomKeyboardBackgroundDimSetting.key, p[2].toFloatOrNull() ?: 0.33f)
+        context.setSettingBlocking(CustomKeyboardBackgroundBlurSetting.key, p[3].toFloatOrNull() ?: 0.0f)
+        context.setSettingBlocking(CustomKeyboardBackgroundZoomSetting.key, p[4].toFloatOrNull() ?: 1.0f)
+        context.setSettingBlocking(CustomKeyboardBackgroundXSetting.key, p[5].toFloatOrNull() ?: 0.0f)
+        context.setSettingBlocking(CustomKeyboardBackgroundYSetting.key, p[6].toFloatOrNull() ?: 0.0f)
+        onSelected(CustomPhotoTheme)
+    }
 
     val isInspecting = LocalInspectionMode.current
     val availableThemeOptions = remember {
@@ -383,6 +410,60 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
 
                 item(span = { GridItemSpan(maxCurrentLineSpan) }) {
                     CompositionLocalProvider(LocalLayoutDirection provides originalDirection) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+                            Text("Save current photo theme", style = Typography.titleMedium)
+                            OutlinedTextField(
+                                value = newThemeName.value,
+                                onValueChange = { newThemeName.value = it.take(32) },
+                                label = { Text("Theme name") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Button(
+                                onClick = {
+                                    val name = newThemeName.value.trim()
+                                    if (name.isNotEmpty() && photoUri.value.isNotBlank()) {
+                                        val record = listOf(
+                                            android.net.Uri.encode(name),
+                                            android.net.Uri.encode(photoUri.value),
+                                            photoDim.value.toString(),
+                                            photoBlur.value.toString(),
+                                            photoZoom.value.toString(),
+                                            photoX.value.toString(),
+                                            photoY.value.toString()
+                                        ).joinToString("|")
+                                        context.setSettingBlocking(SavedCustomPhotoThemesSetting.key, savedThemes.value + record)
+                                        newThemeName.value = ""
+                                    }
+                                },
+                                enabled = newThemeName.value.trim().isNotEmpty() && photoUri.value.isNotBlank(),
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("Save theme") }
+
+                            savedThemes.value.sorted().forEach { record ->
+                                val parts = record.split("|")
+                                if (parts.size == 7) {
+                                    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                        Text(android.net.Uri.decode(parts[0]))
+                                        androidx.compose.foundation.layout.Row {
+                                            TextButton(onClick = { applyPhotoTheme(record) }) { Text("Apply") }
+                                            TextButton(onClick = {
+                                                renameTarget.value = record
+                                                renameName.value = android.net.Uri.decode(parts[0])
+                                            }) { Text("Rename") }
+                                            TextButton(onClick = {
+                                                context.setSettingBlocking(SavedCustomPhotoThemesSetting.key, savedThemes.value - record)
+                                            }) { Text("Delete") }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item(span = { GridItemSpan(maxCurrentLineSpan) }) {
+                    CompositionLocalProvider(LocalLayoutDirection provides originalDirection) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             SettingToggleDataStore(
                                 title = "Key borders",
@@ -417,6 +498,36 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
                     }
                 }
             }
+        }
+
+        if (renameTarget.value != null) {
+            AlertDialog(
+                onDismissRequest = { renameTarget.value = null },
+                title = { Text("Rename photo theme") },
+                text = {
+                    OutlinedTextField(
+                        value = renameName.value,
+                        onValueChange = { renameName.value = it.take(32) },
+                        singleLine = true,
+                        label = { Text("Theme name") }
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val old = renameTarget.value
+                        val parts = old?.split("|")
+                        val name = renameName.value.trim()
+                        if (old != null && parts != null && parts.size == 7 && name.isNotEmpty()) {
+                            val renamed = (listOf(android.net.Uri.encode(name)) + parts.drop(1)).joinToString("|")
+                            context.setSettingBlocking(SavedCustomPhotoThemesSetting.key, (savedThemes.value - old) + renamed)
+                        }
+                        renameTarget.value = null
+                    }) { Text("Save") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { renameTarget.value = null }) { Text("Cancel") }
+                }
+            )
         }
     }
 }
