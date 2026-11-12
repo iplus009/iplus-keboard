@@ -550,7 +550,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
             Spacer(modifier = Modifier.height(14.dp))
 
             // 5. ABOUT DEVELOPER
-            SectionHeader(title = "About Developer", modifier = Modifier.padding(horizontal = 16.dp))
+            SectionHeader(title = "About iPlus", modifier = Modifier.padding(horizontal = 16.dp))
             DeveloperDetailsCard(modifier = Modifier.padding(horizontal = 16.dp))
 
             Spacer(modifier = Modifier.height(24.dp))
