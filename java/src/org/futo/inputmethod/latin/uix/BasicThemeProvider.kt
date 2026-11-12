@@ -1,7 +1,11 @@
 package org.futo.inputmethod.latin.uix
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.view.Gravity
@@ -46,6 +50,9 @@ val KeyHintColorSetting = SettingsKey(stringPreferencesKey("key_hint_color"), "s
 val SpacebarColorSetting = SettingsKey(stringPreferencesKey("spacebar_color"), "default")
 val CustomKeyboardBackgroundUriSetting = SettingsKey(stringPreferencesKey("custom_keyboard_background_uri"), "")
 val CustomKeyboardBackgroundDimSetting = SettingsKey(floatPreferencesKey("custom_keyboard_background_dim"), 0.33f)
+val CustomKeyboardBackgroundZoomSetting = SettingsKey(floatPreferencesKey("custom_keyboard_background_zoom"), 1.0f)
+val CustomKeyboardBackgroundXSetting = SettingsKey(floatPreferencesKey("custom_keyboard_background_x"), 0.0f)
+val CustomKeyboardBackgroundYSetting = SettingsKey(floatPreferencesKey("custom_keyboard_background_y"), 0.0f)
 
 val KeyboardHeightMultiplierSetting = SettingsKey(floatPreferencesKey("keyboardHeightMultiplier"), 1.0f)
 val KeyboardBottomOffsetSetting = SettingsKey(floatPreferencesKey("keyboardOffset"), 0.0f)
@@ -77,7 +84,7 @@ fun<T> Preferences.get(key: SettingsKey<T>): T {
     return this[key.key] ?: key.default
 }
 
-private fun loadCustomPhotoBackground(context: Context, uriValue: String, dimAmount: Float): Drawable? {
+private fun loadCustomPhotoBackground(context: Context, uriValue: String, dimAmount: Float, zoom: Float, offsetX: Float, offsetY: Float): Drawable? {
     if (uriValue.isBlank()) return null
 
     return runCatching {
@@ -101,7 +108,15 @@ private fun loadCustomPhotoBackground(context: Context, uriValue: String, dimAmo
             BitmapFactory.decodeStream(stream, null, options)
         } ?: return null
 
-        val photo = BitmapDrawable(context.resources, bitmap).apply {
+        val scale = maxOf(targetWidth / bitmap.width.toFloat(), targetHeight / bitmap.height.toFloat()) * zoom.coerceIn(1.0f, 2.5f)
+        val drawnWidth = bitmap.width * scale
+        val drawnHeight = bitmap.height * scale
+        val left = (targetWidth - drawnWidth) / 2f + offsetX.coerceIn(-1f, 1f) * (drawnWidth - targetWidth) / 2f
+        val top = (targetHeight - drawnHeight) / 2f + offsetY.coerceIn(-1f, 1f) * (drawnHeight - targetHeight) / 2f
+        val cropped = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
+        Canvas(cropped).drawBitmap(bitmap, null, RectF(left, top, left + drawnWidth, top + drawnHeight), Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
+        bitmap.recycle()
+        val photo = BitmapDrawable(context.resources, cropped).apply {
             gravity = Gravity.FILL
         }
         android.graphics.drawable.LayerDrawable(
@@ -213,6 +228,9 @@ class BasicThemeProvider(
     val spacebarColorPref: String
     val customKeyboardBackgroundUri: String
     val customKeyboardBackgroundDim: Float
+    val customKeyboardBackgroundZoom: Float
+    val customKeyboardBackgroundX: Float
+    val customKeyboardBackgroundY: Float
     override val keyboardTypeface: Typeface?
 
     fun hasUpdated(np: Preferences): Boolean {
@@ -225,6 +243,9 @@ class BasicThemeProvider(
                 || np.get(SpacebarColorSetting) != spacebarColorPref
                 || np.get(CustomKeyboardBackgroundUriSetting) != customKeyboardBackgroundUri
                 || np.get(CustomKeyboardBackgroundDimSetting) != customKeyboardBackgroundDim
+                || np.get(CustomKeyboardBackgroundZoomSetting) != customKeyboardBackgroundZoom
+                || np.get(CustomKeyboardBackgroundXSetting) != customKeyboardBackgroundX
+                || np.get(CustomKeyboardBackgroundYSetting) != customKeyboardBackgroundY
     }
 
 
@@ -261,6 +282,9 @@ class BasicThemeProvider(
         spacebarColorPref = context.getSettingBlocking(SpacebarColorSetting)
         customKeyboardBackgroundUri = context.getSettingBlocking(CustomKeyboardBackgroundUriSetting)
         customKeyboardBackgroundDim = context.getSettingBlocking(CustomKeyboardBackgroundDimSetting)
+        customKeyboardBackgroundZoom = context.getSettingBlocking(CustomKeyboardBackgroundZoomSetting)
+        customKeyboardBackgroundX = context.getSettingBlocking(CustomKeyboardBackgroundXSetting)
+        customKeyboardBackgroundY = context.getSettingBlocking(CustomKeyboardBackgroundYSetting)
         val customSpaceColor = when (spacebarColorPref) {
             "red" -> OrbitThemeHelper.COLOR_RED
             "blue" -> OrbitThemeHelper.COLOR_BLUE
@@ -391,7 +415,7 @@ class BasicThemeProvider(
         }
 
         keyboardBackground = if (currentThemeKey == "CustomPhotoTheme") {
-            loadCustomPhotoBackground(context, customKeyboardBackgroundUri, customKeyboardBackgroundDim)
+            loadCustomPhotoBackground(context, customKeyboardBackgroundUri, customKeyboardBackgroundDim, customKeyboardBackgroundZoom, customKeyboardBackgroundX, customKeyboardBackgroundY)
                 ?: coloredRectangle(primaryKeyboardColor)
         } else if (isOrbitTheme) {
             coloredRectangle(0xFF000000.toInt())
