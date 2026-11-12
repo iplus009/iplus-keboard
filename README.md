@@ -17,14 +17,15 @@ Bangla and English Android keyboard project. The iPlus app identity and settings
 - [x] iPlus project links for the Telegram channel and GitHub repository.
 - [x] Existing theme registry retained.
 - [x] Custom photo selection, persisted image URI and keyboard background rendering already exist in the imported source.
-- [ ] Full Custom Theme Studio controls (crop, zoom, position, brightness, blur, key opacity and saved theme presets).
+- [x] Adjustable photo-background dim control, saved locally in DataStore and applied by the keyboard theme provider.
+- [ ] Remaining Custom Theme Studio controls (crop, zoom, position, blur, key opacity and saved theme presets).
 - [ ] Complete app-facing branding and permission audit.
 - [ ] Clean Android build and device regression tests.
 - [ ] Release signing and public APK workflow.
 
 ## Custom photo theme: current behavior
 
-The current code uses Android's document picker to select an image, persists read access to the selected URI where supported, stores the URI in app preferences and renders it as the keyboard background with a fixed dark overlay. This is a useful baseline, but it is not yet the full editor described in the product goals.
+The current code uses Android's document picker to select an image, persists read access to the selected URI where supported, stores the URI in app preferences and renders it as the keyboard background with a fixed dark overlay. A photo-dim slider is now available while the Custom Photo theme is selected. The dim value is saved locally and applied to the keyboard background. This is still not the full editor described in the product goals.
 
 ## Upstream source and legal notices
 
