@@ -113,6 +113,112 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.streams.toList
+import java.text.Normalizer
+
+internal val banglaEmojiAliases: Map<String, List<String>> = mapOf(
+    "হাসি" to listOf("smile", "laugh", "grin"),
+    "কান্না" to listOf("cry", "sob", "tear"),
+    "ভালোবাসা" to listOf("love", "heart", "affection"),
+    "ভালবাসা" to listOf("love", "heart", "affection"),
+    "হৃদয়" to listOf("heart"),
+    "হৃদয়" to listOf("heart"),
+    "আগুন" to listOf("fire", "flame"),
+    "রাগ" to listOf("angry", "rage"),
+    "তালি" to listOf("clap"),
+    "ভয়" to listOf("fear", "scream", "fearful"),
+    "ভয়" to listOf("fear", "scream", "fearful"),
+    "খাবার" to listOf("food", "eat", "meal"),
+    "বই" to listOf("book"),
+    "গান" to listOf("music", "song", "musical"),
+    "ফুটবল" to listOf("soccer", "football"),
+    "চাঁদ" to listOf("moon"),
+    "তারা" to listOf("star"),
+    "ফুল" to listOf("flower", "blossom", "rose"),
+    "বৃষ্টি" to listOf("rain", "umbrella"),
+    "ঘুম" to listOf("sleep", "sleeping"),
+    "ধন্যবাদ" to listOf("pray", "thank"),
+    "স্বাগতম" to listOf("wave", "welcome"),
+    "বিস্ময়" to listOf("astonished", "surprised", "open_mouth"),
+    "বিস্ময়" to listOf("astonished", "surprised", "open_mouth"),
+    "দুঃখ" to listOf("sad", "disappointed", "pensive"),
+    "চুমু" to listOf("kiss"),
+    "আলিঙ্গন" to listOf("hug"),
+    "চোখ" to listOf("eye", "eyes"),
+    "হাত" to listOf("hand", "raised_hand"),
+    "ঠিক" to listOf("ok", "check"),
+    "হ্যাঁ" to listOf("yes", "check"),
+    "না" to listOf("no", "cross_mark"),
+    "সূর্য" to listOf("sun", "sunny"),
+    "মেঘ" to listOf("cloud"),
+    "বিদ্যুৎ" to listOf("zap", "lightning"),
+    "তুষার" to listOf("snow", "snowflake"),
+    "গাছ" to listOf("tree"),
+    "বিড়াল" to listOf("cat"),
+    "বিড়াল" to listOf("cat"),
+    "কুকুর" to listOf("dog"),
+    "পাখি" to listOf("bird"),
+    "মাছ" to listOf("fish"),
+    "প্রজাপতি" to listOf("butterfly"),
+    "চা" to listOf("tea"),
+    "কফি" to listOf("coffee"),
+    "কেক" to listOf("cake"),
+    "জন্মদিন" to listOf("birthday", "party"),
+    "উপহার" to listOf("gift"),
+    "উৎসব" to listOf("party", "tada", "celebration"),
+    "বাড়ি" to listOf("house", "home"),
+    "বাড়ি" to listOf("house", "home"),
+    "গাড়ি" to listOf("car", "automobile"),
+    "গাড়ি" to listOf("car", "automobile"),
+    "বিমান" to listOf("airplane", "plane"),
+    "ফোন" to listOf("phone", "telephone"),
+    "টাকা" to listOf("money", "dollar"),
+    "মুকুট" to listOf("crown"),
+    "কাজ" to listOf("work", "briefcase"),
+    "সময়" to listOf("clock", "time"),
+    "সময়" to listOf("clock", "time"),
+    "পতাকা" to listOf("flag"),
+    "বাংলাদেশ" to listOf("bangladesh"),
+    "শান্তি" to listOf("peace", "dove"),
+    "শক্তি" to listOf("muscle", "flex"),
+    "বুদ্ধি" to listOf("brain", "thinking"),
+    "অসুস্থ" to listOf("sick", "thermometer", "nauseated"),
+)
+
+private val normalizedBanglaEmojiAliases: Map<String, List<String>> = banglaEmojiAliases
+    .entries
+    .associate { (k, v) -> Normalizer.normalize(k, Normalizer.Form.NFC) to v }
+
+internal fun resolveEmojiSearchTargets(searchFilter: String): List<String> {
+    val normalized = Normalizer.normalize(searchFilter.trim(), Normalizer.Form.NFC)
+    if (normalized.isEmpty()) return emptyList()
+
+    normalizedBanglaEmojiAliases[normalized]?.let { return it }
+
+    val hasBangla = normalized.any { it in '\u0980'..'\u09FF' }
+    if (hasBangla) {
+        val partialMatches = normalizedBanglaEmojiAliases.entries
+            .filter { (key, _) ->
+                key.startsWith(normalized) || key.contains(normalized) || normalized.contains(key)
+            }
+            .flatMap { it.value }
+            .distinct()
+        if (partialMatches.isNotEmpty()) return partialMatches
+    }
+
+    return listOf(normalized)
+}
+
+internal fun searchEmojiItems(emojis: List<EmojiItem>, searchFilter: String): List<EmojiItem> {
+    val targets = resolveEmojiSearchTargets(searchFilter)
+    if (targets.isEmpty()) return emptyList()
+    return emojis.searchMultipleTargets(targets) { item ->
+        listOf(item.description) +
+            item.description.split(" ") +
+            item.aliases.map { it.replace("_", " ") } +
+            item.tags +
+            item.aliases.filter { it.contains("_") }.flatMap { it.split("_") }
+    }.take(30)
+}
 
 private fun levenshteinDistance(lhs: CharSequence, rhs: CharSequence): Int {
     val lhsLen = lhs.length
@@ -143,12 +249,26 @@ private fun <T> List<T>.search(searchTarget: String, keyFunction: (T) -> String)
 }
 
 private fun <T> List<T>.searchMultiple(searchTarget: String, keyFunction: (T) -> List<String>): List<T> {
-    val maxDistance = searchTarget.length * 2 / 3
+    return searchMultipleTargets(listOf(searchTarget), keyFunction)
+}
+
+private fun <T> List<T>.searchMultipleTargets(searchTargets: List<String>, keyFunction: (T) -> List<String>): List<T> {
+    if (searchTargets.isEmpty()) return emptyList()
     return this.mapNotNull { item ->
         val keys = keyFunction(item)
-        val minDistanceKey = keys.minByOrNull { levenshteinDistance(searchTarget, it) }
-        val minDistance = minDistanceKey?.let { levenshteinDistance(searchTarget, it) }
-        if (minDistance != null && minDistance <= maxDistance) Pair(item, minDistance) else null
+        var bestDistance: Int? = null
+        for (target in searchTargets) {
+            val maxDistance = target.length * 2 / 3
+            val minDistance = keys.minOfOrNull { key ->
+                if (key.equals(target, ignoreCase = true)) 0 else levenshteinDistance(target, key)
+            }
+            if (minDistance != null && minDistance <= maxDistance) {
+                if (bestDistance == null || minDistance < bestDistance) {
+                    bestDistance = minDistance
+                }
+            }
+        }
+        bestDistance?.let { Pair(item, it) }
     }.sortedBy { it.second }.map { it.first }
 }
 
@@ -275,24 +395,50 @@ val skinTones = listOf(
     "\ud83c\udfff",
 )
 
-// TODO: Mixing multiple skin tones
-//  e.g. family: woman, woman, girl, girl: medium, dark. light, medium skin tones
+private const val MAX_SKIN_TONE_VARIANTS = 25
+
 fun generateSkinToneVariants(emoji: String, emojiMap: Map<String, EmojiItem>): List<String> {
     val humanEmojis = emoji.split("\u200D")
-    val variants = mutableListOf<String>()
+    val personIndices = humanEmojis.indices.filter { idx ->
+        val part = humanEmojis[idx]
+        emojiMap[part]?.category == "People & Body" && !(humanEmojis.size > 1 && part == "\uD83E\uDD1D")
+    }.ifEmpty {
+        humanEmojis.indices.filter { idx ->
+            emojiMap[humanEmojis[idx]]?.category == "People & Body"
+        }
+    }
+
+    val variants = LinkedHashSet<String>()
 
     for (modifier in skinTones) {
-        val variant = humanEmojis.joinToString("\u200D") { part ->
-            if (emojiMap[part]?.category == "People & Body") {
-                part + modifier
-            } else {
-                part
-            }
-        }
+        val variant = humanEmojis.mapIndexed { idx, part ->
+            if (idx in personIndices) part + modifier else part
+        }.joinToString("\u200D")
         variants.add(variant)
     }
 
-    return variants
+    if (personIndices.size > 1) {
+        val personPositions = personIndices.withIndex().associate { (pos, idx) -> idx to pos }
+        for (firstTone in skinTones) {
+            for (secondTone in skinTones) {
+                if (firstTone == secondTone) continue
+                if (variants.size >= MAX_SKIN_TONE_VARIANTS) break
+                val mixed = humanEmojis.mapIndexed { idx, part ->
+                    val pos = personPositions[idx]
+                    if (pos != null) {
+                        val tone = if (pos % 2 == 0) firstTone else secondTone
+                        part + tone
+                    } else {
+                        part
+                    }
+                }.joinToString("\u200D")
+                variants.add(mixed)
+            }
+            if (variants.size >= MAX_SKIN_TONE_VARIANTS) break
+        }
+    }
+
+    return variants.toList()
 }
 
 
@@ -445,27 +591,32 @@ fun Emojis(
                         color = MaterialTheme.colorScheme.primaryContainer,
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Row {
-                            generateSkinToneVariants(popupInfo.emoji.emoji, emojiMap).map { emoji ->
-                                IconButton(
-                                    onClick = {
-                                        onClick(
-                                            EmojiItem(
-                                                emoji = emoji,
-                                                description = popupInfo.emoji.description,
-                                                category = popupInfo.emoji.category,
-                                                skinTones = false,
-                                                aliases = listOf(),
-                                                tags = listOf()
-                                            )
-                                        )
-                                        popupIsActive = false
-                                    }, modifier = Modifier
-                                        .width(42.dp)
-                                        .height(42.dp)
-                                ) {
-                                    Box {
-                                        Text(emoji, modifier = Modifier.align(Alignment.Center))
+                        val skinToneVariants = generateSkinToneVariants(popupInfo.emoji.emoji, emojiMap)
+                        Column {
+                            skinToneVariants.chunked(5).forEach { rowVariants ->
+                                Row {
+                                    rowVariants.forEach { emoji ->
+                                        IconButton(
+                                            onClick = {
+                                                onClick(
+                                                    EmojiItem(
+                                                        emoji = emoji,
+                                                        description = popupInfo.emoji.description,
+                                                        category = popupInfo.emoji.category,
+                                                        skinTones = false,
+                                                        aliases = listOf(),
+                                                        tags = listOf()
+                                                    )
+                                                )
+                                                popupIsActive = false
+                                            }, modifier = Modifier
+                                                .width(42.dp)
+                                                .height(42.dp)
+                                        ) {
+                                            Box {
+                                                Text(emoji, modifier = Modifier.align(Alignment.Center))
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -666,12 +817,7 @@ fun EmojiGrid(
     var emojiList = listOf(CategoryItem("Recent")) + recentEmojis.map { EmojiItemItem(it) } + categorizedEmojis
 
     if(isSearching) {
-        emojiList = emojiList.filterIsInstance<EmojiItemItem>().searchMultiple(searchFilter) { item ->
-            listOf(item.emoji.description) +
-                    item.emoji.aliases.map { it.replace("_", " ") } +
-                    item.emoji.tags +
-                    item.emoji.aliases.filter { it.contains("_") }.flatMap { it.split("_") }
-        }.take(30)
+        emojiList = searchEmojiItems(emojis, searchFilter).map { EmojiItemItem(it) }
 
         if(emojiList.isEmpty()) {
             emojiList = emojiList + listOf(CategoryItem("No results found"))

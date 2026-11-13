@@ -45,9 +45,9 @@ public class KeyboardLayoutTest {
         assertEquals(0, keyboardLayout.getKeyXCoordinates().length);
         assertEquals(0, keyboardLayout.getKeyYCoordinates().length);
 
-        Key key1 = new Key("label1", 101, 102, "101", "101hint", 103, 104, 105, 106, 1100, 1101,
+        Key key1 = new Key("label1", "101", 102, "101", "101hint", 103, 104, 105, 106, 1100, 1101,
                 10, 10);
-        Key key2 = new Key("label2", 201, 103, "201", "201hint", 203, 204, 205, 206, 2100, 2101,
+        Key key2 = new Key("label2", "201", 103, "201", "201hint", 203, 204, 205, 206, 2100, 2101,
                 10, 10);
 
         ArrayList<Key> sortedKeys = new ArrayList<>(2);

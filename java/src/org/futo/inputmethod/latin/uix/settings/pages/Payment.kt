@@ -167,7 +167,7 @@ fun PaymentText(verbose: Boolean) {
             IconText(
                 icon = painterResource(id = R.drawable.activity),
                 title = "Sustainable Development",
-                body = "FUTO's mission is for open-source software and non-malicious software business practices to become a sustainable income source for projects and their developers. For this reason, we are in favor of users actually paying for software."
+                body = "iPlus's mission is for open-source software and non-malicious software business practices to become a sustainable income source for projects and their developers. For this reason, we are in favor of users actually paying for software."
             )
 
             IconText(
@@ -341,8 +341,11 @@ fun PaymentFailedScreen(onExit: () -> Unit = { }) {
             else -> stringResource(R.string.payment_failed_body)
         }
     ))
-        NavigationItem(title = "Email keyboard@futo.org", style = NavigationItemStyle.Mail, navigate = {
-            context.openURI("mailto:keyboard@futo.org")
+        NavigationItem(title = "Get Support on GitHub", subtitle = "github.com/iplus009/iplus-keboard/issues", style = NavigationItemStyle.Misc, navigate = {
+            context.openURI("https://github.com/iplus009/iplus-keboard/issues")
+        })
+        NavigationItem(title = "Official Telegram Channel", subtitle = "t.me/ismailq01appsstore", style = NavigationItemStyle.Misc, navigate = {
+            context.openURI("https://t.me/ismailq01appsstore")
         })
         Box(modifier = Modifier.fillMaxWidth()) {
             val coroutineScope = rememberCoroutineScope()
@@ -439,7 +442,7 @@ fun PaymentScreen(
 
         val context = LocalContext.current
 
-        PaymentSurface(isPrimary = true, title = "Pay for FUTO Keyboard") {
+        PaymentSurface(isPrimary = true, title = "Pay for iPlus Keyboard") {
             PaymentText(true)
 
             Button(
@@ -465,7 +468,7 @@ fun PaymentScreen(
         }
 
         PaymentSurface(isPrimary = false, title = "Already paid?") {
-            ParagraphText(it = "If you already paid for FUTO Keyboard or FUTO Voice Input, tap below.")
+            ParagraphText(it = "If you already paid for iPlus Keyboard or iPlus Voice Input, tap below.")
             Button(
                 onClick = {
                     counter.intValue += 1
@@ -536,8 +539,8 @@ fun PaymentScreen(
             }
         }
 
-        NavigationItem(title = "Help", subtitle = "Need help? Visit our website", style = NavigationItemStyle.Misc, navigate = {
-            context.openURI("https://keyboard.futo.org/")
+        NavigationItem(title = "Help", subtitle = "Need help? Visit iPlus Keyboard on GitHub", style = NavigationItemStyle.Misc, navigate = {
+            context.openURI("https://github.com/iplus009/iplus-keboard")
         })
     }
 }

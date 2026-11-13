@@ -12,51 +12,51 @@ import androidx.compose.ui.unit.dp
 import org.futo.inputmethod.latin.R
 import org.futo.inputmethod.latin.uix.theme.ThemeOption
 
-// Matte Bauhaus Nothing Theme Palette
-val OrbitMatteYellow = Color(0xFFE2B438)
-val OrbitMatteBlue = Color(0xFF2A5288)
-val OrbitMatteRed = Color(0xFFC23636)
-val OrbitMatteWhite = Color(0xFFEAE6E1)
-val OrbitMatteDark = Color(0xFF1C1D20)
-val OrbitBlack = Color(0xFF000000)
+// Matte Bauhaus iPlus Theme Palette
+val IPlusMatteYellow = Color(0xFFE2B438)
+val IPlusMatteBlue = Color(0xFF2A5288)
+val IPlusMatteRed = Color(0xFFC23636)
+val IPlusMatteWhite = Color(0xFFEAE6E1)
+val IPlusMatteDark = Color(0xFF1C1D20)
+val IPlusMatteBlack = Color(0xFF000000)
 
-private val orbitColorScheme = darkColorScheme(
-    primary = OrbitMatteRed,
+private val iPlusMatteColorScheme = darkColorScheme(
+    primary = IPlusMatteRed,
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = OrbitMatteDark,
+    primaryContainer = IPlusMatteDark,
     onPrimaryContainer = Color(0xFFFFFFFF),
-    secondary = OrbitMatteBlue,
+    secondary = IPlusMatteBlue,
     onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = OrbitMatteDark,
+    secondaryContainer = IPlusMatteDark,
     onSecondaryContainer = Color(0xFFFFFFFF),
-    tertiary = OrbitMatteYellow,
+    tertiary = IPlusMatteYellow,
     onTertiary = Color(0xFF121212),
-    background = OrbitBlack,
+    background = IPlusMatteBlack,
     onBackground = Color(0xFFFFFFFF),
-    surface = OrbitBlack,
+    surface = IPlusMatteBlack,
     onSurface = Color(0xFFFFFFFF),
-    surfaceVariant = OrbitMatteDark,
+    surfaceVariant = IPlusMatteDark,
     onSurfaceVariant = Color(0xFFFFFFFF),
-    outline = OrbitMatteYellow,
+    outline = IPlusMatteYellow,
     outlineVariant = Color(0xFF2B2D31)
 )
 
-val OrbitTheme = ThemeOption(
+val IPlusMatteTheme = ThemeOption(
     dynamic = false,
-    key = "OrbitTheme",
+    key = "IPlusMatteTheme",
     name = R.string.theme_orbit,
     available = { true }
 ) {
-    orbitColorScheme
+    iPlusMatteColorScheme
 }
 
 @Composable
-fun OrbitPreviewKeyboard() {
-    val yellow = OrbitMatteYellow
-    val blue = OrbitMatteBlue
-    val dark = OrbitMatteDark
-    val white = OrbitMatteWhite
-    val red = OrbitMatteRed
+fun IPlusMattePreviewKeyboard() {
+    val yellow = IPlusMatteYellow
+    val blue = IPlusMatteBlue
+    val dark = IPlusMatteDark
+    val white = IPlusMatteWhite
+    val red = IPlusMatteRed
 
     val row1 = listOf(yellow, blue, dark, white, red, blue, white, red, yellow, dark)
     val row2 = listOf(white, red, blue, dark, yellow, white, red, blue, dark)

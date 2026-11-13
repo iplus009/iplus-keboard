@@ -9,7 +9,7 @@ import org.futo.inputmethod.latin.uix.CustomPhotoTextContrastSetting
 import org.futo.inputmethod.latin.uix.getSettingBlocking
 import org.futo.inputmethod.latin.uix.theme.presets.AMOLEDDarkPurple
 import org.futo.inputmethod.latin.uix.theme.presets.AMOLEDNothing
-import org.futo.inputmethod.latin.uix.theme.presets.OrbitTheme
+import org.futo.inputmethod.latin.uix.theme.presets.IPlusMatteTheme
 import org.futo.inputmethod.latin.uix.theme.presets.NothingLight
 import org.futo.inputmethod.latin.uix.theme.presets.NothingDark
 import org.futo.inputmethod.latin.uix.theme.presets.ClassicMaterialDark
@@ -74,7 +74,8 @@ val CustomPhotoTheme = ThemeOption(
 
 val ThemeOptions = mapOf(
     CustomPhotoTheme.key to CustomPhotoTheme,
-    OrbitTheme.key to OrbitTheme,
+    IPlusMatteTheme.key to IPlusMatteTheme,
+    "OrbitTheme" to IPlusMatteTheme,
     VoiceInputTheme.key to VoiceInputTheme,
 
     DynamicNothing.key to DynamicNothing,
@@ -100,4 +101,4 @@ val ThemeOptions = mapOf(
 
 )
 
-val ThemeOptionKeys = ThemeOptions.keys
+val ThemeOptionKeys = ThemeOptions.keys - "OrbitTheme"

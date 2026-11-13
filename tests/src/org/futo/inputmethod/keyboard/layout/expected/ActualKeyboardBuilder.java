@@ -108,10 +108,10 @@ public final class ActualKeyboardBuilder extends AbstractKeyboardBuilder<Key> {
         }
 
         @Nonnull
-        static String toString(final String label, final int iconId, final String outputText,
+        static String toString(final String label, final String iconId, final String outputText,
                 final int code) {
-            final String visual = (iconId != KeyboardIconsSet.ICON_UNDEFINED)
-                    ? KeyboardIconsSet.getIconName(iconId) : label;
+            final String visual = (iconId != null && !KeyboardIconsSet.ICON_UNDEFINED.equals(iconId))
+                    ? iconId : label;
             final String output;
             if (code == Constants.CODE_OUTPUT_TEXT) {
                 output = outputText;

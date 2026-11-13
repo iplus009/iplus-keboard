@@ -5,24 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -33,8 +22,6 @@ import org.futo.inputmethod.latin.uix.SettingsKey
 import org.futo.inputmethod.latin.uix.getSetting
 import org.futo.inputmethod.latin.uix.setSetting
 import org.futo.inputmethod.latin.uix.settings.SettingItem
-import org.futo.inputmethod.latin.uix.settings.pages.ParagraphText
-import org.futo.inputmethod.latin.uix.settings.pages.PaymentSurface
 import org.futo.inputmethod.latin.uix.settings.useDataStore
 
 val LAST_UPDATE_CHECK_RESULT = stringPreferencesKey("last_update_check_result")
@@ -83,11 +70,7 @@ fun Context.openURI(uri: String, newTask: Boolean = false) {
 }
 
 fun Context.openManualUpdateCheck() {
-    if(BuildConfig.IS_PLAYSTORE_BUILD) {
-        openURI("https://keyboard.futo.org/manual_update?version=${BuildConfig.VERSION_CODE}&build=playstore", newTask = true)
-    } else {
-        openURI("https://keyboard.futo.org/manual_update?version=${BuildConfig.VERSION_CODE}", newTask = true)
-    }
+    openURI("https://github.com/iplus009/iplus-keboard/releases", newTask = true)
 }
 
 @Composable
@@ -136,44 +119,5 @@ val dismissedMigrateUpdateNotice = SettingsKey(
 @Composable
 @Preview
 fun ConditionalMigrateUpdateNotice() {
-    if(LocalInspectionMode.current) { return }
-    val context = LocalContext.current
-    val value = useDataStore(dismissedMigrateUpdateNotice, blocking = true)
-    if(!value.value) {
-        PaymentSurface(isPrimary = true, title = "Use F-Droid or Obtainium") {
-            ParagraphText("The standalone APK has been updated to remove the network permission.")
-
-            ParagraphText("As a consequence, it can no longer offer automatic updates.")
-
-            ParagraphText("If you are still using the apk, we recommend downloading the app from F-Droid, Obtainium or Play Store so that you receive updates.")
-
-            ParagraphText("Visit keyboard.futo.org for download options.")
-
-            Row(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth()
-            ) {
-
-                Box(modifier = Modifier.weight(1.0f)) {
-                    Button(onClick = {
-                        context.openURI("https://keyboard.futo.org/#downloads")
-                    }, modifier = Modifier.align(Alignment.Center)) {
-                        Text("Visit")
-                    }
-                }
-                Box(modifier = Modifier.weight(1.0f)) {
-                    Button(
-                        onClick = { value.setValue(true) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary,
-                            contentColor = MaterialTheme.colorScheme.onSecondary
-                        ), modifier = Modifier.align(Alignment.Center)
-                    ) {
-                        Text("Dismiss")
-                    }
-                }
-            }
-        }
-    }
+    // Retired legacy FUTO F-Droid/Obtainium migration notice; updates are delivered via iPlus GitHub Releases.
 }

@@ -931,11 +931,11 @@ fun PreviewActionBarWithNotice(colorScheme: ColorScheme = DarkColorScheme) {
                 }
 
                 override fun onDismiss(context: Context) {
-                    TODO("Not yet implemented")
+                    // Preview no-op
                 }
 
                 override fun onOpen(context: Context) {
-                    TODO("Not yet implemented")
+                    // Preview no-op
                 }
 
             }

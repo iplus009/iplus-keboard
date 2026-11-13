@@ -13,7 +13,11 @@ data class UpdateResult(
     val nextVersionString: String
 ) {
     fun isNewer(): Boolean {
-        return nextVersion > currentVersion()
+        return if (nextVersionString.isNotBlank() && UpdateChecker.extractVersion(nextVersionString).isNotBlank()) {
+            UpdateChecker.isNewerVersion(remote = nextVersionString, current = currentVersionString())
+        } else {
+            nextVersion > currentVersion()
+        }
     }
 
     companion object {

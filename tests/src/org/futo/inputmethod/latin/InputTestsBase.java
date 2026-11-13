@@ -81,6 +81,10 @@ public class InputTestsBase extends ServiceTestCase<LatinIME> {
     private boolean mPreviousAutoCorrectSetting;
     private boolean mPreviousBigramPredictionSettings;
 
+    public InputTestsBase() {
+        super(LatinIME.class);
+    }
+
     public InputTestsBase(Class<LatinIME> serviceClass) {
         super(serviceClass);
     }

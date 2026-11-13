@@ -23,8 +23,8 @@ import android.view.inputmethod.InputMethodSubtype;
 import org.futo.inputmethod.keyboard.internal.KeyboardIconsSet;
 import org.futo.inputmethod.keyboard.internal.MoreKeySpec;
 import org.futo.inputmethod.latin.R;
-import org.futo.inputmethod.latin.RichInputMethodManager;
 import org.futo.inputmethod.latin.common.Constants;
+import org.futo.inputmethod.latin.utils.AdditionalSubtypeUtils;
 import org.futo.inputmethod.latin.utils.SubtypeLocaleUtils;
 
 import java.util.Arrays;
@@ -281,9 +281,9 @@ abstract class KeyboardLayoutSetNavigateMoreKeysBase extends KeyboardLayoutSetTe
     }
 
     public void testMoreKeysOfEnterKey() {
-        final RichInputMethodManager richImm = RichInputMethodManager.getInstance();
-        final InputMethodSubtype subtype = richImm.findSubtypeByLocaleAndKeyboardLayoutSet(
-                Locale.US.toString(), SubtypeLocaleUtils.QWERTY);
+        final InputMethodSubtype subtype = AdditionalSubtypeUtils
+                .createAsciiEmojiCapableAdditionalSubtype(
+                        Locale.US.toString(), SubtypeLocaleUtils.QWERTY);
 
         // Password field.
         doTestNavigationMoreKeysOf(Constants.CODE_ENTER, subtype, KeyboardId.ELEMENT_ALPHABET,

@@ -36,6 +36,7 @@ import org.futo.inputmethod.latin.utils.ResourceUtils;
 import org.futo.inputmethod.latin.utils.SubtypeLocaleUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Locale;
 
 public abstract class KeyboardLayoutSetTestsBase extends AndroidTestCase {
@@ -61,7 +62,6 @@ public abstract class KeyboardLayoutSetTestsBase extends AndroidTestCase {
     };
 
     private RichInputMethodManager mRichImm;
-    private InputMethodSubtype[] mSavedAdditionalSubtypes;
     private int mScreenMetrics;
 
     protected abstract int getKeyboardThemeForTests();
@@ -74,13 +74,10 @@ public abstract class KeyboardLayoutSetTestsBase extends AndroidTestCase {
         RichInputMethodManager.init(context);
         mRichImm = RichInputMethodManager.getInstance();
 
-        // Save and reset additional subtypes preference.
-        mSavedAdditionalSubtypes = mRichImm.getAdditionalSubtypes();
         final InputMethodSubtype[] predefinedAdditionalSubtypes =
                 AdditionalSubtypeUtils.createAdditionalSubtypesArray(
                         AdditionalSubtypeUtils.createPrefSubtypes(
                                 res.getStringArray(R.array.predefined_subtypes)));
-        mRichImm.setAdditionalInputMethodSubtypes(predefinedAdditionalSubtypes);
 
         final KeyboardTheme keyboardTheme = KeyboardTheme.searchKeyboardThemeById(
                 getKeyboardThemeForTests(), KeyboardTheme.KEYBOARD_THEMES);
@@ -94,12 +91,11 @@ public abstract class KeyboardLayoutSetTestsBase extends AndroidTestCase {
         for (int index = 0; index < subtypeCount; index++) {
             mAllSubtypesList.add(imi.getSubtypeAt(index));
         }
+        mAllSubtypesList.addAll(Arrays.asList(predefinedAdditionalSubtypes));
     }
 
     @Override
     protected void tearDown() throws Exception {
-        // Restore additional subtypes preference.
-        mRichImm.setAdditionalInputMethodSubtypes(mSavedAdditionalSubtypes);
         super.tearDown();
     }
 
@@ -161,7 +157,7 @@ public abstract class KeyboardLayoutSetTestsBase extends AndroidTestCase {
         builder.setKeyboardGeometry(keyboardWidth, keyboardHeight)
                 .setSubtype(RichInputMethodSubtype.getRichInputMethodSubtype(subtype))
                 .setVoiceInputKeyEnabled(voiceInputKeyEnabled)
-                .setBottomEmojiKeyEnabled(languageSwitchKeyEnabled)
+                .setBottomActionKey(languageSwitchKeyEnabled, languageSwitchKeyEnabled ? 0 : -1)
                 .setSplitLayoutEnabledByUser(splitLayoutEnabled);
         return builder.build();
     }

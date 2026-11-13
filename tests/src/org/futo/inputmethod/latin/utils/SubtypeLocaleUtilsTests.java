@@ -50,7 +50,6 @@ public class SubtypeLocaleUtilsTests {
 
     private RichInputMethodManager mRichImm;
     private Resources mRes;
-    private InputMethodSubtype mSavedAddtionalSubtypes[];
 
     InputMethodSubtype EN_US;
     InputMethodSubtype EN_GB;
@@ -84,13 +83,10 @@ public class SubtypeLocaleUtilsTests {
         RichInputMethodManager.init(context);
         mRichImm = RichInputMethodManager.getInstance();
 
-        // Save and reset additional subtypes
-        mSavedAddtionalSubtypes = mRichImm.getAdditionalSubtypes();
         final InputMethodSubtype[] predefinedAddtionalSubtypes =
                 AdditionalSubtypeUtils.createAdditionalSubtypesArray(
                         AdditionalSubtypeUtils.createPrefSubtypes(
                                 mRes.getStringArray(R.array.predefined_subtypes)));
-        mRichImm.setAdditionalInputMethodSubtypes(predefinedAddtionalSubtypes);
 
         final InputMethodInfo imi = mRichImm.getInputMethodInfoOfThisIme();
         final int subtypeCount = imi.getSubtypeCount();
@@ -98,28 +94,31 @@ public class SubtypeLocaleUtilsTests {
             final InputMethodSubtype subtype = imi.getSubtypeAt(index);
             mSubtypesList.add(new RichInputMethodSubtype(subtype));
         }
+        for (final InputMethodSubtype subtype : predefinedAddtionalSubtypes) {
+            mSubtypesList.add(new RichInputMethodSubtype(subtype));
+        }
 
-        EN_US = mRichImm.findSubtypeByLocaleAndKeyboardLayoutSet(
+        EN_US = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                 Locale.US.toString(), "qwerty");
-        EN_GB = mRichImm.findSubtypeByLocaleAndKeyboardLayoutSet(
+        EN_GB = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                 Locale.UK.toString(), "qwerty");
-        ES_US = mRichImm.findSubtypeByLocaleAndKeyboardLayoutSet(
+        ES_US = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                 "es_US", "spanish");
-        FR = mRichImm.findSubtypeByLocaleAndKeyboardLayoutSet(
+        FR = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                 Locale.FRENCH.toString(), "azerty");
-        FR_CA = mRichImm.findSubtypeByLocaleAndKeyboardLayoutSet(
+        FR_CA = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                 Locale.CANADA_FRENCH.toString(), "qwerty");
-        FR_CH = mRichImm.findSubtypeByLocaleAndKeyboardLayoutSet(
+        FR_CH = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                 "fr_CH", "swiss");
-        DE = mRichImm.findSubtypeByLocaleAndKeyboardLayoutSet(
+        DE = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                 Locale.GERMAN.toString(), "qwertz");
-        DE_CH = mRichImm.findSubtypeByLocaleAndKeyboardLayoutSet(
+        DE_CH = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                 "de_CH", "swiss");
-        HI = mRichImm.findSubtypeByLocaleAndKeyboardLayoutSet(
+        HI = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                 "hi", "hindi");
-        SR = mRichImm.findSubtypeByLocaleAndKeyboardLayoutSet(
+        SR = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                 "sr", "south_slavic");
-        ZZ = mRichImm.findSubtypeByLocaleAndKeyboardLayoutSet(
+        ZZ = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                 SubtypeLocaleUtils.NO_LANGUAGE, "qwerty");
         DE_QWERTY = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                 Locale.GERMAN.toString(), "qwerty");
@@ -136,12 +135,14 @@ public class SubtypeLocaleUtilsTests {
         ZZ_PC = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                 SubtypeLocaleUtils.NO_LANGUAGE, "pcqwerty");
 
-        HI_LATN = mRichImm.findSubtypeByLocaleAndKeyboardLayoutSet("hi_ZZ", "qwerty");
+        HI_LATN = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
+                "hi_ZZ", "qwerty");
         if (HI_LATN != null) {
             HI_LATN_DVORAK = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                     "hi_ZZ", "dvorak");
         }
-        SR_LATN = mRichImm.findSubtypeByLocaleAndKeyboardLayoutSet("sr_ZZ", "serbian_qwertz");
+        SR_LATN = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
+                "sr_ZZ", "serbian_qwertz");
         if (SR_LATN != null) {
             SR_LATN_QWERTY = AdditionalSubtypeUtils.createAsciiEmojiCapableAdditionalSubtype(
                     "sr_ZZ", "qwerty");
@@ -150,8 +151,6 @@ public class SubtypeLocaleUtilsTests {
 
     @After
     public void tearDown() throws Exception {
-        // Restore additional subtypes.
-        mRichImm.setAdditionalInputMethodSubtypes(mSavedAddtionalSubtypes);
     }
 
     @Test
@@ -473,14 +472,14 @@ public class SubtypeLocaleUtilsTests {
     @Test
     public void testIsRtlLanguage() {
         // Known Right-to-Left language subtypes.
-        final InputMethodSubtype ARABIC = mRichImm
-                .findSubtypeByLocaleAndKeyboardLayoutSet("ar", "arabic");
+        final InputMethodSubtype ARABIC = AdditionalSubtypeUtils
+                .createAsciiEmojiCapableAdditionalSubtype("ar", "arabic");
         assertNotNull("Arabic", ARABIC);
-        final InputMethodSubtype FARSI = mRichImm
-                .findSubtypeByLocaleAndKeyboardLayoutSet("fa", "farsi");
+        final InputMethodSubtype FARSI = AdditionalSubtypeUtils
+                .createAsciiEmojiCapableAdditionalSubtype("fa", "farsi");
         assertNotNull("Farsi", FARSI);
-        final InputMethodSubtype HEBREW = mRichImm
-                .findSubtypeByLocaleAndKeyboardLayoutSet("iw", "hebrew");
+        final InputMethodSubtype HEBREW = AdditionalSubtypeUtils
+                .createAsciiEmojiCapableAdditionalSubtype("iw", "hebrew");
         assertNotNull("Hebrew", HEBREW);
 
         for (final RichInputMethodSubtype subtype : mSubtypesList) {

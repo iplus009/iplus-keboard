@@ -22,7 +22,8 @@ import android.util.Log
 import android.util.TypedValue
 import androidx.annotation.ColorInt
 import org.futo.inputmethod.keyboard.Key
-import org.futo.inputmethod.latin.uix.theme.presets.OrbitThemeHelper
+import org.futo.inputmethod.latin.uix.theme.presets.IPlusMatteTheme
+import org.futo.inputmethod.latin.uix.theme.presets.IPlusMatteThemeHelper
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -72,6 +73,7 @@ fun keyShapeToCornerRadiusDp(keyShape: String): Dp = when (keyShape) {
 
 val KeyboardHeightMultiplierSetting = SettingsKey(floatPreferencesKey("keyboardHeightMultiplier"), 1.0f)
 val KeyboardBottomOffsetSetting = SettingsKey(floatPreferencesKey("keyboardOffset"), 0.0f)
+val OneHandedModeSetting = SettingsKey(stringPreferencesKey("one_handed_mode"), "off")
 
 fun adjustColorBrightnessForContrast(bgColor: Int, fgColor: Int, desiredContrast: Float, adjustSaturation: Boolean = false): Int {
     // Convert RGB colors to HSL
@@ -186,8 +188,8 @@ class BasicThemeProvider(
     val overrideColorScheme: ColorScheme? = null,
     val themeKey: String? = null
 ) : DynamicThemeProvider {
-    val currentThemeKey: String = themeKey ?: context.getSettingBlocking(THEME_KEY)
-    val isOrbitTheme: Boolean = currentThemeKey == "OrbitTheme"
+    val currentThemeKey: String = normalizeThemeKey(themeKey ?: context.getSettingBlocking(THEME_KEY))
+    val isIPlusMatteTheme: Boolean = currentThemeKey == IPlusMatteTheme.key
     override val primaryKeyboardColor: Int
     override val keyColor: Int
 
@@ -286,6 +288,7 @@ class BasicThemeProvider(
     val customKeyboardBackgroundX: Float
     val customKeyboardBackgroundY: Float
     val customPhotoTextContrast: String
+    val oneHandedMode: String
     override val keyboardTypeface: Typeface?
 
     fun hasUpdated(np: Preferences): Boolean {
@@ -305,6 +308,7 @@ class BasicThemeProvider(
                 || np.get(CustomKeyboardBackgroundXSetting) != customKeyboardBackgroundX
                 || np.get(CustomKeyboardBackgroundYSetting) != customKeyboardBackgroundY
                 || np.get(CustomPhotoTextContrastSetting) != customPhotoTextContrast
+                || np.get(OneHandedModeSetting) != oneHandedMode
     }
 
 
@@ -338,6 +342,7 @@ class BasicThemeProvider(
         customKeyboardBackgroundX = context.getSettingBlocking(CustomKeyboardBackgroundXSetting)
         customKeyboardBackgroundY = context.getSettingBlocking(CustomKeyboardBackgroundYSetting)
         customPhotoTextContrast = context.getSettingBlocking(CustomPhotoTextContrastSetting)
+        oneHandedMode = context.getSettingBlocking(OneHandedModeSetting)
 
         val keyCornerRadius = keyShapeToCornerRadiusDp(keyShape)
         val keyCornerRadiusPx = dp(keyCornerRadius)
@@ -354,14 +359,14 @@ class BasicThemeProvider(
             dynamicLightColorScheme(dCtx)
         }
         val customSpaceColor = when (spacebarColorPref) {
-            "red" -> OrbitThemeHelper.COLOR_RED
-            "blue" -> OrbitThemeHelper.COLOR_BLUE
-            "yellow" -> OrbitThemeHelper.COLOR_YELLOW
-            "white" -> OrbitThemeHelper.COLOR_WHITE
-            "dark" -> OrbitThemeHelper.COLOR_DARK
+            "red" -> IPlusMatteThemeHelper.COLOR_RED
+            "blue" -> IPlusMatteThemeHelper.COLOR_BLUE
+            "yellow" -> IPlusMatteThemeHelper.COLOR_YELLOW
+            "white" -> IPlusMatteThemeHelper.COLOR_WHITE
+            "dark" -> IPlusMatteThemeHelper.COLOR_DARK
             else -> null
         }
-        OrbitThemeHelper.customSpacebarColor = customSpaceColor
+        IPlusMatteThemeHelper.customSpacebarColor = customSpaceColor
         keyboardTypeface = when (keyboardFont) {
             "normal", "clean" -> Typeface.create("sans-serif", Typeface.NORMAL)
             "doto", "pixel" -> ResourcesCompat.getFont(context, R.font.doto) ?: Typeface.DEFAULT
@@ -494,7 +499,7 @@ class BasicThemeProvider(
         keyboardBackground = if (currentThemeKey == "CustomPhotoTheme") {
             loadCustomPhotoBackground(context, customKeyboardBackgroundUri, customKeyboardBackgroundDim, customKeyboardBackgroundBlur, customKeyboardBackgroundZoom, customKeyboardBackgroundX, customKeyboardBackgroundY)
                 ?: coloredRectangle(primaryKeyboardColor)
-        } else if (isOrbitTheme) {
+        } else if (isIPlusMatteTheme) {
             coloredRectangle(0xFF000000.toInt())
         } else {
             coloredRectangle(primaryKeyboardColor)
@@ -557,7 +562,7 @@ class BasicThemeProvider(
         val effectiveSpaceColor = customSpaceColor ?: (if(keyBorders) keyColor else highlight)
         val spaceDrawable = if(customSpaceColor != null) {
             coloredRoundedRectangle(effectiveSpaceColor, dp(spaceCornerRadius)).apply {
-                setStroke(dp(1.5.dp).roundToInt(), if (spacebarColorPref == "yellow") OrbitThemeHelper.COLOR_DARK else yellowAccent)
+                setStroke(dp(1.5.dp).roundToInt(), if (spacebarColorPref == "yellow") IPlusMatteThemeHelper.COLOR_DARK else yellowAccent)
             }
         } else if(keyBorders) {
             coloredRoundedRectangle(keyColor, dp(spaceCornerRadius)).apply {
@@ -633,25 +638,25 @@ class BasicThemeProvider(
     }
 
     override fun getKeyBackground(key: Key, isPressed: Boolean): Drawable? {
-        if (!isOrbitTheme) return null
+        if (!isIPlusMatteTheme) return null
         ensureDimensions()
-        return OrbitThemeHelper.getKeyBackground(key, isPressed, cachedCornerRadius)
+        return IPlusMatteThemeHelper.getKeyBackground(key, isPressed, cachedCornerRadius)
     }
 
     override fun getKeyTextColor(key: Key): Int? {
-        if (!isOrbitTheme) return null
-        return OrbitThemeHelper.getKeyTextColor(key)
+        if (!isIPlusMatteTheme) return null
+        return IPlusMatteThemeHelper.getKeyTextColor(key)
     }
 
     override fun getKeyHintColor(key: Key): Int? {
-        if (!isOrbitTheme) return null
-        return OrbitThemeHelper.getKeyHintColor(key)
+        if (!isIPlusMatteTheme) return null
+        return IPlusMatteThemeHelper.getKeyHintColor(key)
     }
 
     override fun getKeyPreviewBackground(key: Key): Drawable? {
-        if (!isOrbitTheme) return null
+        if (!isIPlusMatteTheme) return null
         ensureDimensions()
-        return OrbitThemeHelper.getKeyPreviewBackground(
+        return IPlusMatteThemeHelper.getKeyPreviewBackground(
             key,
             cachedCornerRadius,
             cachedPreviewWidth,

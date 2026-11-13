@@ -11,59 +11,31 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.internal.closeQuietly
 import org.futo.inputmethod.latin.uix.dataStore
 import org.futo.inputmethod.latin.uix.getSetting
 import org.futo.inputmethod.latin.BuildConfig
-import java.lang.Exception
 
-const val UPDATE_URL = "https://keyboard.futo.org/keyboard_version"
+const val RELEASES_URL = "https://github.com/iplus009/iplus-keboard/releases"
 
 suspend fun checkForUpdate(): UpdateResult? {
     if(!BuildConfig.UPDATE_CHECKING) return null
 
-    return withContext(Dispatchers.IO) {
-        val httpClient = OkHttpClient()
-
-        val request = Request.Builder().method("GET", null).url(UPDATE_URL).build()
-
-        try {
-            val response = httpClient.newCall(request).execute()
-
-            val body = response.body
-            val result = if (body != null) {
-                val data = body.string().lines()
-                body.closeQuietly()
-
-                val latestVersion = data[0].toInt()
-                val latestVersionUrl = data[1]
-                val latestVersionString = data[2]
-                if(latestVersionUrl.startsWith("https://voiceinput.futo.org/") || latestVersionUrl.startsWith("https://keyboard.futo.org/")){
-                    Log.d("UpdateChecking", "Retrieved update for version ${latestVersionString}")
-                    UpdateResult(
-                        nextVersion = latestVersion,
-                        apkUrl = latestVersionUrl,
-                        nextVersionString = latestVersionString
-                    )
-                } else {
-                    Log.e("UpdateChecking", "Update URL contains unknown prefix: ${latestVersionUrl}")
-                    null
-                }
-            } else {
-                Log.e("UpdateChecking", "Body of result is null")
-                null
-            }
-
-            response.closeQuietly()
-
-            result
-        } catch (e: Exception) {
-            Log.e("UpdateChecking", "Checking update failed with exception")
-            e.printStackTrace()
-            null
+    return try {
+        val appUpdate = UpdateChecker.checkForUpdate().getOrNull() ?: return null
+        val nextVersion = if (appUpdate.isUpdateAvailable) {
+            BuildConfig.VERSION_CODE + 1
+        } else {
+            BuildConfig.VERSION_CODE
         }
+        Log.d("UpdateChecking", "Retrieved update check for version ${appUpdate.versionName} (available=${appUpdate.isUpdateAvailable})")
+        UpdateResult(
+            nextVersion = nextVersion,
+            apkUrl = appUpdate.downloadUrl.ifBlank { RELEASES_URL },
+            nextVersionString = appUpdate.versionName
+        )
+    } catch (e: Exception) {
+        Log.e("UpdateChecking", "Checking update failed with exception", e)
+        null
     }
 }
 

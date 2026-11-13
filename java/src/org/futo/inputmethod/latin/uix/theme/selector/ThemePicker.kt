@@ -83,6 +83,7 @@ import org.futo.inputmethod.latin.uix.KeyHintsSetting
 import org.futo.inputmethod.latin.uix.KeyboardBottomOffsetSetting
 import org.futo.inputmethod.latin.uix.KeyboardHeightMultiplierSetting
 import org.futo.inputmethod.latin.uix.THEME_KEY
+import org.futo.inputmethod.latin.uix.normalizeThemeKey
 import org.futo.inputmethod.latin.uix.settings.SettingSlider
 import org.futo.inputmethod.latin.uix.settings.SettingToggleDataStore
 import org.futo.inputmethod.latin.uix.settings.useDataStore
@@ -96,8 +97,8 @@ import org.futo.inputmethod.latin.uix.theme.Typography
 import org.futo.inputmethod.latin.uix.theme.UixThemeWrapper
 import org.futo.inputmethod.latin.uix.theme.presets.AMOLEDDarkPurple
 import org.futo.inputmethod.latin.uix.theme.presets.AMOLEDNothing
-import org.futo.inputmethod.latin.uix.theme.presets.OrbitPreviewKeyboard
-import org.futo.inputmethod.latin.uix.theme.presets.OrbitTheme
+import org.futo.inputmethod.latin.uix.theme.presets.IPlusMattePreviewKeyboard
+import org.futo.inputmethod.latin.uix.theme.presets.IPlusMatteTheme
 import org.futo.inputmethod.latin.uix.theme.presets.NothingLight
 import org.futo.inputmethod.latin.uix.theme.presets.NothingDark
 import org.futo.inputmethod.latin.uix.theme.presets.ClassicMaterialDark
@@ -268,8 +269,8 @@ fun ThemePreview(
                     .fillMaxSize()
                     .padding(8.dp)
             ) {
-                if (theme.key == "OrbitTheme") {
-                    OrbitPreviewKeyboard()
+                if (theme.key == IPlusMatteTheme.key) {
+                    IPlusMattePreviewKeyboard()
                 } else {
                     // Spacebar
                     Surface(
@@ -391,7 +392,7 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
         }
     }
 
-    val currentTheme = useDataStore(THEME_KEY.key, "").value
+    val currentTheme = normalizeThemeKey(useDataStore(THEME_KEY.key, "").value)
     val savedThemes = useDataStore(SavedCustomPhotoThemesSetting.key, SavedCustomPhotoThemesSetting.default)
     val photoUri = useDataStore(CustomKeyboardBackgroundUriSetting.key, CustomKeyboardBackgroundUriSetting.default)
     val photoDim = useDataStore(CustomKeyboardBackgroundDimSetting.key, CustomKeyboardBackgroundDimSetting.default)
@@ -555,7 +556,7 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
                                             CustomKeyboardBackgroundUriSetting.key,
                                             CustomKeyboardBackgroundUriSetting.default
                                         )
-                                        onSelected(OrbitTheme)
+                                        onSelected(IPlusMatteTheme)
                                     },
                                     modifier = Modifier.padding(horizontal = 4.dp)
                                 ) {

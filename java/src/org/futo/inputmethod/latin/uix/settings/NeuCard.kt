@@ -29,7 +29,7 @@ private val DefaultNeuCardShape = RoundedCornerShape(16.dp)
 
 /**
  * Neumorphic card component providing AMOLED matte surface, 1dp hairline border,
- * and tactile spring press feedback matching Orbit Music's Nothing OS design.
+ * and tactile spring press feedback matching Nothing OS design.
  */
 @Composable
 fun NeuCard(

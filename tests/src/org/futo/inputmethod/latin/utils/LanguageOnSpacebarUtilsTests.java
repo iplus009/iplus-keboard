@@ -81,12 +81,8 @@ public class LanguageOnSpacebarUtilsTests {
     @Nonnull
     private RichInputMethodSubtype findSubtypeOf(final String localeString,
             final String keyboardLayoutSetName) {
-        final InputMethodSubtype subtype = mRichImm.findSubtypeByLocaleAndKeyboardLayoutSet(
-                localeString, keyboardLayoutSetName);
-        if (subtype == null) {
-            throw new RuntimeException("Can't find subtype of " + localeString + " with "
-                    + keyboardLayoutSetName);
-        }
+        final InputMethodSubtype subtype = AdditionalSubtypeUtils
+                .createAsciiEmojiCapableAdditionalSubtype(localeString, keyboardLayoutSetName);
         return new RichInputMethodSubtype(subtype);
     }
 

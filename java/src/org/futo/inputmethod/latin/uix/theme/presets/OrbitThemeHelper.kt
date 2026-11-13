@@ -8,7 +8,7 @@ import android.graphics.drawable.shapes.RoundRectShape
 import org.futo.inputmethod.keyboard.Key
 import org.futo.inputmethod.latin.common.Constants
 
-object OrbitThemeHelper {
+object IPlusMatteThemeHelper {
     var customSpacebarColor: Int? = null
 
     // Matte Bauhaus Nothing OS Color Palette

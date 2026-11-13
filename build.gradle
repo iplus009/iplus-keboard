@@ -37,7 +37,7 @@ android {
     namespace 'org.futo.inputmethod.latin'
     testNamespace 'org.futo.inputmethod.latin.tests'
 
-    compileSdk 34
+    compileSdk 35
 
     // Required if using classes in android.test.runner
     useLibrary 'android.test.runner'
@@ -50,11 +50,11 @@ android {
 
     defaultConfig {
         minSdk 24
-        targetSdk 34
-        versionName "1.1.0"
-        versionCode 10940
+        targetSdk 35
+        versionName "2.0.0"
+        versionCode 20000
 
-        applicationId 'com.arunk140.inputmethod.latin'
+        applicationId 'com.iplus.keyboard'
         testApplicationId 'org.futo.inputmethod.latin.tests'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = false
@@ -247,7 +247,7 @@ android.applicationVariants.all { variant ->
             assembleTask.doLast {
                 def outputDir = file("${buildDir}/outputs/apk/${variant.flavorName}/release")
                 def universalApk = file("${outputDir}/nth-kbd-${variant.flavorName}-universal-release.apk")
-                def standardApk = file("${outputDir}/nth-kbd-${variant.flavorName}-release.apk")
+                def standardApk = file("${outputDir}/iplus-kbd-${variant.flavorName}-release.apk")
                 if (universalApk.exists()) {
                     java.nio.file.Files.copy(universalApk.toPath(), standardApk.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
                 }

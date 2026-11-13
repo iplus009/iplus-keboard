@@ -26,6 +26,7 @@ import android.util.TypedValue;
 
 import org.futo.inputmethod.annotations.UsedForTesting;
 import org.futo.inputmethod.latin.R;
+import org.futo.inputmethod.latin.define.ProductionFlags;
 import org.futo.inputmethod.latin.settings.SettingsValues;
 
 import java.util.ArrayList;
@@ -182,9 +183,22 @@ public final class ResourceUtils {
         return matchedAll;
     }
 
+    public static final float ONE_HANDED_WIDTH_SCALE = 0.82f;
+
     public static int getDefaultKeyboardWidth(final Resources res) {
         final DisplayMetrics dm = res.getDisplayMetrics();
         return dm.widthPixels;
+    }
+
+    public static int getKeyboardWidth(final Resources res, final SettingsValues settingsValues,
+            final String oneHandedMode) {
+        final int defaultWidth = getDefaultKeyboardWidth(res);
+        final boolean isSplitActive = ProductionFlags.IS_SPLIT_KEYBOARD_SUPPORTED
+                && settingsValues != null && settingsValues.mIsSplitKeyboardEnabled;
+        if (!isSplitActive && ("left".equals(oneHandedMode) || "right".equals(oneHandedMode))) {
+            return Math.max(1, Math.round(defaultWidth * ONE_HANDED_WIDTH_SCALE));
+        }
+        return defaultWidth;
     }
 
     public static int getKeyboardHeight(final Resources res, final SettingsValues settingsValues) {

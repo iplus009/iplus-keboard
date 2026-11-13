@@ -61,6 +61,7 @@ import org.futo.inputmethod.latin.uix.KeyboardBottomOffsetSetting
 import org.futo.inputmethod.latin.uix.KeyboardFontSetting
 import org.futo.inputmethod.latin.uix.SpacebarColorSetting
 import org.futo.inputmethod.latin.uix.KeyboardHeightMultiplierSetting
+import org.futo.inputmethod.latin.uix.OneHandedModeSetting
 import org.futo.inputmethod.latin.uix.PreferenceUtils
 import org.futo.inputmethod.latin.uix.SHOW_EMOJI_SUGGESTIONS
 import org.futo.inputmethod.latin.uix.SettingsKey
@@ -79,8 +80,10 @@ import org.futo.inputmethod.latin.uix.settings.SettingRadio
 import org.futo.inputmethod.latin.uix.settings.SettingSlider
 import org.futo.inputmethod.latin.uix.settings.SettingSliderSharedPrefsInt
 import org.futo.inputmethod.latin.uix.settings.SettingToggleDataStore
+import org.futo.inputmethod.latin.uix.settings.SettingToggleDataStoreItem
 import org.futo.inputmethod.latin.uix.settings.SettingToggleSharedPrefs
 import org.futo.inputmethod.latin.uix.settings.useDataStore
+import org.futo.inputmethod.latin.uix.settings.useSharedPrefsBool
 import org.futo.inputmethod.latin.uix.settings.useSharedPrefsInt
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
@@ -509,15 +512,43 @@ fun TypingScreen(navController: NavHostController = rememberNavController()) {
             icon = painterResource(id = R.drawable.maximize)
         )
 
-        SettingToggleSharedPrefs(
+        val splitKeyboardItem = useSharedPrefsBool(Settings.PREF_ENABLE_SPLIT_KEYBOARD, false)
+        val oneHandedModeItem = useDataStore(
+            key = OneHandedModeSetting.key,
+            default = OneHandedModeSetting.default
+        )
+
+        SettingToggleDataStoreItem(
             title = stringResource(R.string.enable_split_keyboard),
+            dataStoreItem = DataStoreItem(
+                value = splitKeyboardItem.value,
+                setValue = { enabled ->
+                    if (enabled && oneHandedModeItem.value != "off") {
+                        oneHandedModeItem.setValue("off")
+                    }
+                    splitKeyboardItem.setValue(enabled)
+                }
+            ),
             subtitle = "Split the keyboard into left and right halves for wider screens",
-            key = Settings.PREF_ENABLE_SPLIT_KEYBOARD,
-            default = false,
             icon = {
                 Icon(painterResource(id = R.drawable.keyboard), contentDescription = null,
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f))
             }
+        )
+
+        SettingRadio(
+            title = if (splitKeyboardItem.value) "One-Handed Mode (turns off Split Keyboard)" else "One-Handed Mode",
+            options = listOf("off", "left", "right"),
+            optionNames = listOf("Off", "Left", "Right"),
+            setting = DataStoreItem(
+                value = if (splitKeyboardItem.value) "off" else oneHandedModeItem.value,
+                setValue = { mode ->
+                    if (mode != "off" && splitKeyboardItem.value) {
+                        splitKeyboardItem.setValue(false)
+                    }
+                    oneHandedModeItem.setValue(mode)
+                }
+            )
         )
 
         ScreenTitle(title = "Keyboard Rows")

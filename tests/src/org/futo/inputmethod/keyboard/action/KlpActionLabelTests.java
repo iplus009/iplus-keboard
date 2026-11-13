@@ -25,7 +25,7 @@ import org.futo.inputmethod.keyboard.KeyboardLayoutSet;
 import org.futo.inputmethod.keyboard.internal.KeyboardIconsSet;
 import org.futo.inputmethod.keyboard.internal.KeyboardTextsSet;
 import org.futo.inputmethod.latin.R;
-import org.futo.inputmethod.latin.RichInputMethodManager;
+import org.futo.inputmethod.latin.utils.AdditionalSubtypeUtils;
 import org.futo.inputmethod.latin.utils.RunInLocale;
 import org.futo.inputmethod.latin.utils.SubtypeLocaleUtils;
 
@@ -87,9 +87,9 @@ public class KlpActionLabelTests extends KlpActionTestsBase {
     }
 
     public void testActionLabelInOtherLocale() {
-        final RichInputMethodManager richImm = RichInputMethodManager.getInstance();
-        final InputMethodSubtype italian = richImm.findSubtypeByLocaleAndKeyboardLayoutSet(
-                Locale.ITALIAN.toString(), SubtypeLocaleUtils.QWERTY);
+        final InputMethodSubtype italian = AdditionalSubtypeUtils
+                .createAsciiEmojiCapableAdditionalSubtype(
+                        Locale.ITALIAN.toString(), SubtypeLocaleUtils.QWERTY);
         // An action label should be displayed in subtype's locale regardless of the system locale.
         doTestActionKeysInLocaleWithStringResources(italian, Locale.ITALIAN, Locale.US);
         doTestActionKeysInLocaleWithStringResources(italian, Locale.ITALIAN, Locale.FRENCH);
@@ -98,9 +98,9 @@ public class KlpActionLabelTests extends KlpActionTestsBase {
     }
 
     public void testNoLanguageSubtypeActionLabel() {
-        final RichInputMethodManager richImm = RichInputMethodManager.getInstance();
-        final InputMethodSubtype noLanguage = richImm.findSubtypeByLocaleAndKeyboardLayoutSet(
-                SubtypeLocaleUtils.NO_LANGUAGE, SubtypeLocaleUtils.QWERTY);
+        final InputMethodSubtype noLanguage = AdditionalSubtypeUtils
+                .createAsciiEmojiCapableAdditionalSubtype(
+                        SubtypeLocaleUtils.NO_LANGUAGE, SubtypeLocaleUtils.QWERTY);
         // An action label of no language keyboard should be displayed in the system locale.
         doTestActionKeysInLocaleWithStringResources(noLanguage, Locale.US, Locale.US);
         doTestActionKeysInLocaleWithStringResources(noLanguage, Locale.FRENCH, Locale.FRENCH);
@@ -145,10 +145,10 @@ public class KlpActionLabelTests extends KlpActionTestsBase {
     }
 
     public void testHinglishActionLabel() {
-        final RichInputMethodManager richImm = RichInputMethodManager.getInstance();
         final Locale hi_ZZ = new Locale("hi", "ZZ");
-        final InputMethodSubtype hiLatn = richImm.findSubtypeByLocaleAndKeyboardLayoutSet(
-                hi_ZZ.toString(), SubtypeLocaleUtils.QWERTY);
+        final InputMethodSubtype hiLatn = AdditionalSubtypeUtils
+                .createAsciiEmojiCapableAdditionalSubtype(
+                        hi_ZZ.toString(), SubtypeLocaleUtils.QWERTY);
         // This is a preliminary subtype and may not exist.
         if (hiLatn == null) {
             return;
@@ -162,10 +162,10 @@ public class KlpActionLabelTests extends KlpActionTestsBase {
     }
 
     public void testSerbianLatinActionLabel() {
-        final RichInputMethodManager richImm = RichInputMethodManager.getInstance();
         final Locale sr_ZZ = new Locale("sr", "ZZ");
-        final InputMethodSubtype srLatn = richImm.findSubtypeByLocaleAndKeyboardLayoutSet(
-                sr_ZZ.toString(), "serbian_qwertz");
+        final InputMethodSubtype srLatn = AdditionalSubtypeUtils
+                .createAsciiEmojiCapableAdditionalSubtype(
+                        sr_ZZ.toString(), "serbian_qwertz");
         // This is a preliminary subtype and may not exist.
         if (srLatn == null) {
             return;

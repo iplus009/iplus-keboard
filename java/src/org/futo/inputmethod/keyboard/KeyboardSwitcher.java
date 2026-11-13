@@ -20,9 +20,12 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 
@@ -41,6 +44,9 @@ import org.futo.inputmethod.latin.WordComposer;
 import org.futo.inputmethod.latin.define.ProductionFlags;
 import org.futo.inputmethod.latin.settings.Settings;
 import org.futo.inputmethod.latin.settings.SettingsValues;
+import org.futo.inputmethod.latin.uix.BasicThemeProvider;
+import org.futo.inputmethod.latin.uix.DynamicThemeProvider;
+import org.futo.inputmethod.latin.uix.DynamicThemeProviderOwner;
 import org.futo.inputmethod.latin.utils.CapsModeUtils;
 import org.futo.inputmethod.latin.utils.LanguageOnSpacebarUtils;
 import org.futo.inputmethod.latin.utils.RecapitalizeStatus;
@@ -133,12 +139,27 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
         return autoCapsFlags;
     }
 
+    @NonNull
+    private String getOneHandedMode() {
+        if (mLatinIMELegacy != null
+                && mLatinIMELegacy.getInputMethodService() instanceof DynamicThemeProviderOwner) {
+            final DynamicThemeProvider provider =
+                    ((DynamicThemeProviderOwner) mLatinIMELegacy.getInputMethodService())
+                            .getDrawableProvider();
+            if (provider instanceof BasicThemeProvider) {
+                return ((BasicThemeProvider) provider).getOneHandedMode();
+            }
+        }
+        return "off";
+    }
+
     public void loadKeyboard(final EditorInfo editorInfo, final SettingsValues settingsValues,
             final int currentAutoCapsState, final int currentRecapitalizeState) {
         final KeyboardLayoutSet.Builder builder = new KeyboardLayoutSet.Builder(
                 mThemeContext, editorInfo);
         final Resources res = mThemeContext.getResources();
-        final int keyboardWidth = ResourceUtils.getDefaultKeyboardWidth(res);
+        final int keyboardWidth = ResourceUtils.getKeyboardWidth(
+                res, settingsValues, getOneHandedMode());
         final int keyboardHeight = ResourceUtils.getKeyboardHeight(res, settingsValues);
         builder.setKeyboardGeometry(keyboardWidth, keyboardHeight);
         builder.setSubtype(mRichImm.getCurrentSubtype());
@@ -343,6 +364,33 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
         // @see #getVisibleKeyboardView() and
         // @see LatinIME#onComputeInset(android.inputmethodservice.InputMethodService.Insets)
         mMainKeyboardFrame.setVisibility(visibility);
+        updateMainKeyboardFrameGravity(settingsValues);
+    }
+
+    private void updateMainKeyboardFrameGravity(@Nonnull final SettingsValues settingsValues) {
+        if (mMainKeyboardFrame == null) {
+            return;
+        }
+        final ViewGroup.LayoutParams rawParams = mMainKeyboardFrame.getLayoutParams();
+        if (!(rawParams instanceof FrameLayout.LayoutParams)) {
+            return;
+        }
+        final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) rawParams;
+        final boolean isSplitActive = ProductionFlags.IS_SPLIT_KEYBOARD_SUPPORTED
+                && settingsValues.mIsSplitKeyboardEnabled;
+        final String oneHandedMode = getOneHandedMode();
+        final int targetGravity;
+        if (!isSplitActive && "left".equals(oneHandedMode)) {
+            targetGravity = Gravity.BOTTOM | Gravity.LEFT;
+        } else if (!isSplitActive && "right".equals(oneHandedMode)) {
+            targetGravity = Gravity.BOTTOM | Gravity.RIGHT;
+        } else {
+            targetGravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        }
+        if (lp.gravity != targetGravity) {
+            lp.gravity = targetGravity;
+            mMainKeyboardFrame.setLayoutParams(lp);
+        }
     }
 
     // Implements {@link KeyboardState.SwitchActions}.

@@ -231,9 +231,9 @@ fun String.toActionList(): List<Action> = split(",").mapNotNull { AllActionsMap[
 val DefaultActionSettings = mapOf(
     ActionCategory.ActionKey to listOf(EmojiAction),
     ActionCategory.PinnedKey to listOf(SwitchLanguageAction),
-    ActionCategory.Favorites to listOf(UndoAction, RedoAction, TextEditAction, ClipboardHistoryAction, ThemeAction, TranslateAction),
+    ActionCategory.Favorites to listOf(UndoAction, RedoAction, TextEditAction, ClipboardHistoryAction, ThemeAction, TranslateAction, VoiceInputAction),
     ActionCategory.More to listOf(), // Remaining actions get populated automatically by ensureWellFormed
-    ActionCategory.Disabled to listOf(MemoryDebugAction, SystemVoiceInputAction, VoiceInputAction)
+    ActionCategory.Disabled to listOf(MemoryDebugAction, SystemVoiceInputAction)
 )
 
 val DefaultActionKey = DefaultActionSettings[ActionCategory.ActionKey]!!.firstOrNull()?.let {

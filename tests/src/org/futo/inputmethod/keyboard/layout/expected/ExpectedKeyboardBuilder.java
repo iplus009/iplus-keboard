@@ -160,8 +160,9 @@ public final class ExpectedKeyboardBuilder extends AbstractKeyboardBuilder<Expec
      *        {@link ExpectedKey}, {@link ExpectedKey} array, and {@link String}.
      * @return this builder.
      */
-    public ExpectedKeyboardBuilder setMoreKeysOf(final int iconId, final Object ... moreKeys) {
-        setMoreKeysOf(ExpectedKeyVisual.newInstance(iconId), joinKeys(moreKeys));
+    public ExpectedKeyboardBuilder setMoreKeysOfIcon(final String iconId,
+            final Object ... moreKeys) {
+        setMoreKeysOf(ExpectedKeyVisual.newIconInstance(iconId), joinKeys(moreKeys));
         return this;
     }
 

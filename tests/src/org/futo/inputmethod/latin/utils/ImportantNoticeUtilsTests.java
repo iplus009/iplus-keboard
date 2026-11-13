@@ -32,6 +32,7 @@ import org.futo.inputmethod.latin.settings.SettingsValues;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -55,7 +56,7 @@ public class ImportantNoticeUtilsTests {
         private Long mLastTime;
 
         public ImportantNoticePreferences(final Context context) {
-            mPref = ImportantNoticeUtils.getImportantNoticePreferences(context);
+            mPref = context.getSharedPreferences("important_notice_pref", Context.MODE_PRIVATE);
         }
 
         private Integer getInt(final String key) {
@@ -118,6 +119,7 @@ public class ImportantNoticeUtilsTests {
         mImportantNoticePreferences.restore();
     }
 
+    @Ignore("ImportantNoticeUtils contacts notice and getImportantNoticePreferences were removed in FUTO")
     @Test
     public void testPersonalizationSetting() {
         mImportantNoticePreferences.clear();

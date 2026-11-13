@@ -18,7 +18,7 @@ limitations under the License.
 
 ### Third-Party Licenses and Attributions
 
-Orbit Board is built with pride upon foundational open-source technologies:
+iPlus Keyboard is built with pride upon foundational open-source technologies:
 
 - **AOSP LatinIME:** Copyright (c) 2008-2016 The Android Open Source Project. Licensed under the Apache License, Version 2.0.
 - **Whisper & GGML:** Copyright (c) 2022-2024 OpenAI & Georgi Gerganov. Licensed under the MIT License.

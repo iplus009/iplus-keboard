@@ -32,7 +32,7 @@ import kotlinx.coroutines.withContext
 import org.futo.inputmethod.latin.ActiveSubtype
 import org.futo.inputmethod.latin.Subtypes
 import org.futo.inputmethod.latin.SubtypesSetting
-import org.futo.inputmethod.latin.uix.theme.presets.OrbitTheme
+import org.futo.inputmethod.latin.uix.theme.presets.IPlusMatteTheme
 
 // Used before first unlock (direct boot)
 private object DefaultDataStore : DataStore<Preferences> {
@@ -44,7 +44,7 @@ private object DefaultDataStore : DataStore<Preferences> {
             "bn_BD:KeyboardLayoutSet=bengali_jatiyo:",
             "bn_BD:KeyboardLayoutSet=bengali_probhat:"
         ),
-        THEME_KEY.key to OrbitTheme.key,
+        THEME_KEY.key to IPlusMatteTheme.key,
         KeyHintsSetting.key to true
     )
 
@@ -231,9 +231,22 @@ fun <T> LifecycleOwner.deferSetSetting(key: SettingsKey<T>, value: T): Job {
 }
 
 
+const val LEGACY_ORBIT_THEME_KEY = "OrbitTheme"
+
+fun normalizeThemeKey(key: String): String =
+    if (key == LEGACY_ORBIT_THEME_KEY) IPlusMatteTheme.key else key
+
+suspend fun Context.migrateLegacyOrbitThemeIfNeeded() {
+    dataStore.edit { preferences ->
+        if (preferences[THEME_KEY.key] == LEGACY_ORBIT_THEME_KEY) {
+            preferences[THEME_KEY.key] = IPlusMatteTheme.key
+        }
+    }
+}
+
 val THEME_KEY = SettingsKey(
     key = stringPreferencesKey("activeThemeOption"),
-    default = OrbitTheme.key
+    default = IPlusMatteTheme.key
 )
 
 val USE_SYSTEM_VOICE_INPUT = SettingsKey(

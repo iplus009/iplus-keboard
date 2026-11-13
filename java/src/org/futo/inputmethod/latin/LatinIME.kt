@@ -11,6 +11,7 @@ import android.inputmethodservice.InputMethodService
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.CompletionInfo
@@ -19,13 +20,17 @@ import android.view.inputmethod.InlineSuggestionsRequest
 import android.view.inputmethod.InlineSuggestionsResponse
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodSubtype
+import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.onSizeChanged
@@ -64,6 +69,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import org.futo.inputmethod.latin.SuggestedWords.SuggestedWordInfo
 import org.futo.inputmethod.latin.common.Constants
+import org.futo.inputmethod.latin.define.ProductionFlags
 import org.futo.inputmethod.latin.settings.Settings
 import org.futo.inputmethod.latin.uix.BasicThemeProvider
 import org.futo.inputmethod.latin.uix.DynamicThemeProvider
@@ -71,6 +77,8 @@ import org.futo.inputmethod.latin.uix.DynamicThemeProviderOwner
 import org.futo.inputmethod.latin.uix.EmojiTracker.unuseEmoji
 import org.futo.inputmethod.latin.uix.EmojiTracker.useEmoji
 import org.futo.inputmethod.latin.uix.KeyboardBottomOffsetSetting
+import org.futo.inputmethod.latin.uix.LEGACY_ORBIT_THEME_KEY
+import org.futo.inputmethod.latin.uix.OneHandedModeSetting
 import org.futo.inputmethod.latin.uix.SUGGESTION_BLACKLIST
 import org.futo.inputmethod.latin.uix.THEME_KEY
 import org.futo.inputmethod.latin.uix.UixManager
@@ -79,15 +87,19 @@ import org.futo.inputmethod.latin.uix.dataStore
 import org.futo.inputmethod.latin.uix.deferGetSetting
 import org.futo.inputmethod.latin.uix.deferSetSetting
 import org.futo.inputmethod.latin.uix.differsFrom
+import org.futo.inputmethod.latin.uix.get
 import org.futo.inputmethod.latin.uix.getSetting
 import org.futo.inputmethod.latin.uix.getSettingBlocking
 import org.futo.inputmethod.latin.uix.getSettingFlow
 import org.futo.inputmethod.latin.uix.isDirectBootUnlocked
+import org.futo.inputmethod.latin.uix.migrateLegacyOrbitThemeIfNeeded
+import org.futo.inputmethod.latin.uix.normalizeThemeKey
 import org.futo.inputmethod.latin.uix.setSetting
 import org.futo.inputmethod.latin.uix.theme.DarkColorScheme
 import org.futo.inputmethod.latin.uix.theme.ThemeOption
 import org.futo.inputmethod.latin.uix.theme.ThemeOptions
 import org.futo.inputmethod.latin.uix.theme.applyWindowColors
+import org.futo.inputmethod.latin.uix.theme.presets.IPlusMatteTheme
 import org.futo.inputmethod.latin.uix.theme.presets.VoiceInputTheme
 import org.futo.inputmethod.latin.xlm.LanguageModelFacilitator
 import org.futo.inputmethod.updates.scheduleUpdateCheckingJob
@@ -138,6 +150,7 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
     private var activeThemeOption: ThemeOption? = null
     private var activeColorScheme = DarkColorScheme
     private var pendingRecreateKeyboard: Boolean = false
+    private val isSplitKeyboardState = mutableStateOf(false)
 
     val themeOption get() = activeThemeOption
     val colorScheme get() = activeColorScheme
@@ -209,7 +222,11 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
             }
         }
 
-        deferGetSetting(THEME_KEY) { key ->
+        deferGetSetting(THEME_KEY) { rawKey ->
+            val key = normalizeThemeKey(rawKey)
+            if (rawKey == LEGACY_ORBIT_THEME_KEY) {
+                deferSetSetting(THEME_KEY, IPlusMatteTheme.key)
+            }
             if(key != activeThemeOption?.key) {
                 ThemeOptions[key]?.let { if(it.available(this)) updateTheme(it) }
             }
@@ -304,8 +321,9 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
             suggestionBlacklist
         )
 
-        getSettingBlocking(THEME_KEY).let {
-            val themeOptionFromSettings = ThemeOptions[it]
+        getSettingBlocking(THEME_KEY).let { rawKey ->
+            val normalizedKey = normalizeThemeKey(rawKey)
+            val themeOptionFromSettings = ThemeOptions[normalizedKey]
             val themeOption = when {
                 themeOptionFromSettings == null -> VoiceInputTheme
                 !themeOptionFromSettings.available(this@LatinIME) -> VoiceInputTheme
@@ -316,7 +334,12 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
             activeColorScheme = themeOption.obtainColors(this@LatinIME)
         }
 
+        launchJob {
+            migrateLegacyOrbitThemeIfNeeded()
+        }
+
         latinIMELegacy.onCreate()
+        isSplitKeyboardState.value = Settings.getInstance().current?.mIsSplitKeyboardEnabled == true
 
         languageModelFacilitator.launchProcessor()
 
@@ -334,9 +357,10 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
                 drawableProvider?.let { provider ->
                     if(provider is BasicThemeProvider) {
                         if (provider.hasUpdated(it)) {
+                            val needsLayoutRefresh = it.get(OneHandedModeSetting) != provider.oneHandedMode
                             activeThemeOption?.obtainColors?.let { f ->
                                 updateDrawableProvider(f(this@LatinIME))
-                                invalidateKeyboard()
+                                invalidateKeyboard(refreshSettings = needsLayoutRefresh)
                             }
                         }
                     }
@@ -379,8 +403,10 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
         ContextCompat.registerReceiver(this, screenshotReceiver, screenshotFilter, ContextCompat.RECEIVER_NOT_EXPORTED)
 
         Settings.getInstance().settingsChangedListeners.add { oldSettings, newSettings ->
-            val differs = (oldSettings.mActionKeyId != newSettings.mActionKeyId)
-                    || (oldSettings.mShowsActionKey != newSettings.mShowsActionKey)
+            isSplitKeyboardState.value = newSettings.mIsSplitKeyboardEnabled
+            val differs = (oldSettings?.mActionKeyId != newSettings.mActionKeyId)
+                    || (oldSettings?.mShowsActionKey != newSettings.mShowsActionKey)
+                    || (oldSettings?.mIsSplitKeyboardEnabled != newSettings.mIsSplitKeyboardEnabled)
 
             if (differs) {
                 invalidateKeyboard(refreshSettings = true)
@@ -672,17 +698,36 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
                 .clipToBounds()
                 .size(0.dp)
         } else {
-            Modifier.onSizeChanged {
-                inputViewHeight = it.height
-            }
+            Modifier
+                .fillMaxWidth()
+                .onSizeChanged {
+                    inputViewHeight = it.height
+                }
         }
 
         val padding = getSettingFlow(KeyboardBottomOffsetSetting).collectAsState(initial = 0.0f)
+        val oneHandedMode = getSettingFlow(OneHandedModeSetting).collectAsState(
+            initial = remember { getSettingBlocking(OneHandedModeSetting) }
+        )
+        val isSplitActive = ProductionFlags.IS_SPLIT_KEYBOARD_SUPPORTED && isSplitKeyboardState.value
+        val targetGravity = Gravity.BOTTOM or when {
+            isSplitActive -> Gravity.CENTER_HORIZONTAL
+            oneHandedMode.value == "left" -> Gravity.LEFT
+            oneHandedMode.value == "right" -> Gravity.RIGHT
+            else -> Gravity.CENTER_HORIZONTAL
+        }
 
         key(legacyInputView) {
             AndroidView(factory = {
                 legacyInputView!!
-            }, modifier = modifier.padding(0.dp, 0.dp, 0.dp, padding.value.dp), onRelease = {
+            }, modifier = modifier.padding(0.dp, 0.dp, 0.dp, padding.value.dp), update = { view ->
+                val frame = view.findViewById<View>(R.id.main_keyboard_frame)
+                val lp = frame?.layoutParams as? FrameLayout.LayoutParams
+                if (lp != null && lp.gravity != targetGravity) {
+                    lp.gravity = targetGravity
+                    frame.layoutParams = lp
+                }
+            }, onRelease = {
                 val view = it as InputView
                 view.deallocateMemory()
                 view.removeAllViews()
