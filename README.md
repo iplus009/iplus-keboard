@@ -1,181 +1,139 @@
-# Orbit Board 🪐 — The Ultimate Nothing OS Aesthetic & Privacy-First Android Keyboard
+# iPlus Keyboard
 
-> [!IMPORTANT]
-> 🚀 **Latest Release Available:** [**Orbit Board v1.3.9**](https://github.com/fahitakrim/Orbit-Board/releases/tag/v1.3.9) is now available! Featuring the new **Constellation Web** typing animation, calibrated bubble burst physics, minimal language switcher dialog, perfected Probhat ergonomics, full Agency FB support, and Qurova digit fixes.
-> 📲 **Direct Downloads:** [⬇️ Download ARM64 APK (v1.3.9)](https://github.com/fahitakrim/Orbit-Board/releases/download/v1.3.9/Orbit-Board-v1.3.9-arm64-release.apk) | [⬇️ Download Universal APK (v1.3.9)](https://github.com/fahitakrim/Orbit-Board/releases/download/v1.3.9/Orbit-Board-v1.3.9-universal-release.apk)
-> 🔒 *This public repository preserves the open-source code up to v1.0.8. Newer versions (v1.2.3+) are maintained in private development and distributed via official release binaries.*
+<p align="center">
+  <img src="docs/assets/iplus-logo.svg" alt="iPlus Keyboard logo" width="220" />
+</p>
 
 
-[![Release](https://img.shields.io/badge/Release-v1.3.9%20Stable-E5252A?style=for-the-badge&logo=android&logoColor=white)](https://github.com/fahitakrim/Orbit-Board/releases/tag/v1.3.9)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](LICENSE.md)
-[![Platform](https://img.shields.io/badge/Platform-Android%207.0%2B%20(API%2024--35)-black?style=for-the-badge&logo=google)](https://developer.android.com)
-[![Privacy](https://img.shields.io/badge/Privacy-100%25%20Offline-00A86B?style=for-the-badge&logo=shield)](https://github.com/fahitakrim/Orbit-Board)
-[![Architecture](https://img.shields.io/badge/Architecture-ARM64%20%7C%20Universal-darkred?style=for-the-badge&logo=arm)](https://github.com/fahitakrim/Orbit-Board/releases)
-[![Author](https://img.shields.io/badge/Developer-Fahim%20Takrim-E5252A?style=for-the-badge&logo=github)](https://github.com/fahitakrim)
+**iPlus Keyboard** is an Android keyboard project focused on Bangla and English input, a customizable typing experience, and a cleaner iPlus-branded app interface. This repository develops the iPlus experience on top of the available open-source keyboard engine while preserving upstream licensing and attribution.
 
-**Orbit Board** is a modern, high-performance, privacy-first Android virtual keyboard crafted with an authentic **Nothing OS & Bauhaus-inspired design language**. Designed specifically for enthusiasts who value minimalism, tactile beauty, and absolute privacy, Orbit Board combines the signature **Matte Orbit Palette**, dot-matrix typography, dynamic per-key accent bubbles, and an advanced **Native Bengali Typing Suite** (Avro Phonetic, Probhat, and Jatiyo).
+> **Development status:** The current implementation branch has a successful GitHub Actions stable-debug build. The APK has not yet completed physical-device regression testing, so build success should not be interpreted as a full feature or release-readiness certification.
 
-Zero internet permissions. Zero cloud logging. Zero tracking. Just pure, elevated typing.
+## Project at a glance
 
----
+| Item | Details |
+|---|---|
+| Platform | Android |
+| App name | iPlus Keyboard |
+| Main input focus | Bangla and English |
+| Source branch | `work/iplus-keyboard-implementation` |
+| Application ID | Existing upstream ID retained for update compatibility |
+| Build channel | GitHub Actions — stable debug APK |
+| Official Telegram | [@ismailq01appsstore](https://t.me/ismailq01appsstore) |
 
-## ⚡ Quick Download
+## Feature overview
 
-Download the latest signed release APK:
+### Typing and language support
 
-| Edition | Architecture | Target Device | Direct Download |
-|:---|:---|:---|:---|
-| **ARM64-v8a** *(Recommended)* | `arm64-v8a` | Nothing Phone (1/2/2a), Pixel, modern 64-bit phones | [⬇️ **Download ARM64 APK (v1.3.9)**](https://github.com/fahitakrim/Orbit-Board/releases/download/v1.3.9/Orbit-Board-v1.3.9-arm64-release.apk) |
-| **Universal APK** | All ABIs | All Android 7.0+ devices & emulators | [⬇️ **Download Universal APK (v1.3.9)**](https://github.com/fahitakrim/Orbit-Board/releases/download/v1.3.9/Orbit-Board-v1.3.9-universal-release.apk) |
+- Retains the keyboard engine's available Bangla and English input capabilities.
+- Supports the project’s Bangla layout set: Avro, Probhat, Jatiyo and Akkhor, alongside English QWERTY where provided by the installed subtype resources.
+- Raises the active-keyboard selection limit to **five**, allowing four Bangla layouts plus English to be selected together.
+- Updates the language-selection UI to use the shared limit and clearer wording.
 
----
+### Custom photo themes
 
-## 🌟 Why Orbit Board?
+The Custom Photo theme can use an image selected from the device:
 
-### 🎨 1. Nothing OS & Bauhaus Design Language
-- **Matte Orbit Palette**: Handcrafted matte tones designed for high legibility and OLED battery conservation:
-  - 🔴 **Matte Carmine Red** (`#E5252A` / `#C23636`)
-  - 🟡 **Matte Warm Ochre Yellow** (`#E2B438`)
-  - 🔵 **Matte Cobalt Slate Blue** (`#2A5288`)
-  - ⚪ **Matte Chalk White** (`#EAE6E1`)
-  - ⬛ **Graphite Dark & AMOLED Deep Black** (`#000000`)
-- **Dynamic Accent Popups**: Long-presses and keystroke bubble previews dynamically inherit the exact tint of the underlying functional key.
-- **NDot & Inter Typography**: Dot-matrix headings paired with clean, readable Latin and Bengali fonts.
+- Select a personal image through Android's document picker.
+- Persist image access where Android permits it.
+- Adjust background dim, zoom and horizontal/vertical position.
+- Adjust a softening/blur-style effect.
+- Save multiple photo-theme presets.
+- Apply, rename and delete saved presets.
+- Reset custom photo adjustments.
 
-### 🇧🇩 2. Complete Bengali Typing Suite (Avro, Probhat & Jatiyo)
-- **Avro Phonetic (অভ্র)**: Seamless phonetics (`ami` → `আমি`, `kemon` → `কেমন`) with instant character rendering and intelligent suggestions.
-- **Probhat (প্রভাত)**: Standard Probhat layout with long-press shifted letter mappings (`দ` → `ধ`, `ূ` → `ঊ`, `ী` → `ঈ`, `র` → `ড়`, `ট` → `ঠ`, `এ` → `ঐ`, `ু` → `উ`, `ি` → `ই`, `ও` → `ঔ`, `প` → `ফ`). No confusing number clutter on letter keys.
-- **Jatiyo (জাতীয়)**: Official national standard layout with complete conjunct and vowel support.
-- **One-Tap Language Toggle**: Switch between English and Bengali instantly without input lag.
+The blur-style effect currently uses bitmap downscaling/upscaling as a lightweight softening approximation; it is not a true Gaussian blur. Existing built-in themes are intended to remain available alongside the added custom-photo options.
 
-### 🔢 3. Streamlined 3-Page Symbol & Number Architecture
-- **Page 1 (Alphabet)**: Clean QWERTY / Bengali layout.
-- **Page 2 (Numbers & Standard Symbols)**: Number row, arithmetic signs, and common punctuation.
-- **Page 3 (Extended Symbols & Math)**: Advanced math symbols (`~ \` | • √ π ÷ × § Δ`), brackets, and typography accessed via `= \<` with reliable navigation and zero layout kickback.
+### Voice input settings
 
-### 🔒 4. 100% Offline & Absolute Privacy
-- **No Internet Permission**: The app manifest strictly requests `android.permission.VIBRATE` only. There are **zero network permissions** (`android.permission.INTERNET` is not included).
-- **On-Device Only**: Your passwords, messages, bank details, and personal dictionaries never leave your local storage.
-- **No Telemetry**: No trackers, no analytics SDKs, and no background crash beacons.
+- Adds a setting to include English alongside the current language for mixed-language voice recognition.
+- Adds a live-transcription / inline partial-result toggle.
+- Adds a voice-punctuation preference.
+- Connects these preferences to the existing voice-input action and recognition configuration.
 
-### ⚡ 5. Power Features
-- **Haptic Engine**: Crisp, tactile vibration feedback fine-tuned for modern linear haptic motors.
-- **Clipboard Management**: Quick clipboard history with pinned items.
-- **Customizable Dimensions**: Adjustable keyboard height, one-handed mode, and split tablet layouts.
-- **Gesture Typing**: Smooth glide trace input with real-time word formulation.
+Recognition quality and mixed-language behavior depend on the available voice model, installed language support and device environment. These behaviors still require on-device testing.
 
----
+### Reliability and maintenance
 
-## 📸 Screenshots & Aesthetics
+- Update-check failures no longer produce a misleading “Already on latest version” result; the checker reports failure and clears the stale update state.
+- Custom-photo selection now checks whether persistent URI permission was actually granted before saving the selected image.
+- Adds an accessibility description to the custom-photo selection control.
+- Enables the Android spell-checker service in the app configuration.
+- Retains the existing application ID to avoid unnecessarily breaking compatibility with installations based on the upstream package identity.
 
-```
-+-------------------------------------------------------+
-|  [ Q ] [ W ] [ E ] [ R ] [ T ] [ Y ] [ U ] [ I ] [ O ] [ P ]  |
-|   [ A ] [ S ] [ D ] [ F ] [ G ] [ H ] [ J ] [ K ] [ L ]   |
-|    [^]   [ Z ] [ X ] [ C ] [ V ] [ B ] [ N ] [ M ]   [x]   |
-|   [?123]   [  🌐  ]   [     Space Bar     ]   [ . ]  [ ↵ ]   |
-+-------------------------------------------------------+
-```
+### App identity and project links
 
----
+- Uses **iPlus Keyboard** as the app-facing name and branding.
+- Includes the project’s GitHub and official Telegram links in the app's developer/details area.
+- Keeps required upstream and third-party legal attribution in the appropriate notices and license files rather than removing legally required credits.
 
-## 🛠️ Tech Stack & Architecture
+## Implementation and verification status
 
-- **Operating System:** Android 7.0 (Nougat, API 24) through Android 15 (Vanilla Ice Cream, API 35)
-- **Architecture:** Android Open Source Project (AOSP) LatinIME foundation with modern Jetpack Compose UIX
-- **Native Core:** C++ JNI Native Input Engine (`libjni_latinime.so`, pocketfft, ggml)
-- **Languages:** Java, Kotlin, C++
-- **Build System:** Gradle 8.2 & Android Gradle Plugin 8.3
+The following table distinguishes code changes from behavior that still needs device validation.
 
----
+| Area | Current status |
+|---|---|
+| iPlus app name and app-facing identity | Implemented |
+| GitHub and Telegram project links | Implemented |
+| Four Bangla layouts + English selection limit | Limit/UI updated; actual layout availability depends on included subtype resources |
+| Existing built-in themes | Retained in the current implementation |
+| Custom photo background | Existing feature retained and permission handling improved |
+| Photo dim, zoom and X/Y positioning | Implemented in code |
+| Blur-style softening control | Implemented in code; approximation, not Gaussian blur |
+| Save/apply/rename/delete photo presets | Implemented in code |
+| Mixed Bangla-English voice setting | Implemented in code; model/device validation pending |
+| Live transcription setting | Implemented in code; device validation pending |
+| Voice punctuation setting | Implemented in code; device validation pending |
+| Update-check failure handling | Fixed in code |
+| Android spell-checker service | Enabled in app configuration; device validation pending |
+| Full typing, prediction and autocorrection regression | Not yet fully verified |
+| Physical-device compatibility and performance | Not yet verified |
+| Release signing / production release | Not included in the debug build |
 
-## 🚀 Building from Source
+For the detailed implementation notes and test checklist, see [Feature and QA notes](docs/FEATURES.md).
 
-### Prerequisites
-- Android Studio Ladybug / Koala or CLI tools
-- Java Development Kit (JDK) 17+
-- Android SDK 34 & NDK (`r25c` or newer)
+## Latest automated build
 
-### Build Steps
+The implementation branch's latest recorded workflow run completed successfully:
+
+- Workflow run: [Build #65](https://github.com/iplus009/iplus-keboard/actions/runs/43300979683)
+- Commit: `54c2d3ef3137615cbe49a98b7e2bd0e2693380b1`
+- Result: **Success**
+- Artifact: `iplus-keyboard-stable-debug`
+
+Open the workflow run and download the APK from its **Artifacts** section. The workflow emitted a Node.js 20 deprecation warning for an action running under Node.js 24; that warning did not cause this recorded run to fail.
+
+**Important:** This is a debug APK artifact. It is not a signed production release, and a successful CI build does not replace installation, typing, voice, theme, permission and upgrade tests on real devices.
+
+## Build locally
+
+This repository includes the Gradle wrapper. On a machine with a compatible JDK and Android SDK installed, run:
+
 ```bash
-# Clone the repository
-git clone https://github.com/fahitakrim/Orbit-Board.git
-cd Orbit-Board/nth-kbd
-
-# Build the release APKs
-./gradlew assembleStableRelease
-
-# Outputs are located in:
-# nth-kbd/build/outputs/apk/stable/release/
+./gradlew assembleDebug
 ```
 
----
+On Windows:
 
-## 🐛 Bug Reporting & Feedback
-
-We actively maintain Orbit Board and appreciate your reports, suggestions, and feedback.
-
-If you encounter any bug, glitch, or layout suggestion:
-- **Email:** [`itz.takrim@gmail.com`](mailto:itz.takrim@gmail.com?subject=Orbit%20Board%20Bug%20Report)
-- **Issue Tracker:** [GitHub Issues](https://github.com/fahitakrim/Orbit-Board/issues)
-
-When reporting a bug, please include:
-1. Device model (e.g., Nothing Phone 2a, Pixel 8)
-2. Android version
-3. Steps to reproduce the issue
-
----
-
-## 👨‍💻 Developer & Author
-
-- **Lead Developer & Designer:** **Fahim Takrim**
-- **GitHub:** [@fahitakrim](https://github.com/fahitakrim)
-- **X (Twitter):** [@TakrimFahim](https://x.com/TakrimFahim)
-- **Facebook:** [Fahim Takrim](https://www.facebook.com/profile.php?id=61592810150809)
-- **Email:** `itz.takrim@gmail.com`
-
----
-
-
----
-
-## 🎙️ Voice Typing and Microphone Permission
-
-If your voice typing is not responding or the microphone does not detect audio, Android may have restricted microphone access by default. Follow these steps to grant permission:
-
-1. **Quick Method:**
-   - On your home screen or app drawer, **long-press the Orbit Board app icon**.
-   - Tap **App info** (the ⓘ icon).
-   - Go to **Permissions** -> **Microphone**.
-   - Select **"Allow only while using the app"**.
-
-2. **From Android Settings:**
-   - Open your phone's **Settings** app.
-   - Navigate to **Apps** (or *Apps & Notifications*) -> **Orbit Board**.
-   - Tap **Permissions** -> **Microphone** -> Select **Allow**.
-
-3. **Mute Audio Click Feedback (Optional):**
-   - If you want completely silent voice typing without the microphone activation click sound, open **Orbit Board** -> **Keyboard** tab (or **More Settings**) -> **Typing** -> Toggle **Mute Voice Typing Sound**.
-
-*Note: Orbit Board operates 100% offline. Microphone audio is processed entirely on-device and is never recorded, stored, or sent to any server.*
-
-## 📄 License & Legal Notice
-
-Orbit Board is released under the **Apache License 2.0**.
-
-```text
-Copyright (c) 2024-2026 Fahim Takrim. All rights reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
+```powershell
+.\gradlew.bat assembleDebug
 ```
 
-See [LICENSE.md](LICENSE.md) and [NOTICE](NOTICE) for complete third-party licenses and credits.
+The debug APK is normally produced under the Android app module's `build/outputs/apk/debug/` directory. Exact output paths can vary with the Gradle module configuration.
 
----
+## Upstream source and legal notices
 
-### 🔍 Search Tags & SEO Keywords
-`Orbit Board` `Orbit Board Keyboard` `Nothing OS Keyboard` `Nothing Phone Keyboard APK` `Bengali Keyboard Android` `Probhat Keyboard` `Avro Keyboard Nothing Phone` `Jatiyo Keyboard Android` `Privacy Keyboard Android` `Offline Keyboard APK` `Matte Bauhaus Android Keyboard` `Fahim Takrim`
+This project is based on the publicly available source of [Orbit Board](https://github.com/fahitakrim/Orbit-Board). The keyboard engine and third-party components retain their upstream provenance. Copyright notices, Apache-2.0 license terms, the `NOTICE` file and third-party attributions must remain available.
+
+The upstream public repository describes source availability through v1.0.8, with later releases distributed as binaries from private development. This project is based on the available public source and does not claim to include private source code for later upstream releases.
+
+See [LICENSE.md](LICENSE.md) and [NOTICE](NOTICE) for applicable notices.
+
+## Official links
+
+- Telegram channel: https://t.me/ismailq01appsstore
+- GitHub repository: https://github.com/iplus009/iplus-keboard
+
+## Contributing and issue reports
+
+Please include the device model, Android version, app build/commit, steps to reproduce and relevant logs when reporting a bug. Do not publish signing keys, passwords, API keys or private user data in issues or commits.

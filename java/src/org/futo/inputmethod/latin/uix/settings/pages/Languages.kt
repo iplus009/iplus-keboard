@@ -510,7 +510,7 @@ fun LanguagesScreen(navController: NavHostController = rememberNavController()) 
                 onLayoutToggled = { layoutKey, enabled ->
                     if (enabled) {
                         if (inputMethods.size >= Subtypes.MAX_ACTIVE_KEYBOARDS) {
-                            android.widget.Toast.makeText(context, "Maximum 3 keyboards can be selected at a time", android.widget.Toast.LENGTH_SHORT).show()
+                            android.widget.Toast.makeText(context, "Maximum 5 keyboards can be selected at a time", android.widget.Toast.LENGTH_SHORT).show()
                         } else {
                             Subtypes.addLanguage(context, locale, layoutKey)
                         }

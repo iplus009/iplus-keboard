@@ -14,7 +14,7 @@ import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 
 class AnnouncementManager(private val context: Context) {
-    private val prefs = context.getSharedPreferences("orbit_board_announcements", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("iplus_keyboard_announcements", Context.MODE_PRIVATE)
     private val inMemoryDismissed = ConcurrentHashMap.newKeySet<String>()
 
     var endpointUrl: String = DEFAULT_ANNOUNCEMENT_URL
@@ -79,7 +79,7 @@ class AnnouncementManager(private val context: Context) {
                 requestMethod = "GET"
                 connectTimeout = 5000
                 readTimeout = 5000
-                setRequestProperty("User-Agent", "OrbitBoard/${BuildConfig.VERSION_NAME}")
+                setRequestProperty("User-Agent", "iPlusKeyboard/${BuildConfig.VERSION_NAME}")
                 setRequestProperty("Accept", "application/json")
             }
 
@@ -95,7 +95,7 @@ class AnnouncementManager(private val context: Context) {
 
     companion object {
         const val DEFAULT_ANNOUNCEMENT_URL =
-            "https://raw.githubusercontent.com/fahitakrim/my-artifacts/main/apps/orbitboard/announcements.json"
+            "https://raw.githubusercontent.com/iplus009/iplus-keboard/main/announcements.json"
 
         @Volatile
         private var instance: AnnouncementManager? = null

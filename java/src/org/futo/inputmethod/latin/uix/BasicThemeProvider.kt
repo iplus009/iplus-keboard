@@ -1,6 +1,14 @@
 package org.futo.inputmethod.latin.uix
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.drawable.BitmapDrawable
+import android.net.Uri
+import android.view.Gravity
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
@@ -26,6 +34,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.google.android.material.color.DynamicColors
 import org.futo.inputmethod.keyboard.internal.KeyboardIconsSet
 import org.futo.inputmethod.latin.R
@@ -35,11 +44,19 @@ import org.futo.inputmethod.latin.uix.theme.DarkColorScheme
 import kotlin.math.roundToInt
 
 val KeyBordersSetting = SettingsKey(booleanPreferencesKey("keyBorders"), true)
+val KeyOpacitySetting = SettingsKey(floatPreferencesKey("key_opacity"), 1.0f)
 val HiddenKeysSetting = SettingsKey(booleanPreferencesKey("hiddenKeys"), false)
 val KeyHintsSetting   = SettingsKey(booleanPreferencesKey("keyHints"), true)
 val KeyboardFontSetting = SettingsKey(stringPreferencesKey("keyboard_font"), "nothing")
 val KeyHintColorSetting = SettingsKey(stringPreferencesKey("key_hint_color"), "subtle")
 val SpacebarColorSetting = SettingsKey(stringPreferencesKey("spacebar_color"), "default")
+val CustomKeyboardBackgroundUriSetting = SettingsKey(stringPreferencesKey("custom_keyboard_background_uri"), "")
+val CustomKeyboardBackgroundDimSetting = SettingsKey(floatPreferencesKey("custom_keyboard_background_dim"), 0.33f)
+val CustomKeyboardBackgroundBlurSetting = SettingsKey(floatPreferencesKey("custom_keyboard_background_blur"), 0.0f)
+val CustomKeyboardBackgroundZoomSetting = SettingsKey(floatPreferencesKey("custom_keyboard_background_zoom"), 1.0f)
+val CustomKeyboardBackgroundXSetting = SettingsKey(floatPreferencesKey("custom_keyboard_background_x"), 0.0f)
+val CustomKeyboardBackgroundYSetting = SettingsKey(floatPreferencesKey("custom_keyboard_background_y"), 0.0f)
+val SavedCustomPhotoThemesSetting = SettingsKey(stringSetPreferencesKey("saved_custom_photo_themes"), setOf())
 
 val KeyboardHeightMultiplierSetting = SettingsKey(floatPreferencesKey("keyboardHeightMultiplier"), 1.0f)
 val KeyboardBottomOffsetSetting = SettingsKey(floatPreferencesKey("keyboardOffset"), 0.0f)
@@ -69,6 +86,69 @@ fun adjustColorBrightnessForContrast(bgColor: Int, fgColor: Int, desiredContrast
 
 fun<T> Preferences.get(key: SettingsKey<T>): T {
     return this[key.key] ?: key.default
+}
+
+private fun loadCustomPhotoBackground(context: Context, uriValue: String, dimAmount: Float, blurAmount: Float, zoom: Float, offsetX: Float, offsetY: Float): Drawable? {
+    if (uriValue.isBlank()) return null
+
+    return runCatching {
+        val uri = Uri.parse(uriValue)
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        val boundsStream = context.contentResolver.openInputStream(uri) ?: return null
+        boundsStream.use { stream ->
+            BitmapFactory.decodeStream(stream, null, bounds)
+        }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+
+        val targetWidth = context.resources.displayMetrics.widthPixels.coerceAtLeast(720)
+        val targetHeight = (targetWidth * 0.7f).toInt()
+        var sampleSize = 1
+        while (bounds.outWidth / sampleSize > targetWidth * 2 ||
+            bounds.outHeight / sampleSize > targetHeight * 2
+        ) {
+            sampleSize *= 2
+        }
+
+        val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+        val bitmap = context.contentResolver.openInputStream(uri)?.use { stream ->
+            BitmapFactory.decodeStream(stream, null, options)
+        } ?: return null
+
+        val scale = maxOf(targetWidth / bitmap.width.toFloat(), targetHeight / bitmap.height.toFloat()) * zoom.coerceIn(1.0f, 2.5f)
+        val drawnWidth = bitmap.width * scale
+        val drawnHeight = bitmap.height * scale
+        val left = (targetWidth - drawnWidth) / 2f + offsetX.coerceIn(-1f, 1f) * (drawnWidth - targetWidth) / 2f
+        val top = (targetHeight - drawnHeight) / 2f + offsetY.coerceIn(-1f, 1f) * (drawnHeight - targetHeight) / 2f
+        val cropped = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
+        Canvas(cropped).drawBitmap(bitmap, null, RectF(left, top, left + drawnWidth, top + drawnHeight), Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
+        bitmap.recycle()
+        val displayBitmap = if (blurAmount > 0.1f) {
+            val reduction = (1.0f + blurAmount.coerceIn(0.0f, 20.0f) * 0.35f).coerceIn(1.0f, 8.0f)
+            val small = Bitmap.createScaledBitmap(
+                cropped,
+                (targetWidth / reduction).toInt().coerceAtLeast(1),
+                (targetHeight / reduction).toInt().coerceAtLeast(1),
+                true
+            )
+            val blurred = Bitmap.createScaledBitmap(small, targetWidth, targetHeight, true)
+            small.recycle()
+            cropped.recycle()
+            blurred
+        } else {
+            cropped
+        }
+        val photo = BitmapDrawable(context.resources, displayBitmap).apply {
+            gravity = Gravity.FILL
+        }
+        android.graphics.drawable.LayerDrawable(
+            arrayOf(
+                photo,
+                android.graphics.drawable.GradientDrawable().apply {
+                    setColor(android.graphics.Color.argb((dimAmount.coerceIn(0f, 0.85f) * 255).roundToInt(), 0, 0, 0))
+                }
+            )
+        )
+    }.getOrNull()
 }
 
 class BasicThemeProvider(
@@ -162,21 +242,35 @@ class BasicThemeProvider(
 
     val expertMode: Boolean
     val keyBorders: Boolean
+    val keyOpacity: Float
     val showKeyHints: Boolean
     val keyHintColor: String
     val keyboardHeight: Float
     val keyboardFont: String
     val spacebarColorPref: String
+    val customKeyboardBackgroundUri: String
+    val customKeyboardBackgroundDim: Float
+    val customKeyboardBackgroundBlur: Float
+    val customKeyboardBackgroundZoom: Float
+    val customKeyboardBackgroundX: Float
+    val customKeyboardBackgroundY: Float
     override val keyboardTypeface: Typeface?
 
     fun hasUpdated(np: Preferences): Boolean {
         return np.get(HiddenKeysSetting) != expertMode
                 || np.get(KeyBordersSetting) != keyBorders
+                || np.get(KeyOpacitySetting) != keyOpacity
                 || np.get(KeyHintsSetting) != showKeyHints
                 || np.get(KeyHintColorSetting) != keyHintColor
                 || np.get(KeyboardHeightMultiplierSetting) != keyboardHeight
                 || np.get(KeyboardFontSetting) != keyboardFont
                 || np.get(SpacebarColorSetting) != spacebarColorPref
+                || np.get(CustomKeyboardBackgroundUriSetting) != customKeyboardBackgroundUri
+                || np.get(CustomKeyboardBackgroundDimSetting) != customKeyboardBackgroundDim
+                || np.get(CustomKeyboardBackgroundBlurSetting) != customKeyboardBackgroundBlur
+                || np.get(CustomKeyboardBackgroundZoomSetting) != customKeyboardBackgroundZoom
+                || np.get(CustomKeyboardBackgroundXSetting) != customKeyboardBackgroundX
+                || np.get(CustomKeyboardBackgroundYSetting) != customKeyboardBackgroundY
     }
 
 
@@ -206,11 +300,18 @@ class BasicThemeProvider(
 
         expertMode = context.getSettingBlocking(HiddenKeysSetting)
         keyBorders = context.getSettingBlocking(KeyBordersSetting)
+        keyOpacity = context.getSettingBlocking(KeyOpacitySetting).coerceIn(0.15f, 1.0f)
         showKeyHints = context.getSettingBlocking(KeyHintsSetting)
         keyHintColor = context.getSettingBlocking(KeyHintColorSetting)
         keyboardHeight = context.getSettingBlocking(KeyboardHeightMultiplierSetting)
         keyboardFont = context.getSettingBlocking(KeyboardFontSetting)
         spacebarColorPref = context.getSettingBlocking(SpacebarColorSetting)
+        customKeyboardBackgroundUri = context.getSettingBlocking(CustomKeyboardBackgroundUriSetting)
+        customKeyboardBackgroundDim = context.getSettingBlocking(CustomKeyboardBackgroundDimSetting)
+        customKeyboardBackgroundBlur = context.getSettingBlocking(CustomKeyboardBackgroundBlurSetting).coerceIn(0.0f, 20.0f)
+        customKeyboardBackgroundZoom = context.getSettingBlocking(CustomKeyboardBackgroundZoomSetting)
+        customKeyboardBackgroundX = context.getSettingBlocking(CustomKeyboardBackgroundXSetting)
+        customKeyboardBackgroundY = context.getSettingBlocking(CustomKeyboardBackgroundYSetting)
         val customSpaceColor = when (spacebarColorPref) {
             "red" -> OrbitThemeHelper.COLOR_RED
             "blue" -> OrbitThemeHelper.COLOR_BLUE
@@ -220,12 +321,18 @@ class BasicThemeProvider(
             else -> null
         }
         OrbitThemeHelper.customSpacebarColor = customSpaceColor
-        keyboardTypeface = if (isOrbitTheme) {
-            ResourcesCompat.getFont(context, R.font.ndot_family) ?: Typeface.DEFAULT
-        } else if (keyboardFont == "normal") {
-            Typeface.DEFAULT
-        } else {
-            ResourcesCompat.getFont(context, R.font.ndot_family)
+        keyboardTypeface = when (keyboardFont) {
+            "normal", "clean" -> Typeface.create("sans-serif", Typeface.NORMAL)
+            "doto", "pixel" -> ResourcesCompat.getFont(context, R.font.doto) ?: Typeface.DEFAULT
+            "inter", "rounded" -> if (keyboardFont == "rounded") Typeface.create("sans-serif-rounded", Typeface.NORMAL) else ResourcesCompat.getFont(context, R.font.inter) ?: Typeface.DEFAULT
+            "tech_mono" -> Typeface.create("monospace", Typeface.NORMAL)
+            "elegant" -> Typeface.create("serif", Typeface.NORMAL)
+            "bold" -> Typeface.create("sans-serif-black", Typeface.NORMAL)
+            "anime" -> Typeface.create("casual", Typeface.BOLD)
+            "manga" -> Typeface.create("sans-serif-condensed", Typeface.BOLD)
+            "cyberpunk" -> Typeface.create("sans-serif", Typeface.BOLD)
+            "gothic" -> Typeface.create("serif", Typeface.BOLD)
+            else -> ResourcesCompat.getFont(context, R.font.ndot_family) ?: Typeface.DEFAULT
         }
 
         val primary = colorScheme.primary.toArgb()
@@ -261,7 +368,7 @@ class BasicThemeProvider(
                 // May happen if the color is already 100% white
                 c = adjustColorBrightnessForContrast(primaryKeyboardColor, primaryKeyboardColor, 1.0f / (ratio / 2.0f + 0.5f))
             }
-            c
+            ColorUtils.setAlphaComponent(c, (keyOpacity * 255).roundToInt())
         } else {
             transparent
         }
@@ -269,7 +376,10 @@ class BasicThemeProvider(
         this.keyColor = keyColor
 
         val functionalKeyColor = if(keyBorders) {
-            adjustColorBrightnessForContrast(primaryKeyboardColor, primaryKeyboardColor, ratio / 2.0f + 0.5f, adjustSaturation = true)
+            ColorUtils.setAlphaComponent(
+                adjustColorBrightnessForContrast(primaryKeyboardColor, primaryKeyboardColor, ratio / 2.0f + 0.5f, adjustSaturation = true),
+                (keyOpacity * 255).roundToInt()
+            )
         } else {
             transparent
         }
@@ -340,7 +450,10 @@ class BasicThemeProvider(
             colors[R.styleable.Keyboard_Key_functionalTextColor] = onBackgroundThird
         }
 
-        keyboardBackground = if (isOrbitTheme) {
+        keyboardBackground = if (currentThemeKey == "CustomPhotoTheme") {
+            loadCustomPhotoBackground(context, customKeyboardBackgroundUri, customKeyboardBackgroundDim, customKeyboardBackgroundBlur, customKeyboardBackgroundZoom, customKeyboardBackgroundX, customKeyboardBackgroundY)
+                ?: coloredRectangle(primaryKeyboardColor)
+        } else if (isOrbitTheme) {
             coloredRectangle(0xFF000000.toInt())
         } else {
             coloredRectangle(primaryKeyboardColor)

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">iPlus Keyboard</title>
+  <desc id="desc">A white i and blue-violet plus sign above a glowing keyboard, surrounded by a cyan orbital stroke.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#10234D"/><stop offset=".55" stop-color="#07142F"/><stop offset="1" stop-color="#170C3E"/></linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#27D8FF"/><stop offset=".52" stop-color="#2878FF"/><stop offset="1" stop-color="#B34CFF"/></linearGradient>
+    <linearGradient id="plus" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#16E0F4"/><stop offset=".55" stop-color="#398CFF"/><stop offset="1" stop-color="#B54BFF"/></linearGradient>
+    <linearGradient id="key" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#173C83"/><stop offset="1" stop-color="#101D4B"/></linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect x="18" y="18" width="476" height="476" rx="104" fill="url(#bg)" stroke="url(#edge)" stroke-width="10"/>
+  <g opacity=".95" filter="url(#glow)" fill="none" stroke="url(#edge)" stroke-width="15" stroke-linecap="round"><path d="M78 310 C115 150 345 70 430 154 C493 217 355 375 158 389 C103 393 65 363 78 310Z"/></g>
+  <g fill="#F5FAFF"><circle cx="178" cy="150" r="29"/><path d="M151 205 Q151 194 164 194 H198 Q210 194 208 207 L194 324 Q192 337 179 337 H145 Q133 337 135 324Z"/></g>
+  <path d="M302 193 Q302 181 315 181 H346 Q359 181 357 194 L351 239 H395 Q408 239 406 252 L402 283 Q400 295 387 295 H343 L337 338 Q335 351 322 351 H291 Q278 351 280 338 L286 295 H243 Q230 295 232 282 L236 251 Q238 239 251 239 H294Z" fill="url(#plus)" filter="url(#glow)"/>
+  <g fill="url(#key)" stroke="#2878D8" stroke-width="4">
+    <rect x="76" y="390" width="65" height="36" rx="11"/><rect x="151" y="390" width="65" height="36" rx="11"/><rect x="226" y="390" width="65" height="36" rx="11"/><rect x="301" y="390" width="65" height="36" rx="11"/><rect x="376" y="390" width="60" height="36" rx="11"/>
+    <rect x="122" y="436" width="268" height="28" rx="10" fill="#153B83" stroke="#27C9FF"/>
+  </g>
+</svg>

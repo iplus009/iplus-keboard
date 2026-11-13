@@ -15,6 +15,9 @@ import org.futo.inputmethod.latin.uix.ENABLE_SOUND
 import org.futo.inputmethod.latin.uix.PREFER_BLUETOOTH
 import org.futo.inputmethod.latin.uix.USE_SYSTEM_VOICE_INPUT
 import org.futo.inputmethod.latin.uix.VERBOSE_PROGRESS
+import org.futo.inputmethod.latin.uix.ENABLE_ENGLISH
+import org.futo.inputmethod.latin.uix.ENABLE_LIVE_TRANSCRIPTION
+import org.futo.inputmethod.latin.uix.VOICE_PUNCTUATION
 import org.futo.inputmethod.latin.uix.settings.NavigationItem
 import org.futo.inputmethod.latin.uix.settings.NavigationItemStyle
 import org.futo.inputmethod.latin.uix.settings.ScreenTitle
@@ -46,6 +49,24 @@ fun VoiceInputScreen(navController: NavHostController = rememberNavController())
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     context.startActivity(intent)
                 }
+            )
+
+            SettingToggleDataStore(
+                title = "Bangla + English mixed typing",
+                subtitle = "Recognize Bengali and English in the same voice input",
+                setting = ENABLE_ENGLISH
+            )
+
+            SettingToggleDataStore(
+                title = "Live transcription",
+                subtitle = "Show recognized words while processing your speech",
+                setting = ENABLE_LIVE_TRANSCRIPTION
+            )
+
+            SettingToggleDataStore(
+                title = "Voice punctuation",
+                subtitle = "Keep punctuation in voice-typed sentences",
+                setting = VOICE_PUNCTUATION
             )
 
             SettingToggleDataStore(

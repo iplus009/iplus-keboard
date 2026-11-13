@@ -22,6 +22,7 @@ import org.futo.inputmethod.latin.uix.theme.presets.Snowfall
 import org.futo.inputmethod.latin.uix.theme.presets.SteelGray
 import org.futo.inputmethod.latin.uix.theme.presets.Sunflower
 import org.futo.inputmethod.latin.uix.theme.presets.VoiceInputTheme
+import org.futo.inputmethod.latin.R
 
 data class ThemeOption(
     val dynamic: Boolean,
@@ -31,7 +32,16 @@ data class ThemeOption(
     val obtainColors: (Context) -> ColorScheme,
 )
 
+val CustomPhotoTheme = ThemeOption(
+    dynamic = false,
+    key = "CustomPhotoTheme",
+    name = R.string.custom_photo_theme,
+    available = { true },
+    obtainColors = VoiceInputTheme.obtainColors,
+)
+
 val ThemeOptions = mapOf(
+    CustomPhotoTheme.key to CustomPhotoTheme,
     OrbitTheme.key to OrbitTheme,
     VoiceInputTheme.key to VoiceInputTheme,
 

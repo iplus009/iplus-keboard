@@ -19,6 +19,16 @@ val ENABLE_ENGLISH = SettingsKey(
     default = true
 )
 
+val ENABLE_LIVE_TRANSCRIPTION = SettingsKey(
+    key = booleanPreferencesKey("enable_live_transcription"),
+    default = true
+)
+
+val VOICE_PUNCTUATION = SettingsKey(
+    key = booleanPreferencesKey("voice_punctuation"),
+    default = true
+)
+
 val ENABLE_MULTILINGUAL = SettingsKey(
     key = booleanPreferencesKey("enable_multilingual"),
     default = false

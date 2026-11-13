@@ -468,8 +468,23 @@ fun TypingScreen(navController: NavHostController = rememberNavController()) {
 
         SettingRadio(
             title = "Keyboard Font Style",
-            options = listOf("nothing", "normal"),
-            optionNames = listOf("Nothing Dot Font", "Normal System Font"),
+            options = listOf("nothing", "normal", "rounded", "clean", "elegant", "bold", "tech_mono", "anime", "manga", "pixel", "cyberpunk", "gothic", "doto", "inter"),
+            optionNames = listOf(
+                "Nothing Dot Font",
+                "Normal System Font",
+                "Rounded Modern",
+                "Clean Minimal",
+                "Elegant Serif",
+                "Bold Modern",
+                "Tech Mono",
+                "Anime / Pirate",
+                "Manga",
+                "Pixel Gaming",
+                "Cyberpunk",
+                "Gothic",
+                "Doto Pixel",
+                "Inter Modern"
+            ),
             setting = useDataStore(
                 key = KeyboardFontSetting.key,
                 default = KeyboardFontSetting.default

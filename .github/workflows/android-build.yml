@@ -1,0 +1,86 @@
+name: Android build
+
+on:
+  push:
+    branches:
+      - "work/**"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stable-debug:
+    name: Build iPlus Keyboard APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK command-line tools
+        uses: android-actions/setup-android@v4
+        with:
+          packages: ''
+
+      - name: Install Android SDK and NDK
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "ndk;25.2.9519653"
+
+      - name: Build stable debug APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon assembleStableDebug
+
+      - name: Prepare universal APK for direct download
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          echo "Available APK outputs:"
+          find build/outputs/apk/stable/debug -maxdepth 1 -type f -name '*.apk' -print
+          APK="$(find build/outputs/apk/stable/debug -maxdepth 1 -type f -iname '*universal*.apk' -print -quit)"
+          if [ -z "$APK" ]; then
+            echo "Universal APK not found; refusing to publish an ABI-specific build as universal."
+            exit 1
+          fi
+          cp "$APK" "dist/iPlus-Keyboard-v0.1.0-beta.1.apk"
+          ls -lh dist/iPlus-Keyboard-v0.1.0-beta.1.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iplus-keyboard-universal-apk
+          path: dist/iPlus-Keyboard-v0.1.0-beta.1.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish direct APK download on GitHub Releases
+        if: github.event_name == 'push' && github.ref == 'refs/heads/work/iplus-keyboard-implementation'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.0-beta.1
+          target_commitish: ${{ github.sha }}
+          name: iPlus Keyboard v0.1.0 Beta 1
+          body: |
+            First public beta build of iPlus Keyboard.
+
+            - Universal Android APK (supports ARM and x86 device architectures)
+            - Debug-signed test build
+            - Some features still require device testing; please report issues before relying on it as a stable release.
+          files: dist/iPlus-Keyboard-v0.1.0-beta.1.apk
+          prerelease: true
+          make_latest: false

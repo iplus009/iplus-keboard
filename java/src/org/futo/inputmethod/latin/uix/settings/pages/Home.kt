@@ -160,8 +160,8 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
     val isProbhatActive = currentSubtypes.contains(probhatSubtype)
 
     fun toggleSubtype(subtypeStr: String, enabled: Boolean) {
-        if (enabled && currentSubtypes.size >= 3) {
-            Toast.makeText(context, "Maximum 3 keyboards can be selected at a time", Toast.LENGTH_SHORT).show()
+        if (enabled && currentSubtypes.size >= Subtypes.MAX_ACTIVE_KEYBOARDS) {
+            Toast.makeText(context, "Maximum 5 keyboards can be selected at a time", Toast.LENGTH_SHORT).show()
             return
         }
         val newSubtypes = if (enabled) {
@@ -176,18 +176,9 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
     }
 
     LaunchedEffect(Unit) {
+        // Keep initial setup local. Online update checks are available only
+        // when the user explicitly requests them from the settings screen.
         Subtypes.addDefaultSubtypesIfNecessary(context)
-
-        // Check for updates in background
-        val result = UpdateChecker.checkForUpdate()
-        val update = result.getOrNull()
-        if (update != null && update.isUpdateAvailable) {
-            availableUpdate = update
-            showUpdateSheet = true
-        }
-
-        // Check for announcements in background
-        announcementManager.checkForAnnouncements(coroutineScope, forceShow = false)
     }
 
     Column(
@@ -204,7 +195,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Header: ORBIT BOARD & Version Tag
+            // Header: iPlus Keyboard & Version Tag
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -214,7 +205,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
             ) {
                 Column {
                     Text(
-                        "ORBIT BOARD",
+                        "iPlus Keyboard",
                         fontFamily = Doto,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
@@ -222,7 +213,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
                         color = Color.White
                     )
                     Text(
-                        "Crafted for Nothing OS",
+                        "Bangla & English Keyboard",
                         fontFamily = Inter,
                         fontSize = 12.sp,
                         color = TextSecondary
@@ -292,7 +283,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
             Spacer(modifier = Modifier.height(14.dp))
 
             // 2. BENGALI KEYBOARD LAYOUTS
-            SectionHeader(title = "Bengali Layouts (Max 3 Active)", modifier = Modifier.padding(horizontal = 16.dp))
+            SectionHeader(title = "Bengali Layouts (4 layouts available)", modifier = Modifier.padding(horizontal = 16.dp))
             NeuCard(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -472,16 +463,16 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
                                     } else {
                                         Toast.makeText(
                                             context,
-                                            "Orbit Board is up to date (v${BuildConfig.VERSION_NAME})",
+                                            "iPlus Keyboard is up to date (v${BuildConfig.VERSION_NAME})",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
                                 },
-                                onFailure = {
+                                onFailure = { error ->
                                     Toast.makeText(
                                         context,
-                                        "Orbit Board is up to date (v${BuildConfig.VERSION_NAME})",
-                                        Toast.LENGTH_SHORT
+                                        error.message?.let { "Update check failed: $it" } ?: "Couldn't check for updates. Check your internet connection.",
+                                        Toast.LENGTH_LONG
                                     ).show()
                                 }
                             )
@@ -559,7 +550,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
             Spacer(modifier = Modifier.height(14.dp))
 
             // 5. ABOUT DEVELOPER
-            SectionHeader(title = "About Developer", modifier = Modifier.padding(horizontal = 16.dp))
+            SectionHeader(title = "About iPlus", modifier = Modifier.padding(horizontal = 16.dp))
             DeveloperDetailsCard(modifier = Modifier.padding(horizontal = 16.dp))
 
             Spacer(modifier = Modifier.height(24.dp))
