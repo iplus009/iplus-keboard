@@ -3,10 +3,38 @@
     android:height="108dp"
     android:viewportWidth="512"
     android:viewportHeight="512">
-    <path android:pathData="M110,150 C110,133 123,120 140,120 H372 C389,120 402,133 402,150 V362 C402,379 389,392 372,392 H140 C123,392 110,379 110,362 Z" android:fillColor="#00000000" android:strokeColor="#2878FF" android:strokeWidth="12" android:strokeLineJoin="round"/>
-    <path android:pathData="M180,150 m-25,0 a25,25 0,1 0,50 0 a25,25 0,1 0,-50 0" android:fillColor="#F5FAFF"/>
-    <path android:pathData="M154,205 H195 Q208,205 206,218 L192,330 H145 L158,218 Q159,205 154,205 Z" android:fillColor="#F5FAFF"/>
-    <path android:pathData="M290,190 H330 V235 H375 V275 H330 V320 H290 V275 H245 V235 H290 Z" android:fillColor="#27C9FF"/>
-    <path android:pathData="M95,370 H165 V405 H95 Z M175,370 H245 V405 H175 Z M255,370 H325 V405 H255 Z M335,370 H405 V405 H335 Z" android:fillColor="#173C83" android:strokeColor="#398CFF" android:strokeWidth="5"/>
-    <path android:pathData="M145,416 H355 V444 H145 Z" android:fillColor="#173C83" android:strokeColor="#27C9FF" android:strokeWidth="5"/>
+    <!-- Minimal Keyboard Frame -->
+    <path
+        android:pathData="M132,96 H380 A36,36 0 0,1 416,132 V380 A36,36 0 0,1 380,416 H132 A36,36 0 0,1 96,380 V132 A36,36 0 0,1 132,96 Z"
+        android:fillColor="#0B1120"
+        android:strokeColor="#334155"
+        android:strokeWidth="6" />
+    <!-- Crisp "i" dot -->
+    <path
+        android:pathData="M202,144 m-18,0 a18,18 0,1 0,36 0 a18,18 0,1 0,-36 0"
+        android:fillColor="#F8FAFC" />
+    <!-- Crisp "i" stem -->
+    <path
+        android:pathData="M196,178 H212 A12,12 0 0,1 224,190 V272 A12,12 0 0,1 212,284 H196 A12,12 0 0,1 184,272 V190 A12,12 0 0,1 196,178 Z"
+        android:fillColor="#F8FAFC" />
+    <!-- Crisp "+" vertical -->
+    <path
+        android:pathData="M294,172 H310 A10,10 0 0,1 320,182 V266 A10,10 0 0,1 310,276 H294 A10,10 0 0,1 284,266 V182 A10,10 0 0,1 294,172 Z"
+        android:fillColor="#38BDF8" />
+    <!-- Crisp "+" horizontal -->
+    <path
+        android:pathData="M260,206 H344 A10,10 0 0,1 354,216 V232 A10,10 0 0,1 344,242 H260 A10,10 0 0,1 250,232 V216 A10,10 0 0,1 260,206 Z"
+        android:fillColor="#38BDF8" />
+    <!-- Minimal Keyboard Keycap Row -->
+    <path
+        android:pathData="M126,310 H168 A6,6 0 0,1 174,316 V334 A6,6 0 0,1 168,340 H126 A6,6 0 0,1 120,334 V316 A6,6 0 0,1 126,310 Z M190,310 H232 A6,6 0 0,1 238,316 V334 A6,6 0 0,1 232,340 H190 A6,6 0 0,1 184,334 V316 A6,6 0 0,1 190,310 Z M254,310 H296 A6,6 0 0,1 302,316 V334 A6,6 0 0,1 296,340 H254 A6,6 0 0,1 248,334 V316 A6,6 0 0,1 254,310 Z M318,310 H360 A6,6 0 0,1 366,316 V334 A6,6 0 0,1 360,340 H318 A6,6 0 0,1 312,334 V316 A6,6 0 0,1 318,310 Z"
+        android:fillColor="#1E293B"
+        android:strokeColor="#334155"
+        android:strokeWidth="3" />
+    <!-- Minimal Spacebar -->
+    <path
+        android:pathData="M174,354 H338 A8,8 0 0,1 346,362 V372 A8,8 0 0,1 338,380 H174 A8,8 0 0,1 166,372 V362 A8,8 0 0,1 174,354 Z"
+        android:fillColor="#0F172A"
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="3.5" />
 </vector>

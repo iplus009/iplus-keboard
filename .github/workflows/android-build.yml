@@ -3,6 +3,7 @@ name: Android build
 on:
   push:
     branches:
+      - main
       - "work/**"
   pull_request:
     branches:

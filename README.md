@@ -1,13 +1,23 @@
 # iPlus Keyboard
 
 <p align="center">
-  <img src="docs/assets/iplus-logo.svg" alt="iPlus Keyboard logo" width="220" />
+  <img src="docs/assets/iplus-logo.svg" alt="iPlus Keyboard logo" width="200" />
 </p>
 
+<p align="center">
+  <a href="https://github.com/iplus009/iplus-keboard/releases/download/v0.1.0-beta.1/iPlus-Keyboard-v0.1.0-beta.1.apk">
+    <img src="https://img.shields.io/badge/Download%20APK-v0.1.0--beta.1-0EA5E9?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  </a>
+  <a href="https://github.com/iplus009/iplus-keboard/releases">
+    <img src="https://img.shields.io/badge/GitHub-Releases-1E293B?style=for-the-badge&logo=github" alt="GitHub Releases" />
+  </a>
+</p>
 
 **iPlus Keyboard** is an Android keyboard project focused on Bangla and English input, a customizable typing experience, and a cleaner iPlus-branded app interface. This repository develops the iPlus experience on top of the available open-source keyboard engine while preserving upstream licensing and attribution.
 
-> **Development status:** The current implementation branch has a successful GitHub Actions stable-debug build. The APK has not yet completed physical-device regression testing, so build success should not be interpreted as a full feature or release-readiness certification.
+> **Download:** Get the universal Android APK directly from **[Releases (v0.1.0-beta.1)](https://github.com/iplus009/iplus-keboard/releases/download/v0.1.0-beta.1/iPlus-Keyboard-v0.1.0-beta.1.apk)** or browse all builds on the **[Releases page](https://github.com/iplus009/iplus-keboard/releases)**.
+>
+> **Development status:** Beta APK builds are generated via GitHub Actions. Physical-device regression testing is ongoing.
 
 ## Project at a glance
 
