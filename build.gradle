@@ -51,8 +51,8 @@ android {
     defaultConfig {
         minSdk 24
         targetSdk 35
-        versionName "2.0.1"
-        versionCode 20001
+        versionName "2.0.2"
+        versionCode 20002
         setProperty("archivesBaseName", "iplus-kbd-v${versionName}")
 
         applicationId 'com.iplus.keyboard'
@@ -64,6 +64,9 @@ android {
     signingConfigs {
         debug {
             storeFile file("java/shared.keystore")
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
         }
     }
 

@@ -51,9 +51,9 @@ class CrashLoggingApplication : Application() {
                     mailTo = ""
                     reportAsFile = true
                     reportFileName = "Crash.txt"
-                    subject = "iPlus Keyboard Crash Report"
+                    subject = "iPlus Crash Report"
                     body =
-                        "I experienced this crash in iPlus Keyboard v${BuildConfig.VERSION_NAME}.\nPlease share Crash.txt at https://github.com/iplus009/iplus-keboard/issues\n\n(Enter details here if necessary)"
+                        "I experienced this crash in iPlus v${BuildConfig.VERSION_NAME}.\nPlease share Crash.txt at https://github.com/iplus009/iplus-keboard/issues\n\n(Enter details here if necessary)"
                 }
                 //}
             }

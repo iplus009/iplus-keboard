@@ -195,7 +195,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Header: iPlus Keyboard & Version Tag
+            // Header: iPlus Brand Mark, Title & Version Tag
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -203,21 +203,41 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
-                    Text(
-                        "iPlus Keyboard",
-                        fontFamily = Doto,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        letterSpacing = 1.sp,
-                        color = Color.White
-                    )
-                    Text(
-                        "Bangla & English Keyboard",
-                        fontFamily = Inter,
-                        fontSize = 12.sp,
-                        color = TextSecondary
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(13.dp))
+                            .background(Color(0xFF0D0D10))
+                            .border(1.dp, BorderColor, RoundedCornerShape(13.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                            contentDescription = "iPlus Logo",
+                            modifier = Modifier.size(38.dp),
+                            tint = Color.Unspecified
+                        )
+                    }
+                    Column {
+                        Text(
+                            "iPlus",
+                            fontFamily = Doto,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp,
+                            letterSpacing = 1.sp,
+                            color = Color.White
+                        )
+                        Text(
+                            "Bangla & English Keyboard",
+                            fontFamily = Inter,
+                            fontSize = 12.sp,
+                            color = TextSecondary
+                        )
+                    }
                 }
 
                 Box(
@@ -475,7 +495,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
                                     } else {
                                         Toast.makeText(
                                             context,
-                                            "iPlus Keyboard is up to date (v${BuildConfig.VERSION_NAME})",
+                                            "iPlus is up to date (v${BuildConfig.VERSION_NAME})",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }

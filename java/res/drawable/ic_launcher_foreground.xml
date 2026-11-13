@@ -3,38 +3,20 @@
     android:height="108dp"
     android:viewportWidth="512"
     android:viewportHeight="512">
-    <!-- Minimal Keyboard Frame -->
+    <!-- Crisp "i" dot (centered optically within adaptive safe zone) -->
     <path
-        android:pathData="M132,96 H380 A36,36 0 0,1 416,132 V380 A36,36 0 0,1 380,416 H132 A36,36 0 0,1 96,380 V132 A36,36 0 0,1 132,96 Z"
-        android:fillColor="#0B1120"
-        android:strokeColor="#334155"
-        android:strokeWidth="6" />
-    <!-- Crisp "i" dot -->
+        android:pathData="M178,161 a22,22 0 1,0 0,44 a22,22 0 1,0 0,-44 Z"
+        android:fillColor="#FAFAFC" />
+    <!-- Crisp "i" pill stem -->
     <path
-        android:pathData="M202,144 m-18,0 a18,18 0,1 0,36 0 a18,18 0,1 0,-36 0"
-        android:fillColor="#F8FAFC" />
-    <!-- Crisp "i" stem -->
+        android:pathData="M178,229 A20,20 0 0,1 198,249 V331 A20,20 0 0,1 178,351 A20,20 0 0,1 158,331 V249 A20,20 0 0,1 178,229 Z"
+        android:fillColor="#FAFAFC" />
+    <!-- Nothing Red "+" vertical bar -->
     <path
-        android:pathData="M196,178 H212 A12,12 0 0,1 224,190 V272 A12,12 0 0,1 212,284 H196 A12,12 0 0,1 184,272 V190 A12,12 0 0,1 196,178 Z"
-        android:fillColor="#F8FAFC" />
-    <!-- Crisp "+" vertical -->
+        android:pathData="M294,194 H302 A14,14 0 0,1 316,208 V304 A14,14 0 0,1 302,318 H294 A14,14 0 0,1 280,304 V208 A14,14 0 0,1 294,194 Z"
+        android:fillColor="#E51923" />
+    <!-- Nothing Red "+" horizontal bar -->
     <path
-        android:pathData="M294,172 H310 A10,10 0 0,1 320,182 V266 A10,10 0 0,1 310,276 H294 A10,10 0 0,1 284,266 V182 A10,10 0 0,1 294,172 Z"
-        android:fillColor="#38BDF8" />
-    <!-- Crisp "+" horizontal -->
-    <path
-        android:pathData="M260,206 H344 A10,10 0 0,1 354,216 V232 A10,10 0 0,1 344,242 H260 A10,10 0 0,1 250,232 V216 A10,10 0 0,1 260,206 Z"
-        android:fillColor="#38BDF8" />
-    <!-- Minimal Keyboard Keycap Row -->
-    <path
-        android:pathData="M126,310 H168 A6,6 0 0,1 174,316 V334 A6,6 0 0,1 168,340 H126 A6,6 0 0,1 120,334 V316 A6,6 0 0,1 126,310 Z M190,310 H232 A6,6 0 0,1 238,316 V334 A6,6 0 0,1 232,340 H190 A6,6 0 0,1 184,334 V316 A6,6 0 0,1 190,310 Z M254,310 H296 A6,6 0 0,1 302,316 V334 A6,6 0 0,1 296,340 H254 A6,6 0 0,1 248,334 V316 A6,6 0 0,1 254,310 Z M318,310 H360 A6,6 0 0,1 366,316 V334 A6,6 0 0,1 360,340 H318 A6,6 0 0,1 312,334 V316 A6,6 0 0,1 318,310 Z"
-        android:fillColor="#1E293B"
-        android:strokeColor="#334155"
-        android:strokeWidth="3" />
-    <!-- Minimal Spacebar -->
-    <path
-        android:pathData="M174,354 H338 A8,8 0 0,1 346,362 V372 A8,8 0 0,1 338,380 H174 A8,8 0 0,1 166,372 V362 A8,8 0 0,1 174,354 Z"
-        android:fillColor="#0F172A"
-        android:strokeColor="#38BDF8"
-        android:strokeWidth="3.5" />
+        android:pathData="M250,238 H346 A14,14 0 0,1 360,252 V260 A14,14 0 0,1 346,274 H250 A14,14 0 0,1 236,260 V252 A14,14 0 0,1 250,238 Z"
+        android:fillColor="#E51923" />
 </vector>

@@ -208,8 +208,8 @@
     <string name="user_dict_settings_more_languages" msgid="4436784162689712198">"আরও ভাষা..."</string>
     <string name="user_dict_settings_delete" msgid="7688033506773806537">"মুছুন"</string>
     <string name="user_dict_fast_scroll_alphabet" msgid="6814045626833403178">" ABCDEFGHIJKLMNOPQRSTUVWXYZ"</string>
-    <string name="english_ime_name">iPlus Keyboard</string>
-    <string name="english_ime_settings">iPlus Keyboard &#x09B8;&#x09C7;&#x099F;&#x09BF;&#x0982;&#x09B8;</string>
+    <string name="english_ime_name">iPlus</string>
+    <string name="english_ime_settings">iPlus &#x09B8;&#x09C7;&#x099F;&#x09BF;&#x0982;&#x09B8;</string>
     <string name="layout_bengali_avro">Avro (&#x0985;&#x09AD;&#x09CD;&#x09B0;)</string>
     <string name="layout_bengali_jatiyo">Jatiyo (&#x099C;&#x09BE;&#x09A4;&#x09C0;&#x09DF;)</string>
     <string name="layout_bengali_probhat">Probhat (&#x09AA;&#x09CD;&#x09B0;&#x09AD;&#x09BE;&#x09A4;)</string>

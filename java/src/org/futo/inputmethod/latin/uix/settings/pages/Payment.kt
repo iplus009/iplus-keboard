@@ -442,7 +442,7 @@ fun PaymentScreen(
 
         val context = LocalContext.current
 
-        PaymentSurface(isPrimary = true, title = "Pay for iPlus Keyboard") {
+        PaymentSurface(isPrimary = true, title = "Pay for iPlus") {
             PaymentText(true)
 
             Button(
@@ -468,7 +468,7 @@ fun PaymentScreen(
         }
 
         PaymentSurface(isPrimary = false, title = "Already paid?") {
-            ParagraphText(it = "If you already paid for iPlus Keyboard or iPlus Voice Input, tap below.")
+            ParagraphText(it = "If you already paid for iPlus or iPlus Voice Input, tap below.")
             Button(
                 onClick = {
                     counter.intValue += 1
@@ -539,7 +539,7 @@ fun PaymentScreen(
             }
         }
 
-        NavigationItem(title = "Help", subtitle = "Need help? Visit iPlus Keyboard on GitHub", style = NavigationItemStyle.Misc, navigate = {
+        NavigationItem(title = "Help", subtitle = "Need help? Visit iPlus on GitHub", style = NavigationItemStyle.Misc, navigate = {
             context.openURI("https://github.com/iplus009/iplus-keboard")
         })
     }

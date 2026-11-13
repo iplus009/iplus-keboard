@@ -31,7 +31,7 @@ fun DeveloperDetailsCard(modifier: Modifier = Modifier) {
                     color = Color.White
                 )
                 Text(
-                    text = "Official iPlus Keyboard project channel",
+                    text = "Official iPlus keyboard project channel",
                     fontFamily = Inter,
                     fontSize = 12.sp,
                     color = Color(0xFF8E8E93)

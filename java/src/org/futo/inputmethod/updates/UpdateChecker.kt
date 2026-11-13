@@ -88,7 +88,7 @@ object UpdateChecker {
             } else {
                 json.optString("releaseNotes", "Bug fixes and performance improvements.")
             }
-            val title = json.optString("title", "iPlus Keyboard v$latestVer (Stable)")
+            val title = json.optString("title", "iPlus v$latestVer (Stable)")
             val isAvailable = isNewerVersion(remote = latestVer, current = currentVersion)
             AppUpdate(
                 versionName = latestVer,
@@ -100,6 +100,23 @@ object UpdateChecker {
         } finally {
             conn.disconnect()
         }
+    }
+
+    private fun isMatchingApkAsset(assetName: String): Boolean {
+        val lower = assetName.lowercase()
+        return lower.endsWith(".apk") && (
+            lower.contains("iplus-keyboard") ||
+                lower.contains("ipluskeyboard") ||
+                lower.contains("iplus_keyboard") ||
+                lower.contains("iplus-kbd") ||
+                lower.contains("iplus")
+            )
+    }
+
+    private fun isMatchingReleaseMetadata(tag: String, title: String): Boolean {
+        val lowerTag = tag.lowercase()
+        val lowerTitle = title.lowercase()
+        return lowerTitle.contains("iplus") || lowerTag.contains("iplus") || lowerTag.startsWith("v")
     }
 
     private fun fetchFromReleasesApi(urlString: String, currentVersion: String): AppUpdate? {
@@ -121,22 +138,20 @@ object UpdateChecker {
                 var matchedObj: JSONObject? = null
                 for (i in 0 until array.length()) {
                     val rel = array.optJSONObject(i) ?: continue
-                    val tag = rel.optString("tag_name", "").lowercase()
-                    val relTitle = rel.optString("name", "").lowercase()
+                    val tag = rel.optString("tag_name", "")
+                    val relTitle = rel.optString("name", "")
                     val assets = rel.optJSONArray("assets")
                     var hasKbdApk = false
                     if (assets != null) {
                         for (j in 0 until assets.length()) {
-                            val assetName = assets.optJSONObject(j)?.optString("name", "")?.lowercase() ?: ""
-                            if ((assetName.contains("iplus-keyboard") || assetName.contains("ipluskeyboard") ||
-                                assetName.contains("iplus_keyboard") || assetName.contains("iplus-keyboard")) && assetName.endsWith(".apk")) {
+                            val assetName = assets.optJSONObject(j)?.optString("name", "") ?: ""
+                            if (isMatchingApkAsset(assetName)) {
                                 hasKbdApk = true
                                 break
                             }
                         }
                     }
-                    if (hasKbdApk || relTitle.contains("iplus-keyboard") || relTitle.contains("iplus keyboard") ||
-                        relTitle.contains("ipluskeyboard") || tag.contains("iplus-keyboard") || tag.contains("ipluskeyboard")) {
+                    if (hasKbdApk || isMatchingReleaseMetadata(tag, relTitle)) {
                         matchedObj = rel
                         break
                     }
@@ -145,10 +160,9 @@ object UpdateChecker {
                 matchedObj ?: return null
             } else {
                 val singleObj = JSONObject(responseBody)
-                val relTitle = singleObj.optString("name", "").lowercase()
-                val tag = singleObj.optString("tag_name", "").lowercase()
-                if (relTitle.contains("iplus-keyboard") || relTitle.contains("iplus keyboard") ||
-                    relTitle.contains("ipluskeyboard") || tag.contains("iplus-keyboard") || tag.contains("ipluskeyboard")) {
+                val relTitle = singleObj.optString("name", "")
+                val tag = singleObj.optString("tag_name", "")
+                if (isMatchingReleaseMetadata(tag, relTitle)) {
                     singleObj
                 } else {
                     return null
@@ -169,11 +183,8 @@ object UpdateChecker {
                 for (i in 0 until assets.length()) {
                     val asset = assets.optJSONObject(i)
                     val assetName = asset?.optString("name", "") ?: ""
-                    if ((assetName.contains("iplus-keyboard", ignoreCase = true) ||
-                         assetName.contains("ipluskeyboard", ignoreCase = true) ||
-                         assetName.contains("iplus-keyboard", ignoreCase = true)) &&
-                        assetName.endsWith(".apk", ignoreCase = true)) {
-                        val apkUrl = asset.optString("browser_download_url", "")
+                    if (isMatchingApkAsset(assetName)) {
+                        val apkUrl = asset?.optString("browser_download_url", "") ?: ""
                         if (apkUrl.isNotBlank()) {
                             downloadUrl = apkUrl
                             break

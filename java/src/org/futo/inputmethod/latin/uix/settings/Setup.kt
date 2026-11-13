@@ -10,6 +10,8 @@ import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +19,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -29,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -48,16 +53,24 @@ fun SetupContainer(inner: @Composable () -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.75f)
+                .weight(0.75f),
+            contentAlignment = Alignment.Center
         ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                contentDescription = null,
+            Box(
                 modifier = Modifier
-                    .matchParentSize()
-                    .align(Alignment.Center),
-                tint = Color.Unspecified
-            )
+                    .size(124.dp)
+                    .clip(RoundedCornerShape(32.dp))
+                    .background(Color(0xFF0D0D10))
+                    .border(1.dp, Color(0xFF26262B), RoundedCornerShape(32.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                    contentDescription = "iPlus Logo",
+                    modifier = Modifier.size(104.dp),
+                    tint = Color.Unspecified
+                )
+            }
         }
 
         Row(
@@ -117,7 +130,7 @@ fun SetupEnableIME() {
             Step(fraction = 1.0f/2.0f, text = "Setup - Step 1 of 2")
 
             Text(
-                "Welcome to iPlus Keyboard!\n\nFirst, enable iPlus Keyboard as an input method.",
+                "Welcome to iPlus!\n\nFirst, enable iPlus as an input method.",
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -157,7 +170,7 @@ fun SetupChangeDefaultIME(doublePackage: Boolean = true) {
             Step(fraction = 2.0f/2.0f, text = "Setup - Step 2 of 2")
 
             Text(
-                "Please select iPlus Keyboard as your active input method.",
+                "Please select iPlus as your active input method.",
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -232,7 +245,7 @@ fun SetupEnableMic(onClick: () -> Unit = { }) {
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                Text("iPlus Keyboard (needs mic permission)")
+                Text("iPlus (needs mic permission)")
             }
 
             Button(
