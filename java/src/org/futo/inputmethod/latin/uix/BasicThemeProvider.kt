@@ -321,15 +321,11 @@ class BasicThemeProvider(
             else -> null
         }
         OrbitThemeHelper.customSpacebarColor = customSpaceColor
-        keyboardTypeface = if (isOrbitTheme) {
-            ResourcesCompat.getFont(context, R.font.ndot_family) ?: Typeface.DEFAULT
-        } else {
-            when (keyboardFont) {
-                "normal" -> Typeface.DEFAULT
-                "doto" -> ResourcesCompat.getFont(context, R.font.doto) ?: Typeface.DEFAULT
-                "inter" -> ResourcesCompat.getFont(context, R.font.inter) ?: Typeface.DEFAULT
-                else -> ResourcesCompat.getFont(context, R.font.ndot_family) ?: Typeface.DEFAULT
-            }
+        keyboardTypeface = when (keyboardFont) {
+            "normal" -> Typeface.DEFAULT
+            "doto" -> ResourcesCompat.getFont(context, R.font.doto) ?: Typeface.DEFAULT
+            "inter" -> ResourcesCompat.getFont(context, R.font.inter) ?: Typeface.DEFAULT
+            else -> ResourcesCompat.getFont(context, R.font.ndot_family) ?: Typeface.DEFAULT
         }
 
         val primary = colorScheme.primary.toArgb()
