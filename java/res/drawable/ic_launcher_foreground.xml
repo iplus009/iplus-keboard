@@ -3,16 +3,10 @@
     android:height="108dp"
     android:viewportWidth="512"
     android:viewportHeight="512">
-    <path
-        android:pathData="M110,150 C110,133 123,120 140,120 H372 C389,120 402,133 402,150 V362 C402,379 389,392 372,392 H140 C123,392 110,379 110,362 Z"
-        android:fillColor="#00000000"
-        android:strokeColor="#F4F7FB"
-        android:strokeWidth="18"
-        android:strokeLineJoin="round"/>
-    <path android:pathData="M150,180 H205 C213,180 220,187 220,195 V225 C220,233 213,240 205,240 H150 C142,240 135,233 135,225 V195 C135,187 142,180 150,180 Z" android:fillColor="#F4F7FB"/>
-    <path android:pathData="M248,180 H303 C311,180 318,187 318,195 V225 C318,233 311,240 303,240 H248 C240,240 233,233 233,225 V195 C233,187 240,180 248,180 Z" android:fillColor="#F4F7FB"/>
-    <path android:pathData="M346,180 H362 C370,180 377,187 377,195 V225 C377,233 370,240 362,240 H346 C338,240 331,233 331,225 V195 C331,187 338,180 346,180 Z" android:fillColor="#67E8F9"/>
-    <path android:pathData="M150,270 H185 C193,270 200,277 200,285 V315 C200,323 193,330 185,330 H150 C142,330 135,323 135,315 V285 C135,277 142,270 150,270 Z" android:fillColor="#F4F7FB"/>
-    <path android:pathData="M228,270 H283 C291,270 298,277 298,285 V315 C298,323 291,330 283,330 H228 C220,330 213,323 213,315 V285 C213,277 220,270 228,270 Z" android:fillColor="#F4F7FB"/>
-    <path android:pathData="M311,270 H362 C370,270 377,277 377,285 V315 C377,323 370,330 362,330 H311 C303,330 296,323 296,315 V285 C296,277 303,270 311,270 Z" android:fillColor="#F4F7FB"/>
+    <path android:pathData="M110,150 C110,133 123,120 140,120 H372 C389,120 402,133 402,150 V362 C402,379 389,392 372,392 H140 C123,392 110,379 110,362 Z" android:fillColor="#00000000" android:strokeColor="#2878FF" android:strokeWidth="12" android:strokeLineJoin="round"/>
+    <path android:pathData="M180,150 m-25,0 a25,25 0,1 0,50 0 a25,25 0,1 0,-50 0" android:fillColor="#F5FAFF"/>
+    <path android:pathData="M154,205 H195 Q208,205 206,218 L192,330 H145 L158,218 Q159,205 154,205 Z" android:fillColor="#F5FAFF"/>
+    <path android:pathData="M290,190 H330 V235 H375 V275 H330 V320 H290 V275 H245 V235 H290 Z" android:fillColor="#27C9FF"/>
+    <path android:pathData="M95,370 H165 V405 H95 Z M175,370 H245 V405 H175 Z M255,370 H325 V405 H255 Z M335,370 H405 V405 H335 Z" android:fillColor="#173C83" android:strokeColor="#398CFF" android:strokeWidth="5"/>
+    <path android:pathData="M145,416 H355 V444 H145 Z" android:fillColor="#173C83" android:strokeColor="#27C9FF" android:strokeWidth="5"/>
 </vector>
