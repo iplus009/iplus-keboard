@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="crashed_text_email">Orbit Board has crashed! Please send a report to help us fix this.</string>
-    <string name="crashed_text">Orbit Board has crashed! Please send a report to help us fix this.</string>
+    <string name="crashed_text_email">iPlus Keyboard has crashed! Please send a report to help us fix this.</string>
+    <string name="crashed_text">iPlus Keyboard has crashed! Please send a report to help us fix this.</string>
     <string name="crashed_title">Crash Reporter</string>
 
     <string name="crash_report_accept">Send Report</string>
