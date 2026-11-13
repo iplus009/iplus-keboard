@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: android-build-${{ github.ref }}
@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   stable-debug:
-    name: Build stable debug APK
+    name: Build iPlus Keyboard APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -46,11 +46,34 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --no-daemon assembleStableDebug
 
-      - name: Upload APK
-        if: success()
+      - name: Prepare universal APK for direct download
+        run: |
+          mkdir -p dist
+          APK="build/outputs/apk/stable/debug/nth-kbd-stable-universal-debug.apk"
+          test -f "$APK"
+          cp "$APK" "dist/iPlus-Keyboard-v0.1.0-beta.1.apk"
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: iplus-keyboard-stable-debug
-          path: build/outputs/apk/stable/debug/*.apk
+          name: iplus-keyboard-universal-apk
+          path: dist/iPlus-Keyboard-v0.1.0-beta.1.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish direct APK download on GitHub Releases
+        if: github.event_name == 'push' && github.ref == 'refs/heads/work/iplus-keyboard-implementation'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.0-beta.1
+          target_commitish: ${{ github.sha }}
+          name: iPlus Keyboard v0.1.0 Beta 1
+          body: |
+            First public beta build of iPlus Keyboard.
+
+            - Universal Android APK (supports ARM and x86 device architectures)
+            - Debug-signed test build
+            - Some features still require device testing; please report issues before relying on it as a stable release.
+          files: dist/iPlus-Keyboard-v0.1.0-beta.1.apk
+          prerelease: true
+          make_latest: false
