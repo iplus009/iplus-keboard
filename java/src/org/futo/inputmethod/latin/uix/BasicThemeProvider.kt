@@ -322,9 +322,16 @@ class BasicThemeProvider(
         }
         OrbitThemeHelper.customSpacebarColor = customSpaceColor
         keyboardTypeface = when (keyboardFont) {
-            "normal" -> Typeface.DEFAULT
-            "doto" -> ResourcesCompat.getFont(context, R.font.doto) ?: Typeface.DEFAULT
-            "inter" -> ResourcesCompat.getFont(context, R.font.inter) ?: Typeface.DEFAULT
+            "normal", "clean" -> Typeface.create("sans-serif", Typeface.NORMAL)
+            "doto", "pixel" -> ResourcesCompat.getFont(context, R.font.doto) ?: Typeface.DEFAULT
+            "inter", "rounded" -> if (keyboardFont == "rounded") Typeface.create("sans-serif-rounded", Typeface.NORMAL) else ResourcesCompat.getFont(context, R.font.inter) ?: Typeface.DEFAULT
+            "tech_mono" -> Typeface.create("monospace", Typeface.NORMAL)
+            "elegant" -> Typeface.create("serif", Typeface.NORMAL)
+            "bold" -> Typeface.create("sans-serif-black", Typeface.NORMAL)
+            "anime" -> Typeface.create("casual", Typeface.BOLD)
+            "manga" -> Typeface.create("sans-serif-condensed", Typeface.BOLD)
+            "cyberpunk" -> Typeface.create("sans-serif", Typeface.BOLD)
+            "gothic" -> Typeface.create("serif", Typeface.BOLD)
             else -> ResourcesCompat.getFont(context, R.font.ndot_family) ?: Typeface.DEFAULT
         }
 
