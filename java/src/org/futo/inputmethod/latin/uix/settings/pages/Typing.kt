@@ -509,6 +509,17 @@ fun TypingScreen(navController: NavHostController = rememberNavController()) {
             icon = painterResource(id = R.drawable.maximize)
         )
 
+        SettingToggleSharedPrefs(
+            title = stringResource(R.string.enable_split_keyboard),
+            subtitle = "Split the keyboard into left and right halves for wider screens",
+            key = Settings.PREF_ENABLE_SPLIT_KEYBOARD,
+            default = false,
+            icon = {
+                Icon(painterResource(id = R.drawable.keyboard), contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f))
+            }
+        )
+
         ScreenTitle(title = "Keyboard Rows")
 
         SettingToggleDataStore(

@@ -241,9 +241,14 @@ object OrbitThemeHelper {
 
     // Cached drawables for smooth 120Hz rendering
     private val drawableCache = HashMap<Int, GradientDrawable>()
+    private var cachedCornerRadius: Float = -1f
 
     @Synchronized
     fun getDrawableForColor(color: Int, cornerRadius: Float): Drawable {
+        if (cachedCornerRadius != cornerRadius) {
+            drawableCache.clear()
+            cachedCornerRadius = cornerRadius
+        }
         val existing = drawableCache[color]
         if (existing != null) {
             return existing

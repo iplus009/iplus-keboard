@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/iplus009/iplus-keboard/releases/download/v0.1.0-beta.1/iPlus-Keyboard-v0.1.0-beta.1.apk">
-    <img src="https://img.shields.io/badge/Download%20APK-v0.1.0--beta.1-0EA5E9?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  <a href="https://github.com/iplus009/iplus-keboard/releases/latest">
+    <img src="https://img.shields.io/badge/Download%20APK-v1.1.0-0EA5E9?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
   </a>
   <a href="https://github.com/iplus009/iplus-keboard/releases">
     <img src="https://img.shields.io/badge/GitHub-Releases-1E293B?style=for-the-badge&logo=github" alt="GitHub Releases" />
@@ -15,9 +15,9 @@
 
 **iPlus Keyboard** is an Android keyboard project focused on Bangla and English input, a customizable typing experience, and a cleaner iPlus-branded app interface. This repository develops the iPlus experience on top of the available open-source keyboard engine while preserving upstream licensing and attribution.
 
-> **Download:** Get the universal Android APK directly from **[Releases (v0.1.0-beta.1)](https://github.com/iplus009/iplus-keboard/releases/download/v0.1.0-beta.1/iPlus-Keyboard-v0.1.0-beta.1.apk)** or browse all builds on the **[Releases page](https://github.com/iplus009/iplus-keboard/releases)**.
+> **Download:** Get the latest universal Android APK from **[Releases (v1.1.0 / Latest)](https://github.com/iplus009/iplus-keboard/releases/latest)** or browse all builds on the **[Releases page](https://github.com/iplus009/iplus-keboard/releases)**.
 >
-> **Development status:** Beta APK builds are generated via GitHub Actions. Physical-device regression testing is ongoing.
+> **Development status:** Universal APK builds are generated via GitHub Actions. Physical-device regression testing is ongoing.
 
 ## Project at a glance
 
@@ -25,8 +25,9 @@
 |---|---|
 | Platform | Android |
 | App name | iPlus Keyboard |
+| Version | `v1.1.0` |
 | Main input focus | Bangla and English |
-| Source branch | `work/iplus-keyboard-implementation` |
+| Source branch | `main` |
 | Application ID | Existing upstream ID retained for update compatibility |
 | Build channel | GitHub Actions — stable debug APK |
 | Official Telegram | [@ismailq01appsstore](https://t.me/ismailq01appsstore) |

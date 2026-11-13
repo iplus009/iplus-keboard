@@ -13,6 +13,7 @@ import org.futo.inputmethod.latin.uix.ErrorDialog
 import org.futo.inputmethod.latin.uix.InfoDialog
 import org.futo.inputmethod.latin.uix.settings.pages.AdvancedParametersScreen
 import org.futo.inputmethod.latin.uix.settings.pages.BlacklistScreen
+import org.futo.inputmethod.latin.uix.settings.pages.CreditsScreen
 import org.futo.inputmethod.latin.uix.settings.pages.DevEditTextVariationsScreen
 import org.futo.inputmethod.latin.uix.settings.pages.DeveloperScreen
 import org.futo.inputmethod.latin.uix.settings.pages.HelpScreen
@@ -20,6 +21,7 @@ import org.futo.inputmethod.latin.uix.settings.pages.HomeScreen
 import org.futo.inputmethod.latin.uix.settings.pages.LanguagesScreen
 import org.futo.inputmethod.latin.uix.settings.pages.PredictiveTextScreen
 import org.futo.inputmethod.latin.uix.settings.pages.ThemeScreen
+import org.futo.inputmethod.latin.uix.settings.pages.VoiceInputScreen
 import org.futo.inputmethod.latin.uix.settings.pages.addTypingNavigation
 import org.futo.inputmethod.latin.uix.urlDecode
 import org.futo.inputmethod.latin.uix.urlEncode
@@ -51,6 +53,8 @@ fun SettingsNavigator(
         addTypingNavigation(navController)
 
         composable("themes") { ThemeScreen(navController) }
+        composable("voiceInput") { VoiceInputScreen(navController) }
+        composable("credits") { CreditsScreen(navController) }
         composable("help") { HelpScreen(navController) }
         composable("developer") { DeveloperScreen(navController) }
         composable("devtextedit") { DevEditTextVariationsScreen(navController) }

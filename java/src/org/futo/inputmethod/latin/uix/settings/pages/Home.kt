@@ -277,6 +277,18 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
                     navigate = { navController.navigate("predictiveText") },
                     icon = painterResource(id = R.drawable.text_prediction)
                 )
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(DividerColor)
+                )
+                NavigationItem(
+                    title = "Voice Input",
+                    style = NavigationItemStyle.HomePrimary,
+                    navigate = { navController.navigate("voiceInput") },
+                    icon = painterResource(id = R.drawable.mic)
+                )
 
             }
 
@@ -552,6 +564,34 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
             // 5. ABOUT DEVELOPER
             SectionHeader(title = "About iPlus", modifier = Modifier.padding(horizontal = 16.dp))
             DeveloperDetailsCard(modifier = Modifier.padding(horizontal = 16.dp))
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            NeuCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                contentPadding = 4.dp
+            ) {
+                NavigationItem(
+                    title = "Help & Feedback",
+                    style = NavigationItemStyle.HomeSecondary,
+                    navigate = { navController.navigate("help") },
+                    icon = painterResource(id = R.drawable.help_circle)
+                )
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(DividerColor)
+                )
+                NavigationItem(
+                    title = "Credits & Licenses",
+                    style = NavigationItemStyle.HomeTertiary,
+                    navigate = { navController.navigate("credits") },
+                    icon = painterResource(id = R.drawable.file_text)
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
         }

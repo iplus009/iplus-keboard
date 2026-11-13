@@ -1140,7 +1140,10 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         }
         if (mKeyboard.mId.mSubtype != null) {
             final String layoutName = mKeyboard.mId.mSubtype.getKeyboardLayoutSetName();
-            if ("bengali_avro".equalsIgnoreCase(layoutName)) {
+            if ("bengali_avro".equalsIgnoreCase(layoutName)
+                    || "bengali_jatiyo".equalsIgnoreCase(layoutName)
+                    || "bengali_probhat".equalsIgnoreCase(layoutName)
+                    || "bengali_akkhor".equalsIgnoreCase(layoutName)) {
                 return true;
             }
         }

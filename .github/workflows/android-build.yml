@@ -58,30 +58,30 @@ jobs:
             echo "Universal APK not found; refusing to publish an ABI-specific build as universal."
             exit 1
           fi
-          cp "$APK" "dist/iPlus-Keyboard-v0.1.0-beta.1.apk"
-          ls -lh dist/iPlus-Keyboard-v0.1.0-beta.1.apk
+          cp "$APK" "dist/iPlus-Keyboard-v1.1.0.apk"
+          ls -lh dist/iPlus-Keyboard-v1.1.0.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: iplus-keyboard-universal-apk
-          path: dist/iPlus-Keyboard-v0.1.0-beta.1.apk
+          path: dist/iPlus-Keyboard-v1.1.0.apk
           if-no-files-found: error
           retention-days: 14
 
       - name: Publish direct APK download on GitHub Releases
-        if: github.event_name == 'push' && github.ref == 'refs/heads/work/iplus-keyboard-implementation'
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/work/iplus-keyboard-implementation')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.0-beta.1
+          tag_name: v1.1.0
           target_commitish: ${{ github.sha }}
-          name: iPlus Keyboard v0.1.0 Beta 1
+          name: iPlus Keyboard v1.1.0
           body: |
-            First public beta build of iPlus Keyboard.
+            iPlus Keyboard v1.1.0 build.
 
             - Universal Android APK (supports ARM and x86 device architectures)
-            - Debug-signed test build
-            - Some features still require device testing; please report issues before relying on it as a stable release.
-          files: dist/iPlus-Keyboard-v0.1.0-beta.1.apk
-          prerelease: true
-          make_latest: false
+            - Includes Avro dictionary suggestions, Split Keyboard toggle, Theme Studio upgrades (Remove photo, Key Shape, Photo Contrast), and wired settings navigation
+            - Debug-signed build
+          files: dist/iPlus-Keyboard-v1.1.0.apk
+          prerelease: false
+          make_latest: true

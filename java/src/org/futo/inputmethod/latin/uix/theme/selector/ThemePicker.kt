@@ -1,13 +1,21 @@
 package org.futo.inputmethod.latin.uix.theme.selector
 
+import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
+import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,12 +42,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -49,9 +63,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundUriSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundDimSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundBlurSetting
+import org.futo.inputmethod.latin.uix.CustomPhotoTextContrastSetting
 import org.futo.inputmethod.latin.uix.SavedCustomPhotoThemesSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundZoomSetting
 import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundXSetting
@@ -59,6 +76,7 @@ import org.futo.inputmethod.latin.uix.CustomKeyboardBackgroundYSetting
 import org.futo.inputmethod.latin.uix.setSettingBlocking
 import org.futo.inputmethod.latin.uix.KeyBordersSetting
 import org.futo.inputmethod.latin.uix.KeyOpacitySetting
+import org.futo.inputmethod.latin.uix.KeyShapeSetting
 import org.futo.inputmethod.latin.uix.SpacebarColorSetting
 import org.futo.inputmethod.latin.uix.settings.SettingRadio
 import org.futo.inputmethod.latin.uix.KeyHintsSetting
@@ -68,7 +86,9 @@ import org.futo.inputmethod.latin.uix.THEME_KEY
 import org.futo.inputmethod.latin.uix.settings.SettingSlider
 import org.futo.inputmethod.latin.uix.settings.SettingToggleDataStore
 import org.futo.inputmethod.latin.uix.settings.useDataStore
+import org.futo.inputmethod.latin.uix.theme.CustomPhotoLightColorScheme
 import org.futo.inputmethod.latin.uix.theme.CustomPhotoTheme
+import org.futo.inputmethod.latin.uix.theme.DarkColorScheme
 import org.futo.inputmethod.latin.uix.theme.ThemeOption
 import org.futo.inputmethod.latin.uix.theme.ThemeOptionKeys
 import org.futo.inputmethod.latin.uix.theme.ThemeOptions
@@ -77,6 +97,7 @@ import org.futo.inputmethod.latin.uix.theme.UixThemeWrapper
 import org.futo.inputmethod.latin.uix.theme.presets.AMOLEDDarkPurple
 import org.futo.inputmethod.latin.uix.theme.presets.AMOLEDNothing
 import org.futo.inputmethod.latin.uix.theme.presets.OrbitPreviewKeyboard
+import org.futo.inputmethod.latin.uix.theme.presets.OrbitTheme
 import org.futo.inputmethod.latin.uix.theme.presets.NothingLight
 import org.futo.inputmethod.latin.uix.theme.presets.NothingDark
 import org.futo.inputmethod.latin.uix.theme.presets.ClassicMaterialDark
@@ -87,12 +108,94 @@ import org.futo.inputmethod.latin.uix.theme.presets.DynamicSystemTheme
 import org.futo.inputmethod.latin.uix.theme.presets.VoiceInputTheme
 import kotlin.math.roundToInt
 
+private fun loadCustomPhotoThumbnail(context: Context, uriValue: String): ImageBitmap? {
+    if (uriValue.isBlank()) return null
+    return runCatching {
+        val uri = Uri.parse(uriValue)
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        context.contentResolver.openInputStream(uri)?.use { stream ->
+            BitmapFactory.decodeStream(stream, null, bounds)
+        } ?: return null
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+
+        val targetSize = 360
+        var sampleSize = 1
+        while (bounds.outWidth / sampleSize > targetSize * 2 ||
+            bounds.outHeight / sampleSize > targetSize * 2
+        ) {
+            sampleSize *= 2
+        }
+
+        val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+        val decoded = context.contentResolver.openInputStream(uri)?.use { stream ->
+            BitmapFactory.decodeStream(stream, null, options)
+        } ?: return null
+
+        val orientation = runCatching {
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                ExifInterface(stream).getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+            }
+        }.getOrNull() ?: ExifInterface.ORIENTATION_NORMAL
+
+        val rotationDegrees = when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+            ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+            ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+            else -> 0f
+        }
+
+        val finalBitmap = if (rotationDegrees != 0f) {
+            val matrix = Matrix().apply { postRotate(rotationDegrees) }
+            Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true).also {
+                if (it !== decoded) decoded.recycle()
+            }
+        } else {
+            decoded
+        }
+
+        finalBitmap.asImageBitmap()
+    }.getOrNull()
+}
+
 @Composable
-fun ThemePreview(theme: ThemeOption, isSelected: Boolean = false, overrideName: String? = null, modifier: Modifier = Modifier, onClick: () -> Unit = { }) {
+fun ThemePreview(
+    theme: ThemeOption,
+    isSelected: Boolean = false,
+    overrideName: String? = null,
+    modifier: Modifier = Modifier,
+    customPhotoUri: String = "",
+    customPhotoDim: Float = 0.33f,
+    customPhotoContrast: String = "dark_bg",
+    onClick: () -> Unit = { }
+) {
     if(theme == DynamicSystemTheme) return DynamicThemePreview(isSelected, onClick)
 
     val context = LocalContext.current
-    val colors = remember { theme.obtainColors(context) }
+    val isInspecting = LocalInspectionMode.current
+    val colors = remember(theme.key, customPhotoContrast) {
+        if (theme.key == CustomPhotoTheme.key) {
+            if (customPhotoContrast == "light_bg") CustomPhotoLightColorScheme else DarkColorScheme
+        } else {
+            theme.obtainColors(context)
+        }
+    }
+
+    val photoThumbnail by produceState<ImageBitmap?>(
+        initialValue = null,
+        key1 = customPhotoUri,
+        key2 = theme.key
+    ) {
+        value = if (theme.key == CustomPhotoTheme.key && customPhotoUri.isNotBlank() && !isInspecting) {
+            withContext(Dispatchers.IO) {
+                loadCustomPhotoThumbnail(context, customPhotoUri)
+            }
+        } else {
+            null
+        }
+    }
 
     val currColors = MaterialTheme.colorScheme
 
@@ -116,7 +219,7 @@ fun ThemePreview(theme: ThemeOption, isSelected: Boolean = false, overrideName: 
 
     val keyboardShape = RoundedCornerShape(8.dp)
 
-    val previewModifier = if(LocalInspectionMode.current) {
+    val previewModifier = if(isInspecting) {
         modifier.width(172.dp)
     } else {
         modifier
@@ -132,6 +235,20 @@ fun ThemePreview(theme: ThemeOption, isSelected: Boolean = false, overrideName: 
         shape = keyboardShape
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
+            if (photoThumbnail != null) {
+                Image(
+                    bitmap = photoThumbnail!!,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = customPhotoDim.coerceIn(0.0f, 0.85f)))
+                )
+            }
+
             // Theme name and action bar
             Text(
                 text = overrideName ?: stringResource(theme.name),
@@ -282,6 +399,8 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
     val photoZoom = useDataStore(CustomKeyboardBackgroundZoomSetting.key, CustomKeyboardBackgroundZoomSetting.default)
     val photoX = useDataStore(CustomKeyboardBackgroundXSetting.key, CustomKeyboardBackgroundXSetting.default)
     val photoY = useDataStore(CustomKeyboardBackgroundYSetting.key, CustomKeyboardBackgroundYSetting.default)
+    val photoContrast = useDataStore(CustomPhotoTextContrastSetting.key, CustomPhotoTextContrastSetting.default)
+    val keyShapeSetting = useDataStore(KeyShapeSetting.key, KeyShapeSetting.default)
     val newThemeName = remember { mutableStateOf("") }
     val renameTarget = remember { mutableStateOf<String?>(null) }
     val renameName = remember { mutableStateOf("") }
@@ -329,7 +448,13 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
                 items(availableThemeOptions.count()) {
                     val themeOption = availableThemeOptions[it].second
 
-                    ThemePreview(themeOption, isSelected = themeOption.key == currentTheme) {
+                    ThemePreview(
+                        theme = themeOption,
+                        isSelected = themeOption.key == currentTheme,
+                        customPhotoUri = if (themeOption.key == CustomPhotoTheme.key) photoUri.value else "",
+                        customPhotoDim = if (themeOption.key == CustomPhotoTheme.key) photoDim.value else 0.33f,
+                        customPhotoContrast = if (themeOption.key == CustomPhotoTheme.key) photoContrast.value else "dark_bg"
+                    ) {
                         onSelected(themeOption)
                     }
                 }
@@ -391,6 +516,16 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
                                     subtitle = "Move the photo up or down"
                                 )
 
+                                SettingRadio(
+                                    title = "Photo text contrast",
+                                    options = listOf("dark_bg", "light_bg"),
+                                    optionNames = listOf(
+                                        "Light text (for dark photos)",
+                                        "Dark text (for bright photos)"
+                                    ),
+                                    setting = photoContrast
+                                )
+
                                 Text(
                                     text = "Reset photo adjustments",
                                     color = MaterialTheme.colorScheme.primary,
@@ -404,6 +539,31 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
                                         }
                                         .padding(12.dp)
                                 )
+
+                                TextButton(
+                                    onClick = {
+                                        val currentUri = photoUri.value
+                                        if (currentUri.isNotBlank()) {
+                                            runCatching {
+                                                context.contentResolver.releasePersistableUriPermission(
+                                                    Uri.parse(currentUri),
+                                                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                                )
+                                            }
+                                        }
+                                        context.setSettingBlocking(
+                                            CustomKeyboardBackgroundUriSetting.key,
+                                            CustomKeyboardBackgroundUriSetting.default
+                                        )
+                                        onSelected(OrbitTheme)
+                                    },
+                                    modifier = Modifier.padding(horizontal = 4.dp)
+                                ) {
+                                    Text(
+                                        text = "Remove current photo",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
                             }
                         }
                     }
@@ -470,6 +630,10 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
                                 title = "Key borders",
                                 setting = KeyBordersSetting
                             )
+                            KeyShapeSelector(
+                                selectedShape = keyShapeSetting.value,
+                                onSelect = { keyShapeSetting.setValue(it) }
+                            )
                             SettingSlider(
                                 title = "Key background opacity",
                                 setting = KeyOpacitySetting,
@@ -529,6 +693,60 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
                     TextButton(onClick = { renameTarget.value = null }) { Text("Cancel") }
                 }
             )
+        }
+    }
+}
+
+
+@Composable
+private fun KeyShapeSelector(
+    selectedShape: String,
+    onSelect: (String) -> Unit
+) {
+    val options = listOf(
+        Triple("sharp", "Sharp", 2.dp),
+        Triple("classic", "Classic", 8.dp),
+        Triple("rounded", "Rounded", 14.dp)
+    )
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Text(
+            text = "Key shape",
+            style = Typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            options.forEach { (key, label, radius) ->
+                val selected = selectedShape == key
+                val shape = RoundedCornerShape(radius)
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .border(
+                            width = if (selected) 2.dp else 1.dp,
+                            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                            shape = shape
+                        )
+                        .clip(shape)
+                        .clickable { onSelect(key) },
+                    color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                    shape = shape
+                ) {
+                    Text(
+                        text = label,
+                        textAlign = TextAlign.Center,
+                        color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = Typography.labelLarge,
+                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp)
+                    )
+                }
+            }
         }
     }
 }

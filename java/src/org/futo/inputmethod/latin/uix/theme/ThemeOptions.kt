@@ -3,6 +3,10 @@ package org.futo.inputmethod.latin.uix.theme
 import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Color
+import org.futo.inputmethod.latin.uix.CustomPhotoTextContrastSetting
+import org.futo.inputmethod.latin.uix.getSettingBlocking
 import org.futo.inputmethod.latin.uix.theme.presets.AMOLEDDarkPurple
 import org.futo.inputmethod.latin.uix.theme.presets.AMOLEDNothing
 import org.futo.inputmethod.latin.uix.theme.presets.OrbitTheme
@@ -32,12 +36,40 @@ data class ThemeOption(
     val obtainColors: (Context) -> ColorScheme,
 )
 
+val CustomPhotoLightColorScheme = lightColorScheme(
+    primary = NothingRed,
+    onPrimary = NothingWhite,
+    primaryContainer = Color(0xFFE4E7EC),
+    onPrimaryContainer = Color(0xFF121212),
+    secondary = Color(0xFF1C1D20),
+    onSecondary = NothingWhite,
+    secondaryContainer = Color(0xFFDDE1E6),
+    onSecondaryContainer = Color(0xFF121212),
+    tertiary = NothingRed,
+    onTertiary = NothingWhite,
+    tertiaryContainer = Color(0xFFE4E7EC),
+    onTertiaryContainer = Color(0xFF121212),
+    background = Color(0xFFECEFF1),
+    onBackground = Color(0xFF121212),
+    surface = Color(0xFFF5F7F9),
+    onSurface = Color(0xFF121212),
+    surfaceVariant = Color(0xFFE0E3E7),
+    onSurfaceVariant = Color(0xFF3A3D42),
+    outline = Color(0xFF6B7078)
+)
+
 val CustomPhotoTheme = ThemeOption(
     dynamic = false,
     key = "CustomPhotoTheme",
     name = R.string.custom_photo_theme,
     available = { true },
-    obtainColors = VoiceInputTheme.obtainColors,
+    obtainColors = { context ->
+        if (context.getSettingBlocking(CustomPhotoTextContrastSetting) == "light_bg") {
+            CustomPhotoLightColorScheme
+        } else {
+            DarkColorScheme
+        }
+    },
 )
 
 val ThemeOptions = mapOf(

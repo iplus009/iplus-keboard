@@ -48,10 +48,12 @@ import org.futo.inputmethod.latin.SuggestedWords;
 import org.futo.inputmethod.latin.SuggestedWords.SuggestedWordInfo;
 import org.futo.inputmethod.latin.WordComposer;
 import org.futo.inputmethod.latin.bengali.RidmikParser;
+import org.futo.inputmethod.latin.common.ComposedData;
 import org.futo.inputmethod.latin.common.Constants;
 import org.futo.inputmethod.latin.common.InputPointers;
 import org.futo.inputmethod.latin.common.StringUtils;
 import org.futo.inputmethod.latin.define.DebugFlags;
+import org.futo.inputmethod.latin.define.DecoderSpecificConstants;
 import org.futo.inputmethod.latin.settings.Settings;
 import org.futo.inputmethod.latin.settings.SettingsValues;
 import org.futo.inputmethod.latin.settings.SettingsValuesForSuggestion;
@@ -61,11 +63,13 @@ import org.futo.inputmethod.latin.utils.AsyncResultHolder;
 import org.futo.inputmethod.latin.utils.InputTypeUtils;
 import org.futo.inputmethod.latin.utils.RecapitalizeStatus;
 import org.futo.inputmethod.latin.utils.StatsUtils;
+import org.futo.inputmethod.latin.utils.SuggestionResults;
 import org.futo.inputmethod.latin.utils.TextRange;
 import org.futo.inputmethod.latin.xlm.LanguageModelFacilitator;
 
 import java.text.BreakIterator;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
@@ -2651,6 +2655,8 @@ public final class InputLogic {
         return true;
     }
 
+    private static final int MAX_AVRO_SUGGESTIONS = 8;
+
     public void getSuggestedWords(final SettingsValues settingsValues,
             final Keyboard keyboard, final int keyboardShiftMode, final int inputStyle,
             final int sequenceNumber, final OnGetSuggestedWordsCallback callback) {
@@ -2658,16 +2664,18 @@ public final class InputLogic {
             final String raw = mWordComposer.getTypedWord();
             final java.util.List<String> candidates = getBanglaCandidates(raw, mRidmikParser);
             final ArrayList<SuggestedWordInfo> list = new ArrayList<>();
+            final HashSet<String> seen = new HashSet<>();
             // Index 0: KIND_TYPED raw typed word (enables ActionBar offset=1 to center primary candidate)
             list.add(new SuggestedWordInfo(raw, "", 1, SuggestedWordInfo.KIND_TYPED, null, 0, 0));
+            seen.add(raw);
             int score = SuggestedWordInfo.MAX_SCORE;
             for (final String candidate : candidates) {
-                if (!candidate.equals(raw)) {
+                if (seen.add(candidate)) {
                     list.add(new SuggestedWordInfo(candidate, "", score, SuggestedWordInfo.KIND_CORRECTION, null, 0, 0));
                     score--;
                 }
             }
-            final SuggestedWordInfo recommendedInfo = list.size() > 1 ? list.get(1) : list.get(0);
+            appendAvroDictionarySuggestions(list, seen, candidates, settingsValues, keyboard, inputStyle);
             final boolean willAutoCorrect = list.size() > 1;
             final SuggestedWords words = new SuggestedWords(list, null, list.get(0), true, willAutoCorrect, false, inputStyle, sequenceNumber);
             callback.onGetSuggestedWords(words);
@@ -2689,6 +2697,85 @@ public final class InputLogic {
                 ),
                 settingsValues.mAutoCorrectionEnabledPerUserSettings,
                 inputStyle, sequenceNumber, callback);
+    }
+
+    /**
+     * Queries the active Bangla dictionary / user history using the primary Avro phonetic
+     * candidate(s) as prefix and appends unique suggestions up to {@link #MAX_AVRO_SUGGESTIONS}.
+     */
+    private void appendAvroDictionarySuggestions(
+            final ArrayList<SuggestedWordInfo> list,
+            final HashSet<String> seen,
+            final java.util.List<String> candidates,
+            final SettingsValues settingsValues,
+            final Keyboard keyboard,
+            final int inputStyle) {
+        if (list.size() >= MAX_AVRO_SUGGESTIONS || candidates.isEmpty()) {
+            return;
+        }
+        if (mDictionaryFacilitator == null || !mDictionaryFacilitator.isActive()) {
+            return;
+        }
+        final Locale dictLocale = mDictionaryFacilitator.getLocale();
+        if (dictLocale != null && !"bn".equals(dictLocale.getLanguage())) {
+            return;
+        }
+        if (settingsValues == null || keyboard == null || keyboard.getProximityInfo() == null) {
+            return;
+        }
+        NgramContext ngramContext = NgramContext.EMPTY_PREV_WORDS_INFO;
+        if (settingsValues.mSpacingAndPunctuations != null && mLatinIMELegacy != null
+                && mLatinIMELegacy.getInputMethodService() != null) {
+            ngramContext = getNgramContextFromNthPreviousWordForSuggestion(
+                    settingsValues.mSpacingAndPunctuations, 2);
+        }
+        final SettingsValuesForSuggestion settingsForSuggestion = new SettingsValuesForSuggestion(
+                settingsValues.mBlockPotentiallyOffensive,
+                settingsValues.mTransformerPredictionEnabled);
+        final int maxQueries = Math.min(2, candidates.size());
+        for (int q = 0; q < maxQueries && list.size() < MAX_AVRO_SUGGESTIONS; q++) {
+            final String banglaPrefix = candidates.get(q);
+            if (banglaPrefix == null || banglaPrefix.isEmpty()) {
+                continue;
+            }
+            final ComposedData composedData = createAvroComposedData(banglaPrefix);
+            final SuggestionResults results;
+            try {
+                results = mDictionaryFacilitator.getSuggestionResults(
+                        composedData, ngramContext, keyboard, settingsForSuggestion,
+                        Suggest.SESSION_ID_TYPING, inputStyle);
+            } catch (final RuntimeException e) {
+                Log.w(TAG, "Failed to query Avro dictionary suggestions", e);
+                return;
+            }
+            if (results == null) {
+                continue;
+            }
+            for (final SuggestedWordInfo info : results) {
+                if (list.size() >= MAX_AVRO_SUGGESTIONS) {
+                    break;
+                }
+                if (info == null || info.mWord == null || info.mWord.isEmpty()
+                        || info.isKindOf(SuggestedWordInfo.KIND_BLACKLIST)) {
+                    continue;
+                }
+                if (seen.add(info.mWord)) {
+                    list.add(info);
+                }
+            }
+        }
+    }
+
+    private static ComposedData createAvroComposedData(final String banglaPrefix) {
+        final int maxWordLen = DecoderSpecificConstants.DICTIONARY_MAX_WORD_LENGTH;
+        final int codePointCount = Math.min(
+                banglaPrefix.codePointCount(0, banglaPrefix.length()), maxWordLen);
+        final InputPointers inputPointers = new InputPointers(maxWordLen);
+        for (int i = 0; i < codePointCount; i++) {
+            inputPointers.addPointerAt(
+                    i, Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, 0, 0);
+        }
+        return new ComposedData(inputPointers, false /* isBatchMode */, banglaPrefix);
     }
 
     /**

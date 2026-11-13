@@ -42,11 +42,14 @@ import org.futo.inputmethod.keyboard.internal.KeyboardIconsSet
 import org.futo.inputmethod.latin.R
 import org.futo.inputmethod.latin.uix.actions.AllActions
 import org.futo.inputmethod.latin.uix.actions.AllActionsMap
+import org.futo.inputmethod.latin.uix.theme.CustomPhotoLightColorScheme
+import org.futo.inputmethod.latin.uix.theme.CustomPhotoTheme
 import org.futo.inputmethod.latin.uix.theme.DarkColorScheme
 import kotlin.math.roundToInt
 
 val KeyBordersSetting = SettingsKey(booleanPreferencesKey("keyBorders"), true)
 val KeyOpacitySetting = SettingsKey(floatPreferencesKey("key_opacity"), 1.0f)
+val KeyShapeSetting = SettingsKey(stringPreferencesKey("key_shape"), "classic")
 val HiddenKeysSetting = SettingsKey(booleanPreferencesKey("hiddenKeys"), false)
 val KeyHintsSetting   = SettingsKey(booleanPreferencesKey("keyHints"), true)
 val KeyboardFontSetting = SettingsKey(stringPreferencesKey("keyboard_font"), "nothing")
@@ -58,7 +61,14 @@ val CustomKeyboardBackgroundBlurSetting = SettingsKey(floatPreferencesKey("custo
 val CustomKeyboardBackgroundZoomSetting = SettingsKey(floatPreferencesKey("custom_keyboard_background_zoom"), 1.0f)
 val CustomKeyboardBackgroundXSetting = SettingsKey(floatPreferencesKey("custom_keyboard_background_x"), 0.0f)
 val CustomKeyboardBackgroundYSetting = SettingsKey(floatPreferencesKey("custom_keyboard_background_y"), 0.0f)
+val CustomPhotoTextContrastSetting = SettingsKey(stringPreferencesKey("custom_photo_text_contrast"), "dark_bg")
 val SavedCustomPhotoThemesSetting = SettingsKey(stringSetPreferencesKey("saved_custom_photo_themes"), setOf())
+
+fun keyShapeToCornerRadiusDp(keyShape: String): Dp = when (keyShape) {
+    "sharp" -> 2.dp
+    "rounded" -> 14.dp
+    else -> 8.dp
+}
 
 val KeyboardHeightMultiplierSetting = SettingsKey(floatPreferencesKey("keyboardHeightMultiplier"), 1.0f)
 val KeyboardBottomOffsetSetting = SettingsKey(floatPreferencesKey("keyboardOffset"), 0.0f)
@@ -263,6 +273,7 @@ class BasicThemeProvider(
     val expertMode: Boolean
     val keyBorders: Boolean
     val keyOpacity: Float
+    val keyShape: String
     val showKeyHints: Boolean
     val keyHintColor: String
     val keyboardHeight: Float
@@ -274,12 +285,14 @@ class BasicThemeProvider(
     val customKeyboardBackgroundZoom: Float
     val customKeyboardBackgroundX: Float
     val customKeyboardBackgroundY: Float
+    val customPhotoTextContrast: String
     override val keyboardTypeface: Typeface?
 
     fun hasUpdated(np: Preferences): Boolean {
         return np.get(HiddenKeysSetting) != expertMode
                 || np.get(KeyBordersSetting) != keyBorders
                 || np.get(KeyOpacitySetting) != keyOpacity
+                || np.get(KeyShapeSetting) != keyShape
                 || np.get(KeyHintsSetting) != showKeyHints
                 || np.get(KeyHintColorSetting) != keyHintColor
                 || np.get(KeyboardHeightMultiplierSetting) != keyboardHeight
@@ -291,6 +304,7 @@ class BasicThemeProvider(
                 || np.get(CustomKeyboardBackgroundZoomSetting) != customKeyboardBackgroundZoom
                 || np.get(CustomKeyboardBackgroundXSetting) != customKeyboardBackgroundX
                 || np.get(CustomKeyboardBackgroundYSetting) != customKeyboardBackgroundY
+                || np.get(CustomPhotoTextContrastSetting) != customPhotoTextContrast
     }
 
 
@@ -308,19 +322,10 @@ class BasicThemeProvider(
     }
 
     init {
-        val colorScheme = if(overrideColorScheme != null) {
-            overrideColorScheme
-        }else if(!DynamicColors.isDynamicColorAvailable()) {
-            DarkColorScheme
-        } else {
-            val dCtx = DynamicColors.wrapContextIfAvailable(context)
-
-            dynamicLightColorScheme(dCtx)
-        }
-
         expertMode = context.getSettingBlocking(HiddenKeysSetting)
         keyBorders = context.getSettingBlocking(KeyBordersSetting)
         keyOpacity = context.getSettingBlocking(KeyOpacitySetting).coerceIn(0.15f, 1.0f)
+        keyShape = context.getSettingBlocking(KeyShapeSetting)
         showKeyHints = context.getSettingBlocking(KeyHintsSetting)
         keyHintColor = context.getSettingBlocking(KeyHintColorSetting)
         keyboardHeight = context.getSettingBlocking(KeyboardHeightMultiplierSetting)
@@ -332,6 +337,22 @@ class BasicThemeProvider(
         customKeyboardBackgroundZoom = context.getSettingBlocking(CustomKeyboardBackgroundZoomSetting)
         customKeyboardBackgroundX = context.getSettingBlocking(CustomKeyboardBackgroundXSetting)
         customKeyboardBackgroundY = context.getSettingBlocking(CustomKeyboardBackgroundYSetting)
+        customPhotoTextContrast = context.getSettingBlocking(CustomPhotoTextContrastSetting)
+
+        val keyCornerRadius = keyShapeToCornerRadiusDp(keyShape)
+        val keyCornerRadiusPx = dp(keyCornerRadius)
+
+        val colorScheme = if (currentThemeKey == CustomPhotoTheme.key) {
+            if (customPhotoTextContrast == "light_bg") CustomPhotoLightColorScheme else DarkColorScheme
+        } else if (overrideColorScheme != null) {
+            overrideColorScheme
+        } else if (!DynamicColors.isDynamicColorAvailable()) {
+            DarkColorScheme
+        } else {
+            val dCtx = DynamicColors.wrapContextIfAvailable(context)
+
+            dynamicLightColorScheme(dCtx)
+        }
         val customSpaceColor = when (spacebarColorPref) {
             "red" -> OrbitThemeHelper.COLOR_RED
             "blue" -> OrbitThemeHelper.COLOR_BLUE
@@ -486,44 +507,49 @@ class BasicThemeProvider(
             )
 
             addStateWithHighlightLayerOnPressed(highlight, intArrayOf(android.R.attr.state_checkable, android.R.attr.state_checked),
-                coloredRoundedRectangle(colorScheme.secondaryContainer.toArgb(), dp(8.dp))
+                coloredRoundedRectangle(colorScheme.secondaryContainer.toArgb(), keyCornerRadiusPx),
+                cornerRadius = keyCornerRadius
             )
 
             addStateWithHighlightLayerOnPressed(highlight, intArrayOf(android.R.attr.state_checkable),
                 if(keyBorders) {
-                    coloredRoundedRectangle(keyColor, dp(8.dp))
+                    coloredRoundedRectangle(keyColor, keyCornerRadiusPx)
                 } else {
                     coloredRectangle(transparent)
-                }
+                },
+                cornerRadius = keyCornerRadius
             )
 
             addStateWithHighlightLayerOnPressed(highlight, intArrayOf(android.R.attr.state_first),
                 if(keyBorders) {
-                    coloredRoundedRectangle(functionalKeyColor, dp(8.dp))
+                    coloredRoundedRectangle(functionalKeyColor, keyCornerRadiusPx)
                 } else {
                     coloredRectangle(transparent)
-                }
+                },
+                cornerRadius = keyCornerRadius
             )
 
             addStateWithHighlightLayerOnPressed(highlight, intArrayOf(android.R.attr.state_empty),
                 if(keyBorders) {
-                    coloredRoundedRectangle(keyColor, dp(8.dp))
+                    coloredRoundedRectangle(keyColor, keyCornerRadiusPx)
                 } else {
                     coloredRectangle(transparent)
-                }
+                },
+                cornerRadius = keyCornerRadius
             )
 
             addStateWithHighlightLayerOnPressed(highlight, intArrayOf(),
                 if(keyBorders) {
-                    coloredRoundedRectangle(keyColor, dp(8.dp))
+                    coloredRoundedRectangle(keyColor, keyCornerRadiusPx)
                 } else {
                     coloredRectangle(transparent)
-                }
+                },
+                cornerRadius = keyCornerRadius
             )
         }
 
         val spaceCornerRadius = if(keyBorders) {
-            8.dp
+            keyCornerRadius
         } else {
             48.dp
         }
@@ -563,8 +589,8 @@ class BasicThemeProvider(
             paint.color = secondary
             shape = RoundRectShape(
                 floatArrayOf(
-                    dp(8.dp), dp(8.dp), dp(8.dp), dp(8.dp),
-                    dp(8.dp), dp(8.dp), dp(8.dp), dp(8.dp),
+                    keyCornerRadiusPx, keyCornerRadiusPx, keyCornerRadiusPx, keyCornerRadiusPx,
+                    keyCornerRadiusPx, keyCornerRadiusPx, keyCornerRadiusPx, keyCornerRadiusPx,
                 ), null, null
             )
 
@@ -575,10 +601,11 @@ class BasicThemeProvider(
         }
 
         moreKeysTextColor = onPrimaryContainer
-        moreKeysKeyboardBackground = coloredRoundedRectangle(primaryContainer, dp(8.dp))
+        moreKeysKeyboardBackground = coloredRoundedRectangle(primaryContainer, keyCornerRadiusPx)
         popupKey = StateListDrawable().apply {
             addStateWithHighlightLayerOnPressed(primary, intArrayOf(),
-                coloredRoundedRectangle(primaryContainer, dp(8.dp))
+                coloredRoundedRectangle(primaryContainer, keyCornerRadiusPx),
+                cornerRadius = keyCornerRadius
             )
         }
         actionPopupKey = StateListDrawable().apply {
@@ -598,7 +625,7 @@ class BasicThemeProvider(
 
     private fun ensureDimensions() {
         if (cachedCornerRadius < 0f) {
-            cachedCornerRadius = dp(8.dp)
+            cachedCornerRadius = dp(keyShapeToCornerRadiusDp(keyShape))
             cachedPreviewWidth = dp(48.dp).roundToInt()
             cachedPreviewHeight = dp(24.dp).roundToInt()
             cachedPreviewPadding = dp(50.dp).roundToInt()
