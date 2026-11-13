@@ -51,8 +51,9 @@ android {
     defaultConfig {
         minSdk 24
         targetSdk 35
-        versionName "2.0.0"
-        versionCode 20000
+        versionName "2.0.1"
+        versionCode 20001
+        setProperty("archivesBaseName", "iplus-kbd-v${versionName}")
 
         applicationId 'com.iplus.keyboard'
         testApplicationId 'org.futo.inputmethod.latin.tests'
@@ -246,8 +247,8 @@ android.applicationVariants.all { variant ->
         variant.assembleProvider.configure { assembleTask ->
             assembleTask.doLast {
                 def outputDir = file("${buildDir}/outputs/apk/${variant.flavorName}/release")
-                def universalApk = file("${outputDir}/nth-kbd-${variant.flavorName}-universal-release.apk")
-                def standardApk = file("${outputDir}/iplus-kbd-${variant.flavorName}-release.apk")
+                def universalApk = file("${outputDir}/iplus-kbd-v${android.defaultConfig.versionName}-${variant.flavorName}-universal-release.apk")
+                def standardApk = file("${outputDir}/iplus-kbd-v${android.defaultConfig.versionName}-${variant.flavorName}-release.apk")
                 if (universalApk.exists()) {
                     java.nio.file.Files.copy(universalApk.toPath(), standardApk.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
                 }

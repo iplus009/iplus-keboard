@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,16 +19,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -78,81 +80,73 @@ internal fun toggleBnEnPair(currentSource: String, currentTarget: String): Pair<
     }
 }
 
-@Composable
-fun LanguageDropdown(
+internal fun sortLanguagesForPicker(
     languageList: Map<String, String>,
-    mExpanded: MutableState<Boolean>,
-    mSelectedText: MutableState<String>,
-    sourceLang: Boolean,
-    prefKey: String,
-    onLanguageSelected: () -> Unit = {},
+    allowAuto: Boolean
+): List<Pair<String, String>> {
+    val pinnedOrder = listOfNotNull(
+        if (allowAuto) "auto" else null,
+        "bn",
+        "en"
+    )
+    val pinned = pinnedOrder.mapNotNull { code ->
+        languageList[code]?.let { label -> code to label }
+    }
+    val remaining = languageList.entries
+        .filter { (code, _) -> (allowAuto || code != "auto") && code !in pinnedOrder }
+        .sortedBy { it.value.lowercase() }
+        .map { it.key to it.value }
+    return pinned + remaining
+}
+
+private enum class TranslationPickerSide {
+    SOURCE,
+    TARGET
+}
+
+@Composable
+private fun LanguagePickerButton(
+    selectedCode: String,
+    isActive: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val updateSharedPref = useUpdateSharedPrefString()
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceBright,
-            shape = RoundedCornerShape(24.dp),
-            onClick = { mExpanded.value = true },
-            modifier = Modifier
-                .minimumInteractiveComponentSize()
-                .padding(2.dp)
-                .weight(1.0f)
+    Surface(
+        color = if (isActive) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceBright
+        },
+        shape = RoundedCornerShape(24.dp),
+        onClick = onClick,
+        modifier = modifier
+            .minimumInteractiveComponentSize()
+            .padding(2.dp)
+            .fillMaxWidth()
+    ) {
+        Box(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            contentAlignment = Alignment.CenterStart,
         ) {
-            Box(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                Text(
-                    TranslationHelper.getLanguageName(mSelectedText.value),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = Typography.bodyMedium
-                )
-            }
-        }
-        DropdownMenu(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(),
-            expanded = mExpanded.value,
-            onDismissRequest = { mExpanded.value = false },
-        ) {
-            languageList.toSortedMap().forEach { (langCode, label) ->
-                val isTargetAuto = !(!sourceLang && langCode == "auto")
-                DropdownMenuItem(
-                    text = { Text(label) },
-                    onClick = {
-                        mExpanded.value = false
-                        mSelectedText.value = langCode
-                        updateSharedPref(prefKey, langCode)
-                        onLanguageSelected()
-                    },
-                    enabled = isTargetAuto,
-                    trailingIcon = {
-                        if (langCode == "auto") {
-                            IconWithColor(
-                                iconId = R.drawable.auto_detect,
-                                iconColor = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-                    }
-                )
-            }
+            Text(
+                TranslationHelper.getLanguageName(selectedCode),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = Typography.bodyMedium
+            )
         }
     }
 }
 
 @Composable
-fun LanguageSelector(
+private fun LanguageSelector(
     modifier: Modifier,
-    isLoading: Boolean,
+    activePicker: TranslationPickerSide?,
+    onTogglePicker: (TranslationPickerSide) -> Unit,
     mSelectedLanguage1: MutableState<String>,
     mSelectedLanguage2: MutableState<String>,
     onLanguagesChanged: () -> Unit = {},
 ) {
-    val mExpanded1 = remember { mutableStateOf(false) }
-    val mExpanded2 = remember { mutableStateOf(false) }
-    val mLanguages = TranslationHelper.getLanguages()
     val updateSharedPref = useUpdateSharedPrefString()
     val canSwap = mSelectedLanguage1.value != "auto"
     val isBnEnActive =
@@ -164,13 +158,10 @@ fun LanguageSelector(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.weight(1f)) {
-            LanguageDropdown(
-                mLanguages,
-                mExpanded1,
-                mSelectedLanguage1,
-                true,
-                Settings.PREF_KEY_LAST_SOURCE_LANG,
-                onLanguageSelected = onLanguagesChanged
+            LanguagePickerButton(
+                selectedCode = mSelectedLanguage1.value,
+                isActive = activePicker == TranslationPickerSide.SOURCE,
+                onClick = { onTogglePicker(TranslationPickerSide.SOURCE) }
             )
         }
 
@@ -204,13 +195,10 @@ fun LanguageSelector(
         }
 
         Box(modifier = Modifier.weight(1f)) {
-            LanguageDropdown(
-                mLanguages,
-                mExpanded2,
-                mSelectedLanguage2,
-                false,
-                Settings.PREF_KEY_LAST_TARGET_LANG,
-                onLanguageSelected = onLanguagesChanged
+            LanguagePickerButton(
+                selectedCode = mSelectedLanguage2.value,
+                isActive = activePicker == TranslationPickerSide.TARGET,
+                onClick = { onTogglePicker(TranslationPickerSide.TARGET) }
             )
         }
 
@@ -251,6 +239,75 @@ fun LanguageSelector(
                 maxLines = 1,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp)
             )
+        }
+    }
+}
+
+@Composable
+private fun InlineLanguageListOverlay(
+    side: TranslationPickerSide,
+    selectedCode: String,
+    languageList: Map<String, String>,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val entries = remember(side, languageList) {
+        sortLanguagesForPicker(languageList, allowAuto = side == TranslationPickerSide.SOURCE)
+    }
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(4.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = if (side == TranslationPickerSide.SOURCE) "Source language" else "Target language",
+                    style = Typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                TextButton(onClick = onDismiss) {
+                    Text("Close")
+                }
+            }
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(entries, key = { it.first }) { (langCode, label) ->
+                    val isSelected = langCode == selectedCode
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(langCode) }
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = label,
+                            style = Typography.bodyMedium,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+                        if (langCode == "auto") {
+                            IconWithColor(
+                                iconId = R.drawable.auto_detect,
+                                iconColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -297,6 +354,8 @@ fun TranslationInputBox(
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
 
+                privateImeOptions = "org.futo.inputmethod.latin.NoSuggestions=1"
+
                 setHeight(height.toInt())
 
                 val editorInfo = EditorInfo().apply {
@@ -304,7 +363,7 @@ fun TranslationInputBox(
                 }
                 onCreateInputConnection(editorInfo)
 
-                manager.overrideInputConnection(inputConnection!!, editorInfo)
+                inputConnection?.let { manager.overrideInputConnection(it, editorInfo) }
 
                 requestFocus()
             }
@@ -359,6 +418,10 @@ fun TranslateScreen(
     languageFrom: MutableState<String>,
     languageTo: MutableState<String>
 ) {
+    val activePicker = remember { mutableStateOf<TranslationPickerSide?>(null) }
+    val languages = remember { TranslationHelper.getLanguages() }
+    val updateSharedPref = useUpdateSharedPrefString()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -366,85 +429,122 @@ fun TranslateScreen(
     ) {
         LanguageSelector(
             modifier = Modifier.fillMaxWidth(),
-            isLoading = isLoading,
+            activePicker = activePicker.value,
+            onTogglePicker = { side ->
+                activePicker.value = if (activePicker.value == side) null else side
+            },
             mSelectedLanguage1 = languageFrom,
             mSelectedLanguage2 = languageTo,
-            onLanguagesChanged = onLanguagesChanged
-        )
-        SourceTextInput(
-            modifier = Modifier
-                .weight(1.0f)
-                .fillMaxWidth(),
-            searchText = searchText,
-            onTextChange = onTextChange,
+            onLanguagesChanged = {
+                activePicker.value = null
+                onLanguagesChanged()
+            }
         )
 
-        if (isLoading || errorText != null || translatedText.isNotEmpty()) {
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 2.dp)
-            ) {
-                Row(
+        Box(
+            modifier = Modifier
+                .weight(1.0f)
+                .fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                SourceTextInput(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    when {
-                        isLoading -> {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Translating...",
-                                    style = Typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        errorText != null -> {
-                            Text(
-                                text = errorText,
-                                style = Typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        else -> {
-                            Text(
-                                text = translatedText,
-                                style = Typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconButton(
-                                onClick = { onCopyResult(translatedText) },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.copy),
-                                    contentDescription = "Copy result",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(18.dp)
-                                )
+                        .weight(1.0f)
+                        .fillMaxWidth(),
+                    searchText = searchText,
+                    onTextChange = onTextChange,
+                )
+
+                if (isLoading || errorText != null || translatedText.isNotEmpty()) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            when {
+                                isLoading -> {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(16.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "Translating...",
+                                            style = Typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                errorText != null -> {
+                                    Text(
+                                        text = errorText,
+                                        style = Typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                                else -> {
+                                    Text(
+                                        text = translatedText,
+                                        style = Typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    IconButton(
+                                        onClick = { onCopyResult(translatedText) },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.copy),
+                                            contentDescription = "Copy result",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
+            }
+
+            // Render language list inside IME bounds so PopupWindow never steals keyboard touches.
+            activePicker.value?.let { side ->
+                val isSource = side == TranslationPickerSide.SOURCE
+                InlineLanguageListOverlay(
+                    side = side,
+                    selectedCode = if (isSource) languageFrom.value else languageTo.value,
+                    languageList = languages,
+                    onSelect = { code ->
+                        if (isSource) {
+                            languageFrom.value = code
+                            updateSharedPref(Settings.PREF_KEY_LAST_SOURCE_LANG, code)
+                        } else {
+                            languageTo.value = code
+                            updateSharedPref(Settings.PREF_KEY_LAST_TARGET_LANG, code)
+                        }
+                        activePicker.value = null
+                        onLanguagesChanged()
+                    },
+                    onDismiss = { activePicker.value = null }
+                )
             }
         }
     }
@@ -456,8 +556,16 @@ val TranslateAction = Action(
     simplePressImpl = null,
     persistentState = null,
     canShowKeyboard = true,
-    windowImpl = { manager, persistentState ->
+    windowImpl = { manager, _ ->
         object : ActionWindow {
+            private val searchText = mutableStateOf("")
+            private val translatedText = mutableStateOf("")
+            private val isLoading = mutableStateOf(false)
+            private val error = mutableStateOf<String?>(null)
+            private var debounceJob: Job? = null
+            @Volatile
+            private var closed = false
+
             @Composable
             override fun windowName(): String {
                 return stringResource(R.string.translate_action_title)
@@ -470,28 +578,22 @@ val TranslateAction = Action(
                 val (sourcePref, _) = useSharedPrefsString(Settings.PREF_KEY_LAST_SOURCE_LANG, "auto")
                 val (targetPref, _) = useSharedPrefsString(Settings.PREF_KEY_LAST_TARGET_LANG, "bn")
 
-                val languageFrom = remember { mutableStateOf(sourcePref) }
-                val languageTo = remember { mutableStateOf(targetPref) }
-                val searchText = remember { mutableStateOf("") }
-                val translatedText = remember { mutableStateOf("") }
-                val isLoading = remember { mutableStateOf(false) }
-                val error = remember { mutableStateOf<String?>(null) }
-
-                val debounceJob = remember { mutableStateOf<Job?>(null) }
-
+                val languageFrom = remember(sourcePref) { mutableStateOf(sourcePref) }
+                val languageTo = remember(targetPref) { mutableStateOf(targetPref) }
                 val coroutineScope = rememberCoroutineScope()
 
                 val launchTranslation: (String, Long) -> Unit = { updatedString, debounceMs ->
-                    debounceJob.value?.cancel()
+                    debounceJob?.cancel()
                     if (updatedString.isEmpty()) {
                         isLoading.value = false
                         error.value = null
                         translatedText.value = ""
                     } else {
-                        debounceJob.value = coroutineScope.launch {
+                        debounceJob = coroutineScope.launch {
                             isLoading.value = true
                             error.value = null
                             if (debounceMs > 0L) delay(debounceMs)
+                            if (closed) return@launch
                             if (languageFrom.value == languageTo.value) {
                                 translatedText.value = updatedString
                                 manager.replaceAllText(updatedString)
@@ -502,6 +604,7 @@ val TranslateAction = Action(
                                     languageTo.value,
                                     updatedString
                                 )
+                                if (closed) return@launch
                                 result.fold(
                                     onSuccess = {
                                         Log.d(TAG, "Translation Success")
@@ -546,6 +649,10 @@ val TranslateAction = Action(
             }
 
             override fun close() {
+                closed = true
+                debounceJob?.cancel()
+                debounceJob = null
+                manager.unsetInputConnection()
             }
         }
     }

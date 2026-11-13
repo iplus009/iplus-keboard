@@ -31,16 +31,17 @@ class CapturePermissionActivity : Activity() {
         if (requestCode == REQ_CODE) {
             if (resultCode == Activity.RESULT_OK && data != null) {
                 val svc = Intent(this, CaptureService::class.java).apply {
-                    action = CaptureService.ACTION_SET_PROJECTION
+                    action = CaptureService.ACTION_CAPTURE_WITH_PROJECTION
                     putExtra(CaptureService.EXTRA_RESULT_CODE, resultCode)
                     putExtra(CaptureService.EXTRA_RESULT_INTENT, data)
                     putExtra(EXTRA_TARGET_PACKAGE, intent?.getStringExtra(EXTRA_TARGET_PACKAGE))
                 }
                 Log.i("CapturePermissionAct", "starting CaptureService with projection result")
-                startForegroundService(svc)
-                // Immediately request a capture
-                val captureNow = Intent(this, CaptureService::class.java).apply { action = CaptureService.ACTION_CAPTURE_ONCE }
-                startService(captureNow)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    startForegroundService(svc)
+                } else {
+                    startService(svc)
+                }
             }
         }
         finish()

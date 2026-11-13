@@ -300,20 +300,27 @@ public class RichInputMethodManager {
         }
     }
 
-    public void switchToShortcutIme(final InputMethodService context) {
+    public boolean hasShortcutIme() {
+        return mShortcutInputMethodInfo != null;
+    }
+
+    public boolean switchToShortcutIme(final InputMethodService context) {
         if (mShortcutInputMethodInfo == null) {
-            return;
+            return false;
         }
 
         final String imiId = mShortcutInputMethodInfo.getId();
-        switchToTargetIME(imiId, mShortcutSubtype, context);
+        return switchToTargetIME(imiId, mShortcutSubtype, context);
     }
 
-    private void switchToTargetIME(final String imiId, final InputMethodSubtype subtype,
+    private boolean switchToTargetIME(final String imiId, final InputMethodSubtype subtype,
             final InputMethodService context) {
+        if (context == null || context.getWindow() == null || context.getWindow().getWindow() == null) {
+            return false;
+        }
         final IBinder token = context.getWindow().getWindow().getAttributes().token;
         if (token == null) {
-            return;
+            return false;
         }
         final InputMethodManager imm = getInputMethodManager();
         new AsyncTask<Void, Void, Void>() {
@@ -323,6 +330,7 @@ public class RichInputMethodManager {
                 return null;
             }
         }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        return true;
     }
 
     public boolean isShortcutImeReady() {

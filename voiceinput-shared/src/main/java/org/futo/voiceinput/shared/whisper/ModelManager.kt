@@ -11,24 +11,27 @@ class ModelManager(
     private val loadedModels: HashMap<ModelLoader, WhisperGGML> = hashMapOf()
 
     fun obtainModel(model: ModelLoader): WhisperGGML {
-        if (!loadedModels.contains(model)) {
-            loadedModels[model] = model.loadGGML(context)
+        synchronized(loadedModels) {
+            loadedModels[model]?.let { return it }
+            val loaded = model.loadGGML(context)
+            loadedModels[model] = loaded
+            return loaded
         }
-
-        return loadedModels[model]!!
     }
 
     fun cancelAll() {
-        loadedModels.forEach {
-            it.value.cancel()
+        val snapshot = synchronized(loadedModels) { loadedModels.values.toList() }
+        snapshot.forEach {
+            it.cancel()
         }
     }
 
     suspend fun cleanUp() {
-        for (model in loadedModels.values) {
+        val snapshot = synchronized(loadedModels) {
+            loadedModels.values.toList().also { loadedModels.clear() }
+        }
+        for (model in snapshot) {
             model.close()
         }
-
-        loadedModels.clear()
     }
 }

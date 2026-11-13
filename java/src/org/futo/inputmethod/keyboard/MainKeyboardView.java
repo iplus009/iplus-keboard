@@ -390,8 +390,9 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
      */
     @Override
     public void setKeyboard(@Nullable final Keyboard keyboard) {
-        // Remove any pending messages, except dismissing preview and key repeat.
+        // Remove any pending timers/previews so repeating or long-press keys cannot stick across layouts.
         mTimerHandler.cancelLongPressTimers();
+        mTimerHandler.cancelKeyRepeatTimers();
         if (mKeyPreviewChoreographer != null) {
             mKeyPreviewChoreographer.cancelAllOngoingEvents();
         }
@@ -767,11 +768,36 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     }
 
     public void onHideWindow() {
+        cancelAllOngoingEvents();
         onDismissMoreKeysPanel();
         final MainKeyboardAccessibilityDelegate accessibilityDelegate = mAccessibilityDelegate;
         if (accessibilityDelegate != null
                 && AccessibilityUtils.getInstance().isAccessibilityEnabled()) {
             accessibilityDelegate.onHideWindow();
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(final boolean hasWindowFocus) {
+        super.onWindowFocusChanged(hasWindowFocus);
+        if (!hasWindowFocus) {
+            cancelAllOngoingEvents();
+        }
+    }
+
+    @Override
+    protected void onVisibilityChanged(@Nonnull final View changedView, final int visibility) {
+        super.onVisibilityChanged(changedView, visibility);
+        if (visibility != View.VISIBLE || !isShown()) {
+            cancelAllOngoingEvents();
+        }
+    }
+
+    @Override
+    protected void onSizeChanged(final int w, final int h, final int oldw, final int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (w <= 0 || h <= 0) {
+            cancelAllOngoingEvents();
         }
     }
 

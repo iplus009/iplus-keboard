@@ -34,6 +34,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.futo.inputmethod.latin.BuildConfig
 import org.futo.inputmethod.latin.uix.BasicThemeProvider
 import org.futo.inputmethod.latin.uix.DynamicThemeProvider
 import org.futo.inputmethod.latin.uix.DynamicThemeProviderOwner
@@ -41,8 +42,9 @@ import org.futo.inputmethod.latin.uix.ImportResourceActivity
 import org.futo.inputmethod.latin.uix.THEME_KEY
 import org.futo.inputmethod.latin.uix.USE_SYSTEM_VOICE_INPUT
 import org.futo.inputmethod.latin.uix.deferGetSetting
-import org.futo.inputmethod.latin.uix.getSetting
+import org.futo.inputmethod.latin.uix.getSettingBlocking
 import org.futo.inputmethod.latin.uix.getSettingFlow
+import org.futo.inputmethod.latin.uix.normalizeThemeKey
 import org.futo.inputmethod.latin.uix.theme.ThemeOption
 import org.futo.inputmethod.latin.uix.theme.ThemeOptions
 import org.futo.inputmethod.latin.uix.theme.UixThemeAuto
@@ -69,15 +71,17 @@ private fun Context.isInputMethodEnabled(): Boolean {
 private fun Context.isDefaultIMECurrent(): Boolean {
     val value = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
 
-    return value.startsWith("$packageName/")
+    return value?.startsWith("$packageName/") == true
 }
 
 private fun Context.isDoublePackage(): Boolean {
     val value = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
-    val standalonePackage = "org.futo.inputmethod.latin"
-    val playstorePackage = "org.futo.inputmethod.latin.playstore"
+        ?: return false
+    val standalonePackage = "com.iplus.keyboard"
+    val playstorePackage = "com.iplus.keyboard.playstore"
 
-    return (value.startsWith("$standalonePackage/") && packageName == playstorePackage) || (value.startsWith("$playstorePackage/") && packageName == standalonePackage)
+    return (value.startsWith("$standalonePackage/") && packageName == playstorePackage) ||
+        (value.startsWith("$playstorePackage/") && packageName == standalonePackage)
 }
 
 public const val IMPORT_GGUF_MODEL_REQUEST = 71067309
@@ -112,9 +116,9 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
 
         this.doublePackage.value = this.doublePackage.value || isDoublePackage()
 
-        this.micPermissionGrantedOrUsingSystem.value = (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) || runBlocking {
-            getSetting(USE_SYSTEM_VOICE_INPUT)
-        }
+        this.micPermissionGrantedOrUsingSystem.value =
+            (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) ||
+                getSettingBlocking(USE_SYSTEM_VOICE_INPUT)
 
         if(!inputMethodEnabled) {
             wasImeEverDisabled = true
@@ -180,34 +184,41 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
         }
     }
 
+    private fun resolveThemeOption(rawKey: String): ThemeOption {
+        val candidate = ThemeOptions[normalizeThemeKey(rawKey)]
+        return when {
+            candidate == null -> VoiceInputTheme
+            !candidate.available(this) -> VoiceInputTheme
+            else -> candidate
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         org.futo.inputmethod.latin.Subtypes.addDefaultSubtypesIfNecessary(this)
 
         enableEdgeToEdge()
+        updateSystemState()
+        updateContent()
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 updateSystemState()
-                updateContent()
+            }
+        }
+
+        if (BuildConfig.UPDATE_CHECKING) {
+            lifecycleScope.launch {
+                try {
+                    org.futo.inputmethod.updates.UpdateChecker.checkForUpdate()
+                } catch (ignored: Exception) {}
             }
         }
 
         lifecycleScope.launch {
-            try {
-                org.futo.inputmethod.updates.UpdateChecker.checkForUpdate()
-            } catch (ignored: Exception) {}
-        }
-
-        lifecycleScope.launch {
             getSettingFlow(THEME_KEY).collect {
-                val themeOptionFromSettings = ThemeOptions[it]
-                val themeOption = when {
-                    themeOptionFromSettings == null -> VoiceInputTheme
-                    !themeOptionFromSettings.available(this@SettingsActivity) -> VoiceInputTheme
-                    else -> themeOptionFromSettings
-                }
+                val themeOption = resolveThemeOption(it)
 
                 this@SettingsActivity.themeOption.value = themeOption
                 this@SettingsActivity.themeProvider = BasicThemeProvider(
@@ -220,12 +231,7 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
         }
 
         deferGetSetting(THEME_KEY) {
-            val themeOptionFromSettings = ThemeOptions[it]
-            val themeOption = when {
-                themeOptionFromSettings == null -> VoiceInputTheme
-                !themeOptionFromSettings.available(this) -> VoiceInputTheme
-                else -> themeOptionFromSettings
-            }
+            val themeOption = resolveThemeOption(it)
 
             this.themeOption.value = themeOption
             this.themeProvider = BasicThemeProvider(
@@ -300,7 +306,10 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
     // Provides theme for keyboard preview
     private var themeProvider: BasicThemeProvider? = null
     override fun getDrawableProvider(): DynamicThemeProvider {
-        return themeProvider!!
+        return themeProvider ?: BasicThemeProvider(
+            context = this,
+            overrideColorScheme = VoiceInputTheme.obtainColors(this)
+        ).also { themeProvider = it }
     }
 
     fun updateEdgeToEdge() {

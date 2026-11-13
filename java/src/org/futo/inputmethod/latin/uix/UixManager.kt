@@ -47,6 +47,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -159,7 +160,7 @@ class UixActionKeyboardManager(val uixManager: UixManager, val latinIME: LatinIM
     }
 
     override fun triggerContentUpdate() {
-        uixManager.setContent()
+        uixManager.bumpContentRefresh()
     }
 
     override fun createInputTransaction(applySpaceIfNeeded: Boolean): ActionInputTransaction {
@@ -175,11 +176,24 @@ class UixActionKeyboardManager(val uixManager: UixManager, val latinIME: LatinIM
     }
 
     override fun replaceAllText(v: String) {
-        val ic = latinIME.getBaseInputConnection()
-        if (ic != null) {
-            ic.setComposingRegion(0, ic.getExtractedText(ExtractedTextRequest(), 0)?.text?.length ?: 0)
-            ic.setComposingText("", 1)
+        val ic = latinIME.getBaseInputConnection() ?: return
+        ic.beginBatchEdit()
+        try {
+            ic.finishComposingText()
+            val totalLen = ic.getExtractedText(ExtractedTextRequest(), 0)?.text?.length
+            if (totalLen != null) {
+                ic.setComposingRegion(0, totalLen)
+                ic.setComposingText("", 1)
+            } else {
+                val beforeLen = ic.getTextBeforeCursor(4096, 0)?.length ?: 0
+                val afterLen = ic.getTextAfterCursor(4096, 0)?.length ?: 0
+                if (beforeLen > 0 || afterLen > 0) {
+                    ic.deleteSurroundingText(beforeLen, afterLen)
+                }
+            }
             ic.commitText(v, 1)
+        } finally {
+            ic.endBatchEdit()
         }
     }
 
@@ -216,12 +230,7 @@ class UixActionKeyboardManager(val uixManager: UixManager, val latinIME: LatinIM
     }
 
     override fun triggerSystemVoiceInput() {
-        latinIME.latinIMELegacy.onCodeInput(
-            Constants.CODE_SHORTCUT,
-            Constants.SUGGESTION_STRIP_COORDINATE,
-            Constants.SUGGESTION_STRIP_COORDINATE,
-            false
-        );
+        latinIME.onVoiceShortcutPressed(preferSystemVoice = true)
     }
 
     override fun updateTheme(newTheme: ThemeOption) {
@@ -307,18 +316,19 @@ data class ActiveDialogRequest(
 )
 
 class UixManager(private val latinIME: LatinIME) {
-    private var shouldShowSuggestionStrip: Boolean = true
-    private var suggestedWords: SuggestedWords? = null
+    private var shouldShowSuggestionStrip by mutableStateOf(true)
+    private var suggestedWords by mutableStateOf<SuggestedWords?>(null)
 
     private var composeView: ComposeView? = null
 
-    private var currWindowAction: Action? = null
+    private var currWindowAction by mutableStateOf<Action?>(null)
     private var persistentStates: HashMap<Action, PersistentActionState?> = hashMapOf()
 
-    private var inlineSuggestions: List<MutableState<View?>> = listOf()
+    private var inlineSuggestions by mutableStateOf<List<MutableState<View?>>>(listOf())
     private val keyboardManagerForAction = UixActionKeyboardManager(this, latinIME)
 
-    private var mainKeyboardHidden = false
+    private var mainKeyboardHidden by mutableStateOf(false)
+    private var themeVersion by mutableStateOf(0)
 
     private var numSuggestionsSinceNotice = 0
     private var currentNotice: MutableState<ImportantNotice?> = mutableStateOf(null)
@@ -343,9 +353,13 @@ class UixManager(private val latinIME: LatinIME) {
 
     var isInputOverridden = mutableStateOf(false)
 
-    var currWindowActionWindow: ActionWindow? = null
+    var currWindowActionWindow by mutableStateOf<ActionWindow?>(null)
 
     val isMainKeyboardHidden get() = mainKeyboardHidden
+
+    fun bumpContentRefresh() {
+        themeVersion += 1
+    }
 
     fun onActionActivated(rawAction: Action) {
         latinIME.inputLogic.finishInput()
@@ -355,6 +369,9 @@ class UixManager(private val latinIME: LatinIME) {
         }
 
         if (action.windowImpl != null) {
+            if (currWindowActionWindow != null) {
+                closeActionWindow()
+            }
             enterActionWindowView(action)
         } else if (action.simplePressImpl != null) {
             action.simplePressImpl.invoke(keyboardManagerForAction, persistentStates[action])
@@ -418,7 +435,8 @@ class UixManager(private val latinIME: LatinIME) {
     }
 
     private fun enterActionWindowView(action: Action) {
-        assert(action.windowImpl != null)
+        val windowFactory = action.windowImpl ?: return
+        latinIME.cancelOngoingKeyboardTouches()
 
         mainKeyboardHidden = true
 
@@ -428,45 +446,43 @@ class UixManager(private val latinIME: LatinIME) {
             persistentStates[action] = action.persistentState?.let { it(keyboardManagerForAction) }
         }
 
-        currWindowActionWindow = (action.windowImpl!!)(keyboardManagerForAction, persistentStates[action])
+        currWindowActionWindow = windowFactory(keyboardManagerForAction, persistentStates[action])
 
         if(action.keepScreenAwake) {
             latinIME.window.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
 
-        setContent()
-
         keyboardManagerForAction.announce("${latinIME.resources.getString(action.name)} mode")
     }
 
     fun returnBackToMainKeyboardViewFromAction() {
-        if(currWindowActionWindow == null) return
+        val windowToClose = currWindowActionWindow ?: return
+        val actionToClose = currWindowAction
+        latinIME.cancelOngoingKeyboardTouches()
 
-        val name = latinIME.resources.getString(currWindowAction!!.name)
-
-        currWindowActionWindow!!.close()
-
-        currWindowAction = null
+        // Clear state first so closing() invoking closeActionWindow() cannot recurse.
         currWindowActionWindow = null
-
+        currWindowAction = null
         mainKeyboardHidden = false
+
+        windowToClose.close()
 
         latinIME.onKeyboardShown()
 
         latinIME.window.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        setContent()
-
-        keyboardManagerForAction.announce("$name closed")
+        val name = actionToClose?.let { latinIME.resources.getString(it.name) } ?: ""
+        if (name.isNotEmpty()) {
+            keyboardManagerForAction.announce("$name closed")
+        }
     }
 
     fun toggleExpandAction(to: Boolean? = null) {
+        latinIME.cancelOngoingKeyboardTouches()
         mainKeyboardHidden = !(to ?: mainKeyboardHidden)
         if(!mainKeyboardHidden) {
             latinIME.onKeyboardShown()
         }
-
-        setContent()
     }
 
     @Composable
@@ -477,10 +493,10 @@ class UixManager(private val latinIME: LatinIME) {
             1.5
         }
         Column {
-            if(mainKeyboardHidden || latinIME.isInputConnectionOverridden) {
+            if(mainKeyboardHidden || isInputOverridden.value) {
                 ActionWindowBar(
                     onBack = { returnBackToMainKeyboardViewFromAction() },
-                    canExpand = currWindowAction!!.canShowKeyboard,
+                    canExpand = currWindowAction?.canShowKeyboard ?: false,
                     onExpand = { toggleExpandAction() },
                     windowTitleBar = { windowImpl.WindowTitleBar(this) }
                 )
@@ -497,7 +513,7 @@ class UixManager(private val latinIME: LatinIME) {
                 windowImpl.WindowContents(keyboardShown = !isMainKeyboardHidden)
             }
 
-            if(!mainKeyboardHidden && !latinIME.isInputConnectionOverridden) {
+            if(!mainKeyboardHidden && !isInputOverridden.value) {
                 val suggestedWordsOrNull = if (shouldShowSuggestionStrip) {
                     suggestedWords
                 } else {
@@ -635,6 +651,8 @@ class UixManager(private val latinIME: LatinIME) {
 
     fun setContent() {
         composeView?.setContent {
+            @Suppress("UNUSED_VARIABLE")
+            val activeThemeVersion = themeVersion
             UixThemeWrapper(latinIME.colorScheme) {
                 DataStoreCacheProvider {
                     CompositionLocalProvider(LocalManager provides keyboardManagerForAction) {
@@ -763,10 +781,11 @@ class UixManager(private val latinIME: LatinIME) {
     }
 
     fun onColorSchemeChanged() {
-        setContent()
+        bumpContentRefresh()
     }
 
     fun onInputFinishing() {
+        latinIME.cancelOngoingKeyboardTouches()
         closeActionWindow()
         languageSwitcherDialog?.dismiss()
         isShowingActionEditor.value = false
@@ -789,12 +808,10 @@ class UixManager(private val latinIME: LatinIME) {
 
     fun updateVisibility(shouldShowSuggestionsStrip: Boolean, fullscreenMode: Boolean) {
         this.shouldShowSuggestionStrip = shouldShowSuggestionsStrip
-        setContent()
     }
 
     fun setSuggestions(suggestedWords: SuggestedWords?, rtlSubtype: Boolean) {
         this.suggestedWords = suggestedWords
-        setContent()
 
         if(currentNotice.value != null) {
             numSuggestionsSinceNotice += 1
@@ -811,7 +828,6 @@ class UixManager(private val latinIME: LatinIME) {
         inlineSuggestions = response.inlineSuggestions.map {
             latinIME.inflateInlineSuggestion(it)
         }
-        setContent()
 
         return true
     }
@@ -857,11 +873,14 @@ class UixManager(private val latinIME: LatinIME) {
             { }
         )
 
-        val v = latinIME.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator?
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            v!!.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
-        } else {
-            v!!.vibrate(50)
+        val v = latinIME.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        if (v != null && v.hasVibrator()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                v.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                v.vibrate(50)
+            }
         }
     }
 

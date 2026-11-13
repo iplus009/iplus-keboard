@@ -22,6 +22,7 @@ import com.konovalov.vad.config.Mode
 import com.konovalov.vad.config.Model
 import com.konovalov.vad.config.SampleRate
 import com.konovalov.vad.models.VadModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -286,7 +287,16 @@ class AudioRecognizer(
     }
 
     private suspend fun preloadModels() {
-        modelRunner.preload(settings.modelRunConfiguration)
+        try {
+            modelRunner.preload(settings.modelRunConfiguration)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            e.printStackTrace()
+            withContext(Dispatchers.Main) {
+                cancel()
+            }
+        }
     }
 
     private suspend fun recordingJob(recorder: AudioRecord, vad: VadModel) {
@@ -519,14 +529,22 @@ class AudioRecognizer(
 
         yield()
         val outputText = try {
-             modelRunner.run(
+            modelRunner.run(
                 floatArray,
                 settings.modelRunConfiguration,
                 settings.decodingConfiguration,
                 runnerCallback
             ).trim()
-        }catch(e: InferenceCancelledException) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: InferenceCancelledException) {
             yield()
+            return
+        } catch (e: Exception) {
+            e.printStackTrace()
+            withContext(Dispatchers.Main) {
+                cancel()
+            }
             return
         }
 

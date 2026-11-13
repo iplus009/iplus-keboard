@@ -21,7 +21,7 @@ val ThemeAction = Action(
 
             @Composable
             override fun WindowContents(keyboardShown: Boolean) {
-                ThemePicker { manager.updateTheme(it) }
+                ThemePicker(isInInputMethod = true) { manager.updateTheme(it) }
             }
 
             override fun close() {

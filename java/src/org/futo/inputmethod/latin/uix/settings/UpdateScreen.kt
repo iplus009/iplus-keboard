@@ -22,8 +22,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -33,13 +35,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -158,32 +157,34 @@ private suspend fun install(scope: CoroutineScope, context: Context, inputStream
     }
 }
 
-@DelicateCoroutinesApi
-private suspend fun downloadAndInstall(scope: CoroutineScope, context: Context, updateResult: UpdateResult, updateStatusText: (String) -> Unit) = GlobalScope.launch(Dispatchers.IO) {
+private suspend fun downloadAndInstall(scope: CoroutineScope, context: Context, updateResult: UpdateResult, updateStatusText: (String) -> Unit) {
     UpdateStatus.isDownloading.value = true
 
-    var inputStream: InputStream? = null;
     try {
-        val httpClient = OkHttpClient()
-        val request = Request.Builder().method("GET", null).url(updateResult.apkUrl).build()
+        withContext(Dispatchers.IO) {
+            try {
+                val httpClient = OkHttpClient()
+                val request = Request.Builder().method("GET", null).url(updateResult.apkUrl).build()
 
-        val response = httpClient.newCall(request).execute()
-        val body = response.body
-        if (response.isSuccessful && body != null) {
-            inputStream = body.byteStream();
-            val dataLength = body.contentLength();
-            install(scope, context, inputStream, dataLength, updateStatusText)
-        } else {
-            throw Exception("Failed to download latest version of app.");
-        }
-    } catch (e: Throwable) {
-        Log.w("UpdateScreen", "Exception thrown while downloading and installing latest version of app.", e);
-        withContext(Dispatchers.Main) {
-            updateStatusText("Failed to download update: ${e.message}");
-            context.openURI(updateResult.apkUrl)
+                httpClient.newCall(request).execute().use { response ->
+                    val body = response.body
+                    if (response.isSuccessful && body != null) {
+                        body.byteStream().use { inputStream ->
+                            install(scope, context, inputStream, body.contentLength(), updateStatusText)
+                        }
+                    } else {
+                        throw Exception("Failed to download latest version of app.")
+                    }
+                }
+            } catch (e: Throwable) {
+                Log.w("UpdateScreen", "Exception thrown while downloading and installing latest version of app.", e)
+                withContext(Dispatchers.Main) {
+                    updateStatusText("Failed to download update: ${e.message}")
+                    context.openURI(updateResult.apkUrl)
+                }
+            }
         }
     } finally {
-        inputStream?.close();
         UpdateStatus.isDownloading.value = false
     }
 }
@@ -191,13 +192,19 @@ private suspend fun downloadAndInstall(scope: CoroutineScope, context: Context, 
 @Composable
 fun UpdateDialog(navController: NavHostController) {
     val scope = LocalLifecycleOwner.current
+    val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
-    val updateInfo = remember { runBlocking {
-        context.getSetting(LAST_UPDATE_CHECK_RESULT, "")
-    } }
+    val isInspecting = LocalInspectionMode.current
+    val updateInfo = remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(context, isInspecting) {
+        if (!isInspecting) {
+            updateInfo.value = context.getSetting(LAST_UPDATE_CHECK_RESULT, "")
+        }
+    }
 
-    val lastUpdateResult = if(!LocalInspectionMode.current){
-        remember { UpdateResult.fromString(updateInfo) }
+    val lastUpdateResult = if (!isInspecting) {
+        val rawInfo = updateInfo.value ?: return
+        remember(rawInfo) { UpdateResult.fromString(rawInfo) }
     } else {
         UpdateResult(123, "abc", "1.2.3")
     }
@@ -239,13 +246,15 @@ fun UpdateDialog(navController: NavHostController) {
             },
             confirmButton = {
                 TextButton(onClick = {
-                    GlobalScope.launch { downloadAndInstall(scope.lifecycleScope, context, lastUpdateResult) {
-                        statusText.value = it
+                    coroutineScope.launch {
+                        downloadAndInstall(scope.lifecycleScope, context, lastUpdateResult) {
+                            statusText.value = it
 
-                        if(!it.endsWith("%")) {
-                            showSpinner.value = false
+                            if (!it.endsWith("%")) {
+                                showSpinner.value = false
+                            }
                         }
-                    } }
+                    }
                 }, enabled = !isDownloading.value) {
                     Text(stringResource(R.string.update))
                 }

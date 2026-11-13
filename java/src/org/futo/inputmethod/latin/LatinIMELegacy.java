@@ -1566,7 +1566,11 @@ public class LatinIMELegacy implements KeyboardActionListener,
     // completely replace #onCodeInput.
     public void onEvent(@Nonnull final Event event) {
         if (Constants.CODE_SHORTCUT == event.mKeyCode) {
-            mRichImm.switchToShortcutIme(mInputMethodService);
+            if (mInputMethodService instanceof LatinIME) {
+                ((LatinIME) mInputMethodService).onVoiceShortcutPressed(false);
+            } else {
+                mRichImm.switchToShortcutIme(mInputMethodService);
+            }
         }
         final InputTransaction completeInputTransaction =
                 mInputLogic.onCodeInput(mSettings.getCurrent(), event,

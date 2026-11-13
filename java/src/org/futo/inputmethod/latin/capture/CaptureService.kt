@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
@@ -25,14 +26,17 @@ class CaptureService : Service() {
     companion object {
         const val ACTION_SET_PROJECTION = "ACTION_SET_PROJECTION"
         const val ACTION_CAPTURE_ONCE = "ACTION_CAPTURE_ONCE"
+        const val ACTION_CAPTURE_WITH_PROJECTION = "ACTION_CAPTURE_WITH_PROJECTION"
         const val EXTRA_RESULT_CODE = "EXTRA_RESULT_CODE"
         const val EXTRA_RESULT_INTENT = "EXTRA_RESULT_INTENT"
         const val BROADCAST_SCREENSHOT = "org.futo.inputmethod.SCREENSHOT_READY"
         const val EXTRA_SCREENSHOT_BYTES = "screenshotBytes"
         const val EXTRA_TARGET_PACKAGE = "extra_target_package"
+        private const val NOTIFICATION_ID = 12345
     }
 
     private var mediaProjection: MediaProjection? = null
+    private var savedTargetPackage: String? = null
     private lateinit var mpManager: MediaProjectionManager
     private var imageReader: ImageReader? = null
     private var virtualDisplay: android.hardware.display.VirtualDisplay? = null
@@ -43,19 +47,25 @@ class CaptureService : Service() {
     override fun onCreate() {
         super.onCreate()
         mpManager = getSystemService(MediaProjectionManager::class.java)
-        startForegroundIfNeeded()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i("CaptureService", "onStartCommand action=${intent?.action}")
+        intent?.getStringExtra(EXTRA_TARGET_PACKAGE)?.let {
+            savedTargetPackage = it
+        }
+
         when (intent?.action) {
-            ACTION_SET_PROJECTION -> {
+            ACTION_SET_PROJECTION,
+            ACTION_CAPTURE_WITH_PROJECTION -> {
                 val rc = intent.getIntExtra(EXTRA_RESULT_CODE, -1)
+                @Suppress("DEPRECATION")
                 val data = intent.getParcelableExtra<Intent>(EXTRA_RESULT_INTENT)
-                Log.i("CaptureService", "ACTION_SET_PROJECTION rc=$rc data=${data != null}")
+                Log.i("CaptureService", "${intent.action} rc=$rc data=${data != null}")
                 if (rc == android.app.Activity.RESULT_OK && data != null) {
+                    // Android 14+ requires starting mediaProjection FGS only after consent is obtained.
+                    startForegroundIfNeeded()
                     mediaProjection = mpManager.getMediaProjection(rc, data)
-                    // Register a callback to manage projection lifecycle as required by newer APIs.
                     try {
                         val callback = object : MediaProjection.Callback() {
                             override fun onStop() {
@@ -68,13 +78,21 @@ class CaptureService : Service() {
                     } catch (e: Exception) {
                         Log.w("CaptureService", "Failed to register MediaProjection callback: ${e.message}")
                     }
-                }
-                // pass-through target package if any
-                intent.getStringExtra(EXTRA_TARGET_PACKAGE)?.let {
-                    // store as tag on service via intent; not persisted beyond this command
+                    if (intent.action == ACTION_CAPTURE_WITH_PROJECTION) {
+                        captureOnce(savedTargetPackage)
+                    }
+                } else {
+                    stopSelf()
                 }
             }
-            ACTION_CAPTURE_ONCE -> captureOnce(intent?.getStringExtra(EXTRA_TARGET_PACKAGE))
+            ACTION_CAPTURE_ONCE -> {
+                if (mediaProjection == null) {
+                    stopSelf()
+                } else {
+                    captureOnce(intent.getStringExtra(EXTRA_TARGET_PACKAGE) ?: savedTargetPackage)
+                }
+            }
+            else -> stopSelf()
         }
         return START_NOT_STICKY
     }
@@ -143,16 +161,28 @@ class CaptureService : Service() {
     }
 
     private fun startForegroundIfNeeded() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val nm = getSystemService(NotificationManager::class.java)
             val channelId = "capture_service"
             val channel = NotificationChannel(channelId, "Capture Service", NotificationManager.IMPORTANCE_LOW)
             nm.createNotificationChannel(channel)
-            val n = Notification.Builder(this, channelId).setContentTitle("Capture service").setContentText("Ready").build()
-            startForeground(12345, n)
+            Notification.Builder(this, channelId)
+                .setSmallIcon(android.R.drawable.ic_menu_camera)
+                .setContentTitle("Capture service")
+                .setContentText("Capturing screen")
+                .build()
         } else {
-            val n = Notification()
-            startForeground(12345, n)
+            @Suppress("DEPRECATION")
+            Notification.Builder(this)
+                .setSmallIcon(android.R.drawable.ic_menu_camera)
+                .setContentTitle("Capture service")
+                .setContentText("Capturing screen")
+                .build()
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
         }
     }
 

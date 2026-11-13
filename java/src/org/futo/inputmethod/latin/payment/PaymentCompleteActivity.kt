@@ -84,10 +84,10 @@ class PaymentCompleteActivity : ComponentActivity() {
                                     )
 
                                     NavigationItem(
-                                        title = "Email keyboard@futo.org",
+                                        title = "Report issue on GitHub",
                                         style = NavigationItemStyle.Mail,
                                         navigate = {
-                                            openURI("mailto:keyboard@futo.org")
+                                            openURI("https://github.com/iplus009/iplus-keboard/issues")
                                         })
                                 }
                             }

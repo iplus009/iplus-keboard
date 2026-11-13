@@ -52,6 +52,7 @@ import okhttp3.Response
 import org.futo.inputmethod.latin.R
 import org.futo.inputmethod.latin.uix.THEME_KEY
 import org.futo.inputmethod.latin.uix.deferGetSetting
+import org.futo.inputmethod.latin.uix.normalizeThemeKey
 import org.futo.inputmethod.latin.uix.settings.useDataStore
 import org.futo.inputmethod.latin.uix.theme.ThemeOption
 import org.futo.inputmethod.latin.uix.theme.ThemeOptions
@@ -412,12 +413,13 @@ class DownloadActivity : ComponentActivity() {
 
         if (modelsToDownload.isEmpty()) {
             cancel()
+            return
         }
 
         isDownloading = false
 
         deferGetSetting(THEME_KEY) {
-            val themeOptionFromSettings = ThemeOptions[it]
+            val themeOptionFromSettings = ThemeOptions[normalizeThemeKey(it)]
             val themeOption = when {
                 themeOptionFromSettings == null -> VoiceInputTheme
                 !themeOptionFromSettings.available(this) -> VoiceInputTheme

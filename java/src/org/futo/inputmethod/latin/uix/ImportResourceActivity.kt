@@ -366,9 +366,10 @@ object ResourceHelper {
 
     fun tryFindingVoiceInputModelForLocale(context: Context, locale: Locale): ModelLoader? {
         val file = runBlocking { findFileForKind(context, locale, FileKind.VoiceInput) }
-            ?: return BuiltInVoiceInputFallbacks[locale.language]
-
-        return ModelFileFile(R.string.externally_imported_model, file)
+        if (file != null) {
+            return ModelFileFile(R.string.externally_imported_model, file)
+        }
+        return BuiltInVoiceInputFallbacks[locale.language]?.takeIf { it.exists(context) }
     }
 
     fun tryOpeningCustomMainDictionaryForLocale(context: Context, locale: Locale): ReadOnlyBinaryDictionary? {

@@ -32,6 +32,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -45,6 +46,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -353,7 +355,7 @@ class EmojiGridAdapter(
 
     internal inner class CategoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         fun bind(item: CategoryItem) {
-            itemView.layoutParams.width = emojiCellWidth * 9
+            itemView.layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
             itemView.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
             itemView.findViewById<TextView>(R.id.text_section).text = item.title
             itemView.findViewById<TextView>(R.id.text_section).setTextColor(contentColor.toArgb())
@@ -442,6 +444,22 @@ fun generateSkinToneVariants(emoji: String, emojiMap: Map<String, EmojiItem>): L
 }
 
 
+internal fun resolveCategoryForScrollPosition(
+    items: List<EmojiViewItem>,
+    firstVisiblePosition: Int,
+    lastVisiblePosition: Int
+): CategoryItem? {
+    if (items.isEmpty() || firstVisiblePosition < 0) return null
+    val finalCategoryIndex = items.indexOfLast { it is CategoryItem }
+    if (finalCategoryIndex == -1) return null
+
+    if (lastVisiblePosition >= 0 && finalCategoryIndex < lastVisiblePosition) {
+        return items[finalCategoryIndex] as? CategoryItem
+    }
+    val safeEnd = (firstVisiblePosition + 1).coerceIn(0, items.size)
+    return items.subList(0, safeEnd).lastOrNull { it is CategoryItem } as? CategoryItem
+}
+
 @Composable
 fun Emojis(
     emojis: List<EmojiViewItem>,
@@ -489,9 +507,9 @@ fun Emojis(
                     layoutManager = GridLayoutManager(context, 8).apply {
                         spanSizeLookup = object : SpanSizeLookup() {
                             override fun getSpanSize(position: Int): Int {
-                                return when(emojiAdapter.currentList[position]) {
-                                    is EmojiItemItem -> 1
+                                return when (emojiAdapter.currentList.getOrNull(position)) {
                                     is CategoryItem -> spanCount
+                                    else -> 1
                                 }
                             }
                         }
@@ -506,18 +524,13 @@ fun Emojis(
                             val firstVisiblePosition = layoutManager.findFirstVisibleItemPosition()
                             val lastVisiblePosition = layoutManager.findLastCompletelyVisibleItemPosition()
 
-                            val finalCategoryIndex = emojis.indexOfLast { it is CategoryItem }
-                            if(finalCategoryIndex == -1) return
-
-                            if(finalCategoryIndex < lastVisiblePosition) {
-                                currentCategory.value = emojis[finalCategoryIndex] as CategoryItem
-                            } else {
-                                val itm = emojis.subList(0, firstVisiblePosition + 1)
-                                    .lastOrNull { it is CategoryItem }
-
-                                if (itm != null) {
-                                    currentCategory.value = itm as CategoryItem
-                                }
+                            // Always read live currentList instead of stale closure items.
+                            resolveCategoryForScrollPosition(
+                                emojiAdapter.currentList,
+                                firstVisiblePosition,
+                                lastVisiblePosition
+                            )?.let { category ->
+                                currentCategory.value = category
                             }
                         }
                     })
@@ -525,11 +538,12 @@ fun Emojis(
             },
             update = {
                 if (viewWidth > 0) {
-                    (it.layoutManager as GridLayoutManager).spanCount = viewWidth / emojiWidth
+                    (it.layoutManager as GridLayoutManager).spanCount =
+                        (viewWidth / emojiWidth.coerceAtLeast(1)).coerceAtLeast(1)
                 }
 
                 jumpCategory.value?.let { item ->
-                    val idx = emojis.indexOf(item)
+                    val idx = emojiAdapter.currentList.indexOf(item).takeIf { i -> i != -1 } ?: emojis.indexOf(item)
                     if (idx != -1) {
                         it.post {
                             (it.layoutManager as GridLayoutManager).scrollToPositionWithOffset(
@@ -787,13 +801,15 @@ fun EmojiGrid(
     searchFilter: String
 ) {
     val context = LocalContext.current
-    val recentEmojis = remember {
-        runBlocking { context.getRecentEmojis() }.map {
+    val recentEmojis by produceState<List<EmojiItem>>(initialValue = emptyList(), context) {
+        value = withContext(Dispatchers.IO) {
+            context.getRecentEmojis()
+        }.map {
             EmojiItem(it, description = "", category = "", skinTones = false, tags = listOf(), aliases = listOf())
         }
     }
 
-    val categorizedEmojis = remember {
+    val categorizedEmojis = remember(emojis) {
         var prevCategory = ""
         val data = emojis.flatMap { emoji ->
             listOfNotNull(
@@ -979,7 +995,12 @@ val EmojiAction = Action(
             @Composable
             override fun WindowContents(keyboardShown: Boolean) {
                 val view = LocalView.current
-                state.emojis.value?.let { emojis ->
+                val loadedEmojis = state.emojis.value
+                if (loadedEmojis == null) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else {
                     EmojiGrid(onClick = {
                         manager.typeText(it.emoji)
                         manager.getLifecycleScope().launch {
@@ -997,7 +1018,7 @@ val EmojiAction = Action(
                         if(!isRepeated) {
                             manager.performHapticAndAudioFeedback(Constants.CODE_DELETE, view)
                         }
-                    }, emojis = emojis, keyboardShown = keyboardShown, emojiMap = state.emojiMap, keyBackground = manager.getThemeProvider().keyBackground,
+                    }, emojis = loadedEmojis, keyboardShown = keyboardShown, emojiMap = state.emojiMap, keyBackground = manager.getThemeProvider().keyBackground,
                         isSearching = searching.value, searchFilter = searchText.value)
                 }
             }
@@ -1046,7 +1067,7 @@ val EmojiAction = Action(
                             listOf(
                                 DialogRequestItem("Cancel") {},
                                 DialogRequestItem("Clear") {
-                                    runBlocking {
+                                    manager.getLifecycleScope().launch {
                                         manager.getContext().resetRecentEmojis()
                                     }
                                     manager.closeActionWindow()

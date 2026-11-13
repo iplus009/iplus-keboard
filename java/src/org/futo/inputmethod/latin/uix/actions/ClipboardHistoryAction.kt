@@ -65,6 +65,8 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.lifecycle.LifecycleCoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -569,26 +571,35 @@ class ClipboardHistoryManager(val context: Context, val coroutineScope: Lifecycl
         deleteUnusedMediaPaths(candidatePaths)
     }
 
+    private val clipboardIoMutex = Mutex()
+
     private fun saveClipboard() {
         if(!context.isDirectBootUnlocked) return
 
         coroutineScope.launch {
-            withContext(Dispatchers.IO) {
-                pruneOldItems()
+            clipboardIoMutex.withLock {
+                withContext(Dispatchers.IO) {
+                    pruneOldItems()
 
-                val snapshot = withContext(Dispatchers.Main) {
-                    clipboardHistory.toList()
+                    val snapshot = withContext(Dispatchers.Main) {
+                        clipboardHistory.toList()
+                    }
+                    val json = Json.encodeToString(snapshot)
+
+                    val file = File(context.filesDir, "clipboard.json")
+                    val tmpFile = File(context.filesDir, "clipboard.json.tmp")
+                    tmpFile.writeText(json)
+                    if (!tmpFile.renameTo(file)) {
+                        file.writeText(json)
+                        tmpFile.delete()
+                    }
                 }
-                val json = Json.encodeToString(snapshot)
-
-                val file = File(context.filesDir, "clipboard.json")
-                file.writeText(json)
             }
         }
     }
 
-    private suspend fun loadClipboard() {
-        if(!context.isDirectBootUnlocked) return
+    private suspend fun loadClipboard() = clipboardIoMutex.withLock {
+        if(!context.isDirectBootUnlocked) return@withLock
 
         try {
             val file = File(context.filesDir, "clipboard.json")

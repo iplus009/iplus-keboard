@@ -88,7 +88,7 @@ fun ActionTextEditor(text: MutableState<String>) {
                 }
                 onCreateInputConnection(editorInfo)
 
-                manager.overrideInputConnection(inputConnection!!, editorInfo)
+                inputConnection?.let { manager.overrideInputConnection(it, editorInfo) }
 
                 requestFocus()
             }

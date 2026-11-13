@@ -47,7 +47,9 @@ internal class ModelBuiltInAsset(
     val ggmlFile: String
 ) : ModelLoader {
     override fun exists(context: Context): Boolean {
-        return true
+        return runCatching {
+            context.assets.openFd(ggmlFile).use { true }
+        }.getOrDefault(false)
     }
 
     override fun getRequiredDownloadList(context: Context): List<String> {

@@ -3,9 +3,11 @@ package org.futo.inputmethod.latin.uix.settings
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
+import androidx.core.content.ContextCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -176,17 +178,31 @@ fun SetupChangeDefaultIME(doublePackage: Boolean = true) {
 @Composable
 @Preview
 fun SetupEnableMic(onClick: () -> Unit = { }) {
+    val context = LocalContext.current
+    val (_, setUseSystemVoiceInput) = useDataStore(
+        key = USE_SYSTEM_VOICE_INPUT.key,
+        default = USE_SYSTEM_VOICE_INPUT.default
+    )
+
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
-        if(isGranted) { onClick() }
+        if (isGranted) {
+            setUseSystemVoiceInput(false)
+            onClick()
+        }
     }
-
-    val context = LocalContext.current
 
     var askedCount by remember { mutableStateOf(0) }
     val askMicAccess = {
-        if (askedCount++ >= 2) {
+        val alreadyGranted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+        if (alreadyGranted) {
+            setUseSystemVoiceInput(false)
+            onClick()
+        } else if (askedCount++ >= 2) {
             val packageName = context.packageName
             val myAppSettings = Intent(
                 Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse(
@@ -199,10 +215,7 @@ fun SetupEnableMic(onClick: () -> Unit = { }) {
         } else {
             launcher.launch(Manifest.permission.RECORD_AUDIO)
         }
-        onClick()
     }
-
-    val (useSystemVoiceInput, setUseSystemVoiceInput) = useDataStore(key = USE_SYSTEM_VOICE_INPUT.key, default = USE_SYSTEM_VOICE_INPUT.default)
 
     SetupContainer {
         Column {

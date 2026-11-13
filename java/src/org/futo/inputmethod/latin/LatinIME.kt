@@ -57,16 +57,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import okhttp3.MultipartBody
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONObject
-import org.json.JSONArray
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import org.futo.inputmethod.keyboard.KeyboardSwitcher
 import org.futo.inputmethod.latin.SuggestedWords.SuggestedWordInfo
 import org.futo.inputmethod.latin.common.Constants
 import org.futo.inputmethod.latin.define.ProductionFlags
@@ -82,6 +75,9 @@ import org.futo.inputmethod.latin.uix.OneHandedModeSetting
 import org.futo.inputmethod.latin.uix.SUGGESTION_BLACKLIST
 import org.futo.inputmethod.latin.uix.THEME_KEY
 import org.futo.inputmethod.latin.uix.UixManager
+import org.futo.inputmethod.latin.uix.USE_SYSTEM_VOICE_INPUT
+import org.futo.inputmethod.latin.uix.actions.DeviceSpeechInputAction
+import org.futo.inputmethod.latin.uix.actions.VoiceInputAction
 import org.futo.inputmethod.latin.uix.createInlineSuggestionsRequest
 import org.futo.inputmethod.latin.uix.dataStore
 import org.futo.inputmethod.latin.uix.deferGetSetting
@@ -493,166 +489,15 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
     }
 
     private fun processScreenshot(bytes: ByteArray, packageName: String?) {
-        Log.i("LatinIME", "processScreenshot called: bytes=${bytes.size} package=${packageName}")
-        try {
-            // Notify user we're starting the assistant call
+        // Removed hardcoded unauthenticated external endpoint (web.ndpnt.co); fail fast locally
+        // instead of transmitting user screen captures without a configured backend.
+        Log.i("LatinIME", "processScreenshot skipped (${bytes.size} bytes, pkg=$packageName): no assistant backend configured")
+        lifecycleScope.launch(Dispatchers.Main) {
             try {
-                // Show Compose FakeToast via UixManager (more reliable inside IME UI)
-                uixManager.showAssistantMessage("Assistant thinking…")
+                uixManager.showAssistantMessage("AI Assistant is not configured")
             } catch (e: Exception) {
                 Log.w("LatinIME", "Failed to show assistant message: ${e.message}")
             }
-
-            // Build JSON payload and embed image as base64 data URL
-            // Use a long timeout for local slow servers. Time is in milliseconds.
-            val longTimeoutMs = 1000000L
-            val client = OkHttpClient.Builder()
-                .connectTimeout(longTimeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
-                .writeTimeout(longTimeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
-                .readTimeout(longTimeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
-                .callTimeout(longTimeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
-                .build()
-            val b64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
-
-            val systemPrompt = "You are an assistant. Analyze the screenshot and, based on the app context, produce a JSON object (no markdown, no code fences) with exactly two fields: \"textInput\" (the short message the keyboard should type into the conversation) and \"toast\" (a brief rationale/reason to show to the user). Example: {\"textInput\":\"Thanks! I'll be there.\", \"toast\":\"Short confirmation appropriate to the message\"}. Respond ONLY with the JSON object and nothing else."
-            val userPrompt = "Please respond appropriately based on the screenshot."
-
-            val messages = org.json.JSONArray().apply {
-                put(org.json.JSONObject().put("role", "system").put("content", systemPrompt))
-                val user = org.json.JSONObject().put("role", "user")
-                val contentArr = org.json.JSONArray()
-                contentArr.put(org.json.JSONObject().put("type", "text").put("text", userPrompt))
-                contentArr.put(org.json.JSONObject().put("type", "image_url").put("image_url",
-                    org.json.JSONObject().put("url", "data:image/png;base64,$b64")))
-                user.put("content", contentArr)
-                put(user)
-            }
-
-            val bodyJson = org.json.JSONObject().apply {
-                put("model", "huihui_ai/qwen3.5-abliterated:latest")
-                put("messages", messages)
-            }
-
-            val mediaTypeJson = "application/json; charset=utf-8".toMediaType()
-            val reqBody = bodyJson.toString().toRequestBody(mediaTypeJson)
-            val request = Request.Builder().url("https://web.ndpnt.co/api/chat/completions")
-                .header("Authorization", "Bearer ")
-                .post(reqBody)
-                .build()
-
-            Log.i("LatinIME", "AI request -> url=https://web.ndpnt.co/api/chat/completions model=huihui_ai/qwen3.5-abliterated:latest package=${packageName ?: ""} imageBytes=${bytes.size}")
-            val startNanos = System.nanoTime()
-            val resp = client.newCall(request).execute()
-            val durationMs = (System.nanoTime() - startNanos) / 1_000_000
-            val body = resp.body?.string() ?: ""
-            val truncated = if (body.length > 2000) body.substring(0, 2000) + "...(truncated)" else body
-            Log.i("LatinIME", "AI response: code=${resp.code} durationMs=${durationMs}ms bodyLength=${body.length}")
-            Log.d("LatinIME", "AI response body (truncated): $truncated")
-            resp.close()
-
-            // Expect the model to return a JSON object according to the system prompt.
-            try {
-                var textInput: String? = null
-                var toastMsg: String? = null
-
-                // First try: top-level JSON with fields
-                try {
-                    val top = JSONObject(body)
-                    if (top.has("textInput") || top.has("toast")) {
-                        textInput = top.optString("textInput", null)
-                        toastMsg = top.optString("toast", null)
-                    } else if (top.has("choices")) {
-                        // The model may return choices[].message.content which itself is a JSON string
-                        val choices = top.optJSONArray("choices")
-                        if (choices != null && choices.length() > 0) {
-                            val first = choices.getJSONObject(0)
-                            var contentObj: Any? = null
-                            if (first.has("message")) {
-                                val msg = first.get("message")
-                                if (msg is JSONObject) {
-                                    val mobj = msg as JSONObject
-                                    contentObj = mobj.opt("content")
-                                } else {
-                                    contentObj = msg
-                                }
-                            } else if (first.has("text")) {
-                                contentObj = first.optString("text")
-                            } else {
-                                contentObj = first.toString()
-                            }
-
-                            // contentObj may be a JSONObject, JSONArray, or a String containing JSON
-                            when (contentObj) {
-                                is JSONObject -> {
-                                    textInput = contentObj.optString("textInput", null)
-                                    toastMsg = contentObj.optString("toast", null)
-                                }
-                                is JSONArray -> {
-                                    // unlikely, but convert to string
-                                    val s = contentObj.toString()
-                                    try {
-                                        val p = JSONObject(s)
-                                        textInput = p.optString("textInput", null)
-                                        toastMsg = p.optString("toast", null)
-                                    } catch (_: Exception) { }
-                                }
-                                is String -> {
-                                    val s = contentObj as String
-                                    // Try parse as JSON string
-                                    try {
-                                        val p = JSONObject(s)
-                                        textInput = p.optString("textInput", null)
-                                        toastMsg = p.optString("toast", null)
-                                    } catch (ex: Exception) {
-                                        // content may itself be wrapped in quotes; try to unescape
-                                        val unquoted = s.trim()
-                                        if (unquoted.startsWith("{")) {
-                                            try {
-                                                val p2 = JSONObject(unquoted)
-                                                textInput = p2.optString("textInput", null)
-                                                toastMsg = p2.optString("toast", null)
-                                            } catch (_: Exception) { }
-                                        }
-                                    }
-                                }
-                                else -> {
-                                    // fallback: no-op
-                                }
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.w("LatinIME", "Top-level JSON parse failed: ${e.message}")
-                }
-
-                if (!textInput.isNullOrEmpty()) {
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        try {
-                            currentInputConnection?.commitText(textInput, 1)
-                            if (!toastMsg.isNullOrEmpty()) {
-                                uixManager.showAssistantMessage(toastMsg)
-                            } else {
-                                uixManager.showAssistantMessage("Assistant inserted a reply")
-                            }
-                        } catch (e: Exception) {
-                            Log.e("LatinIME", "Failed to commit AI reply: ${e.message}")
-                            uixManager.showAssistantMessage("Assistant failed to insert reply")
-                        }
-                    }
-                } else {
-                    Log.w("LatinIME", "JSON response missing textInput field, falling back to raw body")
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        uixManager.showAssistantMessage("Assistant returned invalid response")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.w("LatinIME", "Failed to handle assistant response: ${e.message}")
-                lifecycleScope.launch(Dispatchers.Main) {
-                    uixManager.showAssistantMessage("Assistant returned unparsable response")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("LatinIME", "AI upload failed: ${e.message}")
         }
     }
 
@@ -827,14 +672,16 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
             candidatesEnd
         )
 
-        latinIMELegacy.onUpdateSelection(
-            oldSelStart,
-            oldSelEnd,
-            newSelStart,
-            newSelEnd,
-            candidatesStart,
-            candidatesEnd
-        )
+        if (!isInputConnectionOverridden) {
+            latinIMELegacy.onUpdateSelection(
+                oldSelStart,
+                oldSelEnd,
+                newSelStart,
+                newSelEnd,
+                candidatesStart,
+                candidatesEnd
+            )
+        }
     }
 
     override fun onExtractedTextClicked() {
@@ -999,9 +846,36 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
         }
     }
 
+    fun cancelOngoingKeyboardTouches() {
+        KeyboardSwitcher.getInstance().mainKeyboardView?.cancelAllOngoingEvents()
+    }
+
+    fun onVoiceShortcutPressed(preferSystemVoice: Boolean = false) {
+        val useSystemVoiceInput = preferSystemVoice || getSettingBlocking(USE_SYSTEM_VOICE_INPUT)
+        if (!useSystemVoiceInput) {
+            uixManager.onActionActivated(VoiceInputAction)
+            return
+        }
+
+        val richImm = RichInputMethodManager.getInstance()
+        if (richImm.hasShortcutIme() && richImm.switchToShortcutIme(this)) {
+            return
+        }
+
+        uixManager.onActionActivated(DeviceSpeechInputAction)
+    }
+
     private var overrideInputConnection: InputConnection? = null
     private var overrideEditorInfo: EditorInfo? = null
     fun overrideInputConnection(to: InputConnection?, editorInfo: EditorInfo?) {
+        if (to == null && this.overrideInputConnection == null) {
+            return
+        }
+        if (to != null && to === this.overrideInputConnection) {
+            return
+        }
+
+        cancelOngoingKeyboardTouches()
         this.overrideInputConnection = to
         this.overrideEditorInfo = editorInfo
 

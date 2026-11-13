@@ -65,6 +65,7 @@ public class PermissionsManager {
         List<String> deniedPermissions = PermissionsUtil.getDeniedPermissions(
                 mContext, permissionsToRequest);
         if (deniedPermissions.isEmpty()) {
+            callback.onRequestPermissionsResult(true);
             return;
         }
         // otherwise request the permissions.
@@ -86,6 +87,8 @@ public class PermissionsManager {
         mRequestIdToCallback.remove(requestCode);
 
         boolean allGranted = PermissionsUtil.allGranted(grantResults);
-        permissionsResultCallback.onRequestPermissionsResult(allGranted);
+        if (permissionsResultCallback != null) {
+            permissionsResultCallback.onRequestPermissionsResult(allGranted);
+        }
     }
 }
