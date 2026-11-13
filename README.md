@@ -1,5 +1,10 @@
 # iPlus Keyboard
 
+<p align="center">
+  <img src="docs/assets/iplus-logo.svg" alt="iPlus Keyboard logo" width="220" />
+</p>
+
+
 **iPlus Keyboard** is an Android keyboard project focused on Bangla and English input, a customizable typing experience, and a cleaner iPlus-branded app interface. This repository develops the iPlus experience on top of the available open-source keyboard engine while preserving upstream licensing and attribution.
 
 > **Development status:** The current implementation branch has a successful GitHub Actions stable-debug build. The APK has not yet completed physical-device regression testing, so build success should not be interpreted as a full feature or release-readiness certification.
