@@ -48,10 +48,17 @@ jobs:
 
       - name: Prepare universal APK for direct download
         run: |
+          set -euo pipefail
           mkdir -p dist
-          APK="build/outputs/apk/stable/debug/nth-kbd-stable-universal-debug.apk"
-          test -f "$APK"
+          echo "Available APK outputs:"
+          find build/outputs/apk/stable/debug -maxdepth 1 -type f -name '*.apk' -print
+          APK="$(find build/outputs/apk/stable/debug -maxdepth 1 -type f -iname '*universal*.apk' -print -quit)"
+          if [ -z "$APK" ]; then
+            echo "Universal APK not found; refusing to publish an ABI-specific build as universal."
+            exit 1
+          fi
           cp "$APK" "dist/iPlus-Keyboard-v0.1.0-beta.1.apk"
+          ls -lh dist/iPlus-Keyboard-v0.1.0-beta.1.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
