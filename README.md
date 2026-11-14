@@ -37,7 +37,10 @@
 | Experience area | Typical stock / generic keyboards | Keybird |
 |---|---|---|
 | **Signature visual style** | Uniform monochrome rectangles | **Keybird Matte** (Bauhaus color-block palette + dot-matrix key legends) alongside **Nothing / AMOLED**, **Emerald**, **Cotton Candy**, and **Material You** presets across `20` theme modes |
-| **Action strip footprint** | Stacked double toolbars eating screen height | **Single `40dp` inline ActionBar** — tap `>` / `<` to swap inline between suggestions and shortcuts (`Undo`, `Redo`, `Text Editor`, `Clipboard`, `One-Handed`, `Theme`) without adding a second row |
+| **Action strip footprint** | Stacked double toolbars eating screen height | **Single `40dp` inline ActionBar** — tap `>` / `<` to swap inline between suggestions and customizable shortcuts, plus **`...` All Actions** drawer (`Translate`, `Voice Input`, `Text Editor`, `Clipboard`, `Undo/Redo`, `Cut/Copy/Paste`) |
+| **Voice typing** | Fixed system-only dictation popup | **Mixed Bangla + English Voice Input** with **Live transcription**, **Voice punctuation**, Bluetooth mic preference, offline Whisper support, and `Use Device Voice` fallback |
+| **Inline translator** | Requires leaving app or switching keyboards | **Built-in Translator** right inside the keyboard with **Auto Detect**, one-tap **`Bn ⇄ En`** toggle, language swap (`⇄`), and direct insert |
+| **Precision editing & clipboard** | Basic cursor drag on spacebar | **Full Text Editor** pad (4-way directional arrows, Shift-Select, Select Word/All, Copy/Paste, Undo/Redo) + **Clipboard Manager** (`50` items / `7` days, password/sensitive-text exclusion) |
 | **Portrait comfort height** | Frequently clamped too short (`~243dp`) on tall phones | **Option B ergonomic height** (`292.0dp` default key grid, `55%p` cap) tuned for ~5.2–5.5 cm two-thumb reach |
 | **Bangla typing depth** | Usually phonetic-only or 1 fixed layout | **4 built-in Bangla layouts** (`Avro (অভ্র)`, `Probhat (প্রভাত)`, `Jatiyo (জাতীয়)`, and alphabetical `Bangla (বাংলা)`) + `English` — up to **5 active subtypes** switchable right from the spacebar |
 | **One-Handed ergonomics** | Basic shrink-to-side box | Dedicated opposite-side **control rail** (`18%` width) with one-tap **Swap Left/Right** and **Expand Full Width**, synced with Split Keyboard |
@@ -120,13 +123,53 @@ Captured directly from `Keybird v2.0.4` (`com.iplus.keyboard`) on Android emulat
       <sub>1-tap Left/Right swap &amp; expand-full controls</sub>
     </td>
   </tr>
+  <tr>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/feature-translate.png" alt="Built-in Keybird Translator with Auto Detect, Bengali target, and Bn <-> En quick toggle" width="210" />
+      <br />
+      <b>Inline Translator (Bn ⇄ En)</b><br />
+      <sub>Auto Detect, quick Bn ⇄ En &amp; direct swap</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/feature-voice-keyboard.png" alt="In-keyboard Voice Input panel with offline Whisper and Device Voice options" width="210" />
+      <br />
+      <b>Voice Input Panel</b><br />
+      <sub>Offline Whisper or quick Device Voice</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/feature-voice-settings.png" alt="Keybird Voice Input settings showing Bangla + English mixed typing, Live transcription, and Voice punctuation" width="210" />
+      <br />
+      <b>Mixed Bangla + English Voice</b><br />
+      <sub>Live transcription, punctuation &amp; BT mic</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/feature-more-actions.png" alt="Keybird All Actions grid with Translate, Voice Input, Emojis, Clipboard, Settings, and Edit actions button" width="210" />
+      <br />
+      <b>All Actions (&hellip; Drawer)</b><br />
+      <sub>Quick launch &amp; customizable toolbar order</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/feature-text-editor.png" alt="Keybird Text Editor action window with 4-way cursor arrows, Shift Select, Copy, Paste, and Undo/Redo" width="210" />
+      <br />
+      <b>Precision Text Editor</b><br />
+      <sub>Directional cursor arrows, select &amp; copy/paste</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/feature-clipboard.png" alt="Privacy-first Keybird Clipboard Manager excluding passwords and storing up to 50 items for 7 days" width="210" />
+      <br />
+      <b>Privacy-First Clipboard</b><br />
+      <sub>50 items / 7 days, skips passwords</sub>
+    </td>
+    <td align="center" width="25%" colspan="2">
+      <img src="docs/assets/showcase/feature-settings-ui.png" alt="Keybird Nothing-inspired dot-matrix Settings home screen with quick Bangla toggles and Try typing here playground" width="210" />
+      <br />
+      <b>Dot-Matrix Settings Home</b><br />
+      <sub>Quick Bangla switches &amp; instant <i>"Try typing here..."</i> test box</sub>
+    </td>
+  </tr>
 </table>
-
-<p align="center">
-  <img src="docs/assets/showcase/feature-settings-ui.png" alt="Keybird Nothing-inspired dot-matrix Settings home screen with quick Bangla toggles and Try typing here playground" width="240" />
-  <br />
-  <sub><b>Dot-Matrix Settings Home:</b> version pill, quick Bangla layout switches, and instant <i>"Try typing here..."</i> playground.</sub>
-</p>
 
 ## Feature overview
 
