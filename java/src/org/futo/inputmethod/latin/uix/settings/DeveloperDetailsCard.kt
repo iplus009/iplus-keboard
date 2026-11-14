@@ -24,14 +24,14 @@ fun DeveloperDetailsCard(modifier: Modifier = Modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
-                    text = "iPlus Apps Store",
+                    text = "Keybird • iPlus Apps Store",
                     fontFamily = Inter,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                     color = Color.White
                 )
                 Text(
-                    text = "Official iPlus keyboard project channel",
+                    text = "Official Keybird project channel",
                     fontFamily = Inter,
                     fontSize = 12.sp,
                     color = Color(0xFF8E8E93)

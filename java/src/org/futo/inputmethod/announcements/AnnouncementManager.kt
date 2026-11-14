@@ -79,7 +79,7 @@ class AnnouncementManager(private val context: Context) {
                 requestMethod = "GET"
                 connectTimeout = 5000
                 readTimeout = 5000
-                setRequestProperty("User-Agent", "iPlusKeyboard/${BuildConfig.VERSION_NAME}")
+                setRequestProperty("User-Agent", "Keybird/${BuildConfig.VERSION_NAME}")
                 setRequestProperty("Accept", "application/json")
             }
 

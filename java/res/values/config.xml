@@ -24,10 +24,9 @@
 
     <dimen name="config_key_hysteresis_distance">8.0dp</dimen>
 
-    <!-- Preferable keyboard height in absolute scale: 1.285in -->
-    <!-- This config_default_keyboard_height value should match with keyboard-heights.xml -->
-    <dimen name="config_default_keyboard_height">240.0dp</dimen>
-    <fraction name="config_max_keyboard_height">46%p</fraction>
+    <!-- Option B default portrait keyboard height (~4.6–4.8 cm key grid; ~5.2–5.5 cm total with bar) -->
+    <dimen name="config_default_keyboard_height">292.0dp</dimen>
+    <fraction name="config_max_keyboard_height">55%p</fraction>
     <fraction name="config_min_keyboard_height">-61.8%p</fraction>
 
     <dimen name="config_more_keys_keyboard_key_height">52.8dp</dimen>

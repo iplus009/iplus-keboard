@@ -14,6 +14,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.Gravity
+import android.view.ViewGroup
 import androidx.core.view.ViewCompat
 import kotlin.math.max
 import kotlin.math.min
@@ -27,18 +28,33 @@ import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodSubtype
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
@@ -76,12 +92,15 @@ import org.futo.inputmethod.latin.uix.EmojiTracker.unuseEmoji
 import org.futo.inputmethod.latin.uix.EmojiTracker.useEmoji
 import org.futo.inputmethod.latin.uix.KeyboardBottomOffsetSetting
 import org.futo.inputmethod.latin.uix.LEGACY_ORBIT_THEME_KEY
+import org.futo.inputmethod.latin.uix.LocalThemeProvider
 import org.futo.inputmethod.latin.uix.OneHandedModeSetting
+import org.futo.inputmethod.latin.uix.PreferenceUtils
 import org.futo.inputmethod.latin.uix.SUGGESTION_BLACKLIST
 import org.futo.inputmethod.latin.uix.THEME_KEY
 import org.futo.inputmethod.latin.uix.UixManager
 import org.futo.inputmethod.latin.uix.USE_SYSTEM_VOICE_INPUT
 import org.futo.inputmethod.latin.uix.actions.DeviceSpeechInputAction
+import org.futo.inputmethod.latin.uix.actions.OneHandedModeHelper
 import org.futo.inputmethod.latin.uix.actions.VoiceInputAction
 import org.futo.inputmethod.latin.uix.createInlineSuggestionsRequest
 import org.futo.inputmethod.latin.uix.dataStore
@@ -203,8 +222,13 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
         latinIMELegacy.updateTheme()
 
         if(settingsRefreshRequired) {
+            val editorInfo = currentInputEditorInfo
+            if (editorInfo == null) {
+                pendingRecreateKeyboard = true
+                return
+            }
             latinIMELegacy.mKeyboardSwitcher.loadKeyboard(
-                currentInputEditorInfo ?: return,
+                editorInfo,
                 latinIMELegacy.mSettings.current,
                 latinIMELegacy.currentAutoCapsState,
                 latinIMELegacy.currentRecapitalizeState
@@ -217,6 +241,14 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
         }
 
         settingsRefreshRequired = false
+        requestRecomputeInsets()
+    }
+
+    private fun applyPendingKeyboardRefresh() {
+        if (pendingRecreateKeyboard || settingsRefreshRequired) {
+            pendingRecreateKeyboard = false
+            recreateKeyboard()
+        }
     }
 
     private var isNavigationBarVisible = false
@@ -274,7 +306,7 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
     private fun invalidateKeyboard(refreshSettings: Boolean = false) {
         settingsRefreshRequired = settingsRefreshRequired || refreshSettings
 
-        if(!uixManager.isMainKeyboardHidden) {
+        if(!uixManager.isMainKeyboardHidden && isInputViewShown) {
             println("Recreating keyboard")
             recreateKeyboard()
         } else {
@@ -297,10 +329,7 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
     // Called by UixManager when the intention is to subsequently call LegacyKeyboardView with hidden=false
     // Maybe this can be changed to LaunchedEffect
     fun onKeyboardShown() {
-        if(pendingRecreateKeyboard) {
-            pendingRecreateKeyboard = false
-            recreateKeyboard()
-        }
+        applyPendingKeyboardRefresh()
     }
 
     private var currentSubtype = ""
@@ -626,28 +655,134 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
             initial = remember { getSettingBlocking(OneHandedModeSetting) }
         )
         val isSplitActive = ProductionFlags.IS_SPLIT_KEYBOARD_SUPPORTED && isSplitKeyboardState.value
-        val targetGravity = Gravity.BOTTOM or when {
-            isSplitActive -> Gravity.CENTER_HORIZONTAL
-            oneHandedMode.value == "left" -> Gravity.LEFT
-            oneHandedMode.value == "right" -> Gravity.RIGHT
+        val oneHandedSide = when {
+            isSplitActive -> "off"
+            oneHandedMode.value == "left" || oneHandedMode.value == "right" -> oneHandedMode.value
+            else -> "off"
+        }
+        val targetGravity = Gravity.BOTTOM or when (oneHandedSide) {
+            "left" -> Gravity.LEFT
+            "right" -> Gravity.RIGHT
             else -> Gravity.CENTER_HORIZONTAL
         }
+        val targetWidth = if (oneHandedSide != "off") {
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        } else {
+            ViewGroup.LayoutParams.MATCH_PARENT
+        }
 
-        key(legacyInputView) {
-            AndroidView(factory = {
-                legacyInputView!!
-            }, modifier = modifier.padding(0.dp, 0.dp, 0.dp, padding.value.dp), update = { view ->
-                val frame = view.findViewById<View>(R.id.main_keyboard_frame)
-                val lp = frame?.layoutParams as? FrameLayout.LayoutParams
-                if (lp != null && lp.gravity != targetGravity) {
-                    lp.gravity = targetGravity
-                    frame.layoutParams = lp
+        Box(modifier = modifier) {
+            key(legacyInputView) {
+                AndroidView(factory = {
+                    legacyInputView!!
+                }, modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp, 0.dp, 0.dp, padding.value.dp), update = { view ->
+                    val frame = view.findViewById<View>(R.id.main_keyboard_frame)
+                    val lp = frame?.layoutParams as? FrameLayout.LayoutParams
+                    if (lp != null && (lp.gravity != targetGravity || lp.width != targetWidth)) {
+                        lp.gravity = targetGravity
+                        lp.width = targetWidth
+                        frame.layoutParams = lp
+                        frame.requestLayout()
+                        view.requestLayout()
+                        requestRecomputeInsets()
+                    }
+                }, onRelease = {
+                    val view = it as InputView
+                    view.deallocateMemory()
+                    view.removeAllViews()
+                })
+            }
+
+            if (!hidden && oneHandedSide != "off") {
+                val railAlignment = if (oneHandedSide == "left") Alignment.CenterEnd else Alignment.CenterStart
+                val view = LocalView.current
+                OneHandedSideControlRail(
+                    oneHandedSide = oneHandedSide,
+                    modifier = Modifier
+                        .matchParentSize()
+                        .padding(bottom = padding.value.dp),
+                    railAlignment = railAlignment,
+                    onSwapSide = {
+                        AudioAndHapticFeedbackManager.getInstance()
+                            .performHapticAndAudioFeedback(Constants.CODE_TAB, view)
+                        val target = OneHandedModeHelper.oppositeSide(oneHandedSide)
+                        lifecycleScope.launch {
+                            OneHandedModeHelper.applyMode(this@LatinIME, target)
+                        }
+                    },
+                    onExpandFull = {
+                        AudioAndHapticFeedbackManager.getInstance()
+                            .performHapticAndAudioFeedback(Constants.CODE_TAB, view)
+                        lifecycleScope.launch {
+                            OneHandedModeHelper.applyMode(this@LatinIME, "off")
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun OneHandedSideControlRail(
+        oneHandedSide: String,
+        modifier: Modifier,
+        railAlignment: Alignment,
+        onSwapSide: () -> Unit,
+        onExpandFull: () -> Unit
+    ) {
+        val buttonBg = ComposeColor(LocalThemeProvider.current.keyColor).let {
+            if (it.alpha > 0.05f) it else MaterialTheme.colorScheme.surfaceVariant
+        }
+        val iconTint = MaterialTheme.colorScheme.onSurface
+        val swapIconRes = if (oneHandedSide == "left") R.drawable.arrow_right else R.drawable.arrow_left
+        val swapLabelRes = if (oneHandedSide == "left") R.string.one_handed_move_right else R.string.one_handed_move_left
+
+        Box(
+            modifier = modifier,
+            contentAlignment = railAlignment
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(0.18f)
+                    .fillMaxHeight()
+                    .padding(vertical = 8.dp, horizontal = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(buttonBg)
+                        .clickable(onClick = onSwapSide),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = swapIconRes),
+                        contentDescription = stringResource(id = swapLabelRes),
+                        tint = iconTint,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
-            }, onRelease = {
-                val view = it as InputView
-                view.deallocateMemory()
-                view.removeAllViews()
-            })
+
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(buttonBg)
+                        .clickable(onClick = onExpandFull),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.maximize),
+                        contentDescription = stringResource(id = R.string.one_handed_expand_full),
+                        tint = iconTint,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
         }
     }
 
@@ -690,7 +825,13 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
         lastEditorInfo = info
 
         super.onStartInputView(info, restarting)
+        val splitPrefEnabled = PreferenceUtils.getDefaultSharedPreferences(this)
+            .getBoolean(Settings.PREF_ENABLE_SPLIT_KEYBOARD, false)
+        if (Settings.getInstance().current?.mIsSplitKeyboardEnabled != splitPrefEnabled) {
+            latinIMELegacy.reloadSettingsFromPrefs()
+        }
         latinIMELegacy.onStartInputView(info, restarting)
+        applyPendingKeyboardRefresh()
         requestRecomputeInsets()
         lifecycleScope.launch { uixManager.showUpdateNoticeIfNeeded() }
     }
@@ -717,6 +858,7 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
     override fun onWindowShown() {
         super.onWindowShown()
         latinIMELegacy.onWindowShown()
+        applyPendingKeyboardRefresh()
 
         updateColorsIfDynamicChanged()
     }

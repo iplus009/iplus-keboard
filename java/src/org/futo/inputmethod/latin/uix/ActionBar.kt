@@ -551,13 +551,6 @@ fun ExpandActionsButton(isActionsOpen: Boolean, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier
             .width(42.dp)
-            .rotate(
-                if (isActionsOpen) {
-                    90.0f
-                } else {
-                    0.0f
-                }
-            )
             .fillMaxHeight()
             .drawBehind {
                 drawCircle(
@@ -571,8 +564,10 @@ fun ExpandActionsButton(isActionsOpen: Boolean, onClick: () -> Unit) {
     ) {
         Icon(
             painter = painterResource(id = R.drawable.chevron_right),
-            contentDescription = "Open Actions",
-            Modifier.size(20.dp)
+            contentDescription = if (isActionsOpen) "Hide Actions" else "Open Actions",
+            modifier = Modifier
+                .size(20.dp)
+                .rotate(if (isActionsOpen) 180.0f else 0.0f)
         )
     }
 }
@@ -672,7 +667,10 @@ fun ActionBar(
                 .fillMaxWidth()
                 .height(actionBarHeight), color = MaterialTheme.colorScheme.background
         ) {
-            Row {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = CenterVertically
+            ) {
                 ExpandActionsButton(isActionsExpanded) {
                     toggleActionsExpanded()
 
@@ -682,59 +680,56 @@ fun ActionBar(
                     )
                 }
 
-                if (importantNotice != null) {
-                    ImportantNoticeView(importantNotice)
-                } else {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        AnimatedVisibility(
-                            inlineSuggestions.isNotEmpty(),
-                            enter = fadeIn(),
-                            exit = fadeOut()
+                when {
+                    isActionsExpanded -> {
+                        Box(
+                            modifier = Modifier
+                                .weight(1.0f)
+                                .fillMaxHeight(),
+                            contentAlignment = Alignment.CenterStart
                         ) {
-                            InlineSuggestions(inlineSuggestions)
+                            ActionItems(onActionActivated, onActionAltActivated)
                         }
                     }
 
-                    if (words != null && inlineSuggestions.isEmpty()) {
-                        SuggestionItems(
-                            words,
-                            onClick = {
-                                suggestionStripListener.pickSuggestionManually(
-                                    words.getInfo(it)
-                                )
-                                keyboardManagerForAction?.performHapticAndAudioFeedback(
-                                    Constants.CODE_TAB,
-                                    view
-                                )
-                            },
-                            onLongClick = {
-                                suggestionStripListener.requestForgetWord(
-                                    words.getInfo(it)
-                                )
-                            })
-                    } else {
-                        Spacer(modifier = Modifier.weight(1.0f))
+                    importantNotice != null -> {
+                        ImportantNoticeView(importantNotice)
                     }
 
-                    PinnedActionItems(onActionActivated, onActionAltActivated)
-                }
-            }
-        }
+                    else -> {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            AnimatedVisibility(
+                                inlineSuggestions.isNotEmpty(),
+                                enter = fadeIn(),
+                                exit = fadeOut()
+                            ) {
+                                InlineSuggestions(inlineSuggestions)
+                            }
+                        }
 
-        if (isActionsExpanded) {
-            ActionSep()
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(actionBarHeight),
-                color = MaterialTheme.colorScheme.background
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight()
-                ) {
-                    ActionItems(onActionActivated, onActionAltActivated)
+                        if (words != null && inlineSuggestions.isEmpty()) {
+                            SuggestionItems(
+                                words,
+                                onClick = {
+                                    suggestionStripListener.pickSuggestionManually(
+                                        words.getInfo(it)
+                                    )
+                                    keyboardManagerForAction?.performHapticAndAudioFeedback(
+                                        Constants.CODE_TAB,
+                                        view
+                                    )
+                                },
+                                onLongClick = {
+                                    suggestionStripListener.requestForgetWord(
+                                        words.getInfo(it)
+                                    )
+                                })
+                        } else {
+                            Spacer(modifier = Modifier.weight(1.0f))
+                        }
+
+                        PinnedActionItems(onActionActivated, onActionAltActivated)
+                    }
                 }
             }
         }

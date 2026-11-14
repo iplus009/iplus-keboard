@@ -607,6 +607,10 @@ public class LatinIMELegacy implements KeyboardActionListener,
         StatsUtils.onCreate(mSettings.getCurrent(), mRichImm);
     }
 
+    public void reloadSettingsFromPrefs() {
+        loadSettings();
+    }
+
     // Has to be package-visible for unit tests
     @UsedForTesting
     void loadSettings() {
@@ -1340,7 +1344,7 @@ public class LatinIMELegacy implements KeyboardActionListener,
                 }
             }
             if (textToCopy != null && textToCopy.length() > 0 && cm != null) {
-                cm.setPrimaryClip(android.content.ClipData.newPlainText("iPlus Clipboard", textToCopy));
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("Keybird Clipboard", textToCopy));
                 android.widget.Toast.makeText(mInputMethodService, "Copied", android.widget.Toast.LENGTH_SHORT).show();
                 AudioAndHapticFeedbackManager.getInstance().performHapticFeedback(
                         mKeyboardSwitcher.getMainKeyboardView(), false);
@@ -1372,7 +1376,7 @@ public class LatinIMELegacy implements KeyboardActionListener,
 
                 if (full.length() > 0) {
                     if (cm != null) {
-                        cm.setPrimaryClip(android.content.ClipData.newPlainText("iPlus Clipboard", full));
+                        cm.setPrimaryClip(android.content.ClipData.newPlainText("Keybird Clipboard", full));
                     }
                     if (selected != null && selected.length() > 0) {
                         ic.commitText("", 1);

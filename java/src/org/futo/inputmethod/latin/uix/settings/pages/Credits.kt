@@ -16,12 +16,12 @@ import org.futo.inputmethod.updates.openURI
 fun CreditsScreen(navController: NavHostController = rememberNavController()) {
     val context = LocalContext.current
     ScrollableList {
-        ScreenTitle("iPlus", showBack = true, navController)
+        ScreenTitle("Keybird", showBack = true, navController)
 
-        ParagraphText("iPlus is a Bangla and English Android keyboard built on an open-source keyboard foundation. The iPlus project is developing its own app identity and user experience while preserving the upstream typing engine.")
+        ParagraphText("Keybird is a Bangla and English Android keyboard built on an open-source keyboard foundation. The Keybird project is developing its own app identity and user experience while preserving the upstream typing engine.")
 
         ScreenTitle("Upstream source attribution")
-        ParagraphText("This project is based on the publicly available source of Orbit Board, created and maintained by Fahim Takrim. The upstream source and applicable copyright, license and third-party notices are retained. This attribution is required for provenance and does not represent the iPlus app branding.",
+        ParagraphText("This project is based on the publicly available source of Orbit Board, created and maintained by Fahim Takrim. The upstream source and applicable copyright, license and third-party notices are retained. This attribution is required for provenance and does not represent the Keybird app branding.",
             modifier = Modifier.clickable {
                 context.openURI("https://github.com/fahitakrim/Orbit-Board")
             })

@@ -471,7 +471,7 @@ fun Emojis(
 ) {
     val emojiWidth = with(LocalDensity.current) {
         remember {
-            42.dp.toPx().roundToInt()
+            35.dp.toPx().roundToInt()
         }
     }
 
@@ -654,7 +654,7 @@ fun EmojiNavigation(
     Surface(
         color = MaterialTheme.colorScheme.background, modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp)
+            .height(42.dp)
     ) {
         Row(modifier = Modifier.padding(2.dp, 0.dp)) {
             if(showKeys) {

@@ -387,9 +387,14 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
         } else {
             targetGravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
         }
-        if (lp.gravity != targetGravity) {
+        final int targetWidth = (!isSplitActive && ("left".equals(oneHandedMode) || "right".equals(oneHandedMode)))
+                ? ViewGroup.LayoutParams.WRAP_CONTENT
+                : ViewGroup.LayoutParams.MATCH_PARENT;
+        if (lp.gravity != targetGravity || lp.width != targetWidth) {
             lp.gravity = targetGravity;
+            lp.width = targetWidth;
             mMainKeyboardFrame.setLayoutParams(lp);
+            mMainKeyboardFrame.requestLayout();
         }
     }
 

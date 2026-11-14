@@ -22,9 +22,8 @@
 <resources>
     <bool name="config_use_fullscreen_mode">true</bool>
 
-    <!-- Preferable keyboard height in absolute scale: 1.100in -->
-    <!-- This config_default_keyboard_height value should match with keyboard-heights.xml -->
-    <dimen name="config_default_keyboard_height">176.0dp</dimen>
+    <!-- Option B default landscape keyboard height -->
+    <dimen name="config_default_keyboard_height">205.0dp</dimen>
     <fraction name="config_min_keyboard_height">45%p</fraction>
 
     <!-- key_height + key_bottom_gap = config_more_keys_keyboard_key_height -->

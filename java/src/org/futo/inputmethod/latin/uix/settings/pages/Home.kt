@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -195,7 +196,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Header: iPlus Brand Mark, Title & Version Tag
+            // Header: Keybird Brand Mark, Title & Version Tag
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -211,20 +212,24 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
                         modifier = Modifier
                             .size(44.dp)
                             .clip(RoundedCornerShape(13.dp))
-                            .background(Color(0xFF0D0D10))
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(Color(0xFF0E1B7A), Color(0xFF02041E))
+                                )
+                            )
                             .border(1.dp, BorderColor, RoundedCornerShape(13.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                            contentDescription = "iPlus Logo",
-                            modifier = Modifier.size(38.dp),
+                            contentDescription = "Keybird Logo",
+                            modifier = Modifier.size(40.dp),
                             tint = Color.Unspecified
                         )
                     }
                     Column {
                         Text(
-                            "iPlus",
+                            "Keybird",
                             fontFamily = Doto,
                             fontWeight = FontWeight.Bold,
                             fontSize = 22.sp,
@@ -495,7 +500,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
                                     } else {
                                         Toast.makeText(
                                             context,
-                                            "iPlus is up to date (v${BuildConfig.VERSION_NAME})",
+                                            "Keybird is up to date (v${BuildConfig.VERSION_NAME})",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
@@ -582,7 +587,7 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
             Spacer(modifier = Modifier.height(14.dp))
 
             // 5. ABOUT DEVELOPER
-            SectionHeader(title = "About iPlus", modifier = Modifier.padding(horizontal = 16.dp))
+            SectionHeader(title = "About Keybird", modifier = Modifier.padding(horizontal = 16.dp))
             DeveloperDetailsCard(modifier = Modifier.padding(horizontal = 16.dp))
 
             Spacer(modifier = Modifier.height(10.dp))

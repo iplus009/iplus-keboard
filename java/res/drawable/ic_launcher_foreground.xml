@@ -1,22 +1,46 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="512"
     android:viewportHeight="512">
-    <!-- Crisp "i" dot (centered optically within adaptive safe zone) -->
+    <!-- Gradient "+" cross (violet -> magenta -> amber-gold) -->
     <path
-        android:pathData="M178,161 a22,22 0 1,0 0,44 a22,22 0 1,0 0,-44 Z"
-        android:fillColor="#FAFAFC" />
-    <!-- Crisp "i" pill stem -->
+        android:pathData="M178,202 H216 A10,10 0 0,1 226,212 V263 H277 A10,10 0 0,1 287,273 V311 A10,10 0 0,1 277,321 H226 V372 A10,10 0 0,1 216,382 H178 A10,10 0 0,1 168,372 V321 H117 A10,10 0 0,1 107,311 V273 A10,10 0 0,1 117,263 H168 V212 A10,10 0 0,1 178,202 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="107"
+                android:startY="355"
+                android:endX="287"
+                android:endY="265">
+                <item android:color="#7B3CFF" android:offset="0.0" />
+                <item android:color="#E83BBA" android:offset="0.52" />
+                <item android:color="#FF9142" android:offset="0.82" />
+                <item android:color="#FFCA3A" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Crisp white D-arch cleanly separated above and right of "+" -->
     <path
-        android:pathData="M178,229 A20,20 0 0,1 198,249 V331 A20,20 0 0,1 178,351 A20,20 0 0,1 158,331 V249 A20,20 0 0,1 178,229 Z"
-        android:fillColor="#FAFAFC" />
-    <!-- Nothing Red "+" vertical bar -->
+        android:fillColor="#FFFFFF"
+        android:pathData="M168,132 H303 A104,104 0 0,1 303,340 V288 A52,52 0 0,0 303,184 H168 V132 Z" />
+
+    <!-- Golden flying bird nestled inside the arch cavity -->
     <path
-        android:pathData="M294,194 H302 A14,14 0 0,1 316,208 V304 A14,14 0 0,1 302,318 H294 A14,14 0 0,1 280,304 V208 A14,14 0 0,1 294,194 Z"
-        android:fillColor="#E51923" />
-    <!-- Nothing Red "+" horizontal bar -->
-    <path
-        android:pathData="M250,238 H346 A14,14 0 0,1 360,252 V260 A14,14 0 0,1 346,274 H250 A14,14 0 0,1 236,260 V252 A14,14 0 0,1 250,238 Z"
-        android:fillColor="#E51923" />
+        android:pathData="M238,198 C264,200 288,208 308,219 C316,211 325,209 332,213 L345,219 L333,223 C331,238 316,251 296,252 C286,252 278,250 272,248 C276,245 279,243 282,241 C269,240 258,238 251,235 C263,234 273,233 280,231 C265,229 252,226 244,221 C258,220 270,219 278,217 C261,213 248,206 238,198 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="238"
+                android:startY="202"
+                android:endX="345"
+                android:endY="248">
+                <item android:color="#FF5E14" android:offset="0.0" />
+                <item android:color="#FF9E1C" android:offset="0.55" />
+                <item android:color="#FFD13B" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
 </vector>

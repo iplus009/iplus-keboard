@@ -167,7 +167,7 @@ fun PaymentText(verbose: Boolean) {
             IconText(
                 icon = painterResource(id = R.drawable.activity),
                 title = "Sustainable Development",
-                body = "iPlus's mission is for open-source software and non-malicious software business practices to become a sustainable income source for projects and their developers. For this reason, we are in favor of users actually paying for software."
+                body = "Keybird's mission is for open-source software and non-malicious software business practices to become a sustainable income source for projects and their developers. For this reason, we are in favor of users actually paying for software."
             )
 
             IconText(
@@ -442,7 +442,7 @@ fun PaymentScreen(
 
         val context = LocalContext.current
 
-        PaymentSurface(isPrimary = true, title = "Pay for iPlus") {
+        PaymentSurface(isPrimary = true, title = "Pay for Keybird") {
             PaymentText(true)
 
             Button(
@@ -468,7 +468,7 @@ fun PaymentScreen(
         }
 
         PaymentSurface(isPrimary = false, title = "Already paid?") {
-            ParagraphText(it = "If you already paid for iPlus or iPlus Voice Input, tap below.")
+            ParagraphText(it = "If you already paid for Keybird or Keybird Voice Input, tap below.")
             Button(
                 onClick = {
                     counter.intValue += 1
@@ -539,7 +539,7 @@ fun PaymentScreen(
             }
         }
 
-        NavigationItem(title = "Help", subtitle = "Need help? Visit iPlus on GitHub", style = NavigationItemStyle.Misc, navigate = {
+        NavigationItem(title = "Help", subtitle = "Need help? Visit Keybird on GitHub", style = NavigationItemStyle.Misc, navigate = {
             context.openURI("https://github.com/iplus009/iplus-keboard")
         })
     }

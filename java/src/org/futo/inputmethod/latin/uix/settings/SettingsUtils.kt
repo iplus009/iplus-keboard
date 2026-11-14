@@ -26,7 +26,7 @@ fun SetupOrMain(inputMethodEnabled: Boolean, inputMethodSelected: Boolean, micPe
             AccessibilityUtils.init(context)
             if(AccessibilityUtils.getInstance().isAccessibilityEnabled) {
                 AccessibilityUtils.getInstance()
-                    .announceForAccessibility(view, "iPlus has been activated")
+                    .announceForAccessibility(view, "Keybird has been activated")
             }
         }
     }

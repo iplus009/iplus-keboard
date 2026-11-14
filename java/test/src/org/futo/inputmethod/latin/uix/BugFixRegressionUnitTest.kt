@@ -3,13 +3,19 @@ package org.futo.inputmethod.latin.uix
 import org.futo.inputmethod.keyboard.Key
 import org.futo.inputmethod.keyboard.internal.PointerTrackerQueue
 import org.futo.inputmethod.latin.ImeInsetsMath
+import org.futo.inputmethod.latin.uix.actions.AllActionsMap
+import org.futo.inputmethod.latin.uix.actions.ActionCategory
 import org.futo.inputmethod.latin.uix.actions.CategoryItem
+import org.futo.inputmethod.latin.uix.actions.DefaultActionSettings
 import org.futo.inputmethod.latin.uix.actions.EmojiItemItem
 import org.futo.inputmethod.latin.uix.actions.EmojiViewItem
+import org.futo.inputmethod.latin.uix.actions.OneHandedAction
+import org.futo.inputmethod.latin.uix.actions.OneHandedModeHelper
 import org.futo.inputmethod.latin.uix.actions.emoji.EmojiItem
 import org.futo.inputmethod.latin.uix.actions.resolveCategoryForScrollPosition
 import org.futo.inputmethod.latin.uix.actions.resolveSpeechLocaleTag
 import org.futo.inputmethod.latin.uix.actions.sortLanguagesForPicker
+import org.futo.inputmethod.updates.UpdateChecker
 import org.futo.inputmethod.latin.uix.theme.CustomPhotoTheme
 import org.futo.inputmethod.latin.uix.theme.ThemeOptionKeys
 import org.futo.inputmethod.latin.uix.theme.ThemeOptions
@@ -188,5 +194,63 @@ class BugFixRegressionUnitTest {
         assertEquals(1550, ImeInsetsMath.computeImeInsetsTopY(0, 2400, 2400, 850))
         assertEquals(1406, ImeInsetsMath.computeImeInsetsTopY(96, 2160, 2400, 850))
         assertEquals(0, ImeInsetsMath.computeImeInsetsTopY(0, 600, 600, 900))
+    }
+
+    @Test
+    fun oneHandedModeCycleOppositeAndNormalizationWorks() {
+        assertEquals("right", OneHandedModeHelper.nextMode("off"))
+        assertEquals("left", OneHandedModeHelper.nextMode("right"))
+        assertEquals("off", OneHandedModeHelper.nextMode("left"))
+        assertEquals("right", OneHandedModeHelper.nextMode("unknown"))
+
+        assertEquals("right", OneHandedModeHelper.oppositeSide("left"))
+        assertEquals("left", OneHandedModeHelper.oppositeSide("right"))
+        assertEquals("right", OneHandedModeHelper.oppositeSide("off"))
+
+        assertEquals("left", OneHandedModeHelper.normalizeMode("left"))
+        assertEquals("right", OneHandedModeHelper.normalizeMode("right"))
+        assertEquals("off", OneHandedModeHelper.normalizeMode(null))
+        assertEquals("off", OneHandedModeHelper.normalizeMode("center"))
+    }
+
+    @Test
+    fun actionRegistryPreservesIndicesAndRegistersOneHanded() {
+        val keys = AllActionsMap.keys.toList()
+        val expectedLegacyPrefix = listOf(
+            "emoji",
+            "settings",
+            "paste",
+            "text_edit",
+            "translate",
+            "themes",
+            "undo",
+            "redo",
+            "voice_input",
+            "system_voice_input",
+            "switch_language",
+            "clipboard_history",
+            "mem_dbg",
+            "cut",
+            "copy",
+            "select_all",
+            "more"
+        )
+        assertEquals(expectedLegacyPrefix, keys.take(expectedLegacyPrefix.size))
+        assertEquals("one_handed", keys.last())
+        assertEquals(18, keys.size)
+        assertTrue(DefaultActionSettings[ActionCategory.Favorites].orEmpty().contains(OneHandedAction))
+    }
+
+    @Test
+    fun updateCheckerMatchesKeybirdAndLegacyIplusApks() {
+        assertTrue(UpdateChecker.isMatchingApkAsset("Keybird-v2.0.4.apk"))
+        assertTrue(UpdateChecker.isMatchingApkAsset("keybird-v2.0.4-stable-universal-debug.apk"))
+        assertTrue(UpdateChecker.isMatchingApkAsset("iPlus-Keyboard-v2.0.3.apk"))
+        assertFalse(UpdateChecker.isMatchingApkAsset("Keybird-v2.0.4.zip"))
+        assertFalse(UpdateChecker.isMatchingApkAsset("random-other-app.apk"))
+
+        assertTrue(UpdateChecker.isMatchingReleaseMetadata("v2.0.4", "Keybird v2.0.4"))
+        assertTrue(UpdateChecker.isMatchingReleaseMetadata("v2.0.3", "iPlus v2.0.3"))
+        assertFalse(UpdateChecker.isMatchingReleaseMetadata("custom-tag", "Other App"))
     }
 }

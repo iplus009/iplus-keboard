@@ -49,7 +49,7 @@ class EmojiView @JvmOverloads constructor(
     View(context, attrs) {
 
     companion object {
-        private const val EMOJI_DRAW_TEXT_SIZE_DP = 42
+        private const val EMOJI_DRAW_TEXT_SIZE_DP = 34
     }
 
     init {

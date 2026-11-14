@@ -71,7 +71,7 @@ object UpdateChecker {
             requestMethod = "GET"
             connectTimeout = 5000
             readTimeout = 5000
-            setRequestProperty("User-Agent", "iPlusKeyboard/$currentVersion")
+            setRequestProperty("User-Agent", "Keybird/$currentVersion")
             setRequestProperty("Accept", "application/json")
         }
         return try {
@@ -88,7 +88,7 @@ object UpdateChecker {
             } else {
                 json.optString("releaseNotes", "Bug fixes and performance improvements.")
             }
-            val title = json.optString("title", "iPlus v$latestVer (Stable)")
+            val title = json.optString("title", "Keybird v$latestVer (Stable)")
             val isAvailable = isNewerVersion(remote = latestVer, current = currentVersion)
             AppUpdate(
                 versionName = latestVer,
@@ -102,10 +102,11 @@ object UpdateChecker {
         }
     }
 
-    private fun isMatchingApkAsset(assetName: String): Boolean {
+    internal fun isMatchingApkAsset(assetName: String): Boolean {
         val lower = assetName.lowercase()
         return lower.endsWith(".apk") && (
-            lower.contains("iplus-keyboard") ||
+            lower.contains("keybird") ||
+                lower.contains("iplus-keyboard") ||
                 lower.contains("ipluskeyboard") ||
                 lower.contains("iplus_keyboard") ||
                 lower.contains("iplus-kbd") ||
@@ -113,10 +114,14 @@ object UpdateChecker {
             )
     }
 
-    private fun isMatchingReleaseMetadata(tag: String, title: String): Boolean {
+    internal fun isMatchingReleaseMetadata(tag: String, title: String): Boolean {
         val lowerTag = tag.lowercase()
         val lowerTitle = title.lowercase()
-        return lowerTitle.contains("iplus") || lowerTag.contains("iplus") || lowerTag.startsWith("v")
+        return lowerTitle.contains("keybird") ||
+            lowerTag.contains("keybird") ||
+            lowerTitle.contains("iplus") ||
+            lowerTag.contains("iplus") ||
+            lowerTag.startsWith("v")
     }
 
     private fun fetchFromReleasesApi(urlString: String, currentVersion: String): AppUpdate? {
@@ -125,7 +130,7 @@ object UpdateChecker {
             requestMethod = "GET"
             connectTimeout = 6000
             readTimeout = 6000
-            setRequestProperty("User-Agent", "iPlusKeyboard/$currentVersion")
+            setRequestProperty("User-Agent", "Keybird/$currentVersion")
             setRequestProperty("Accept", "application/vnd.github.v3+json")
         }
         return try {
