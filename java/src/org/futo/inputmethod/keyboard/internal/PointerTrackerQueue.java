@@ -205,6 +205,31 @@ public final class PointerTrackerQueue {
         }
     }
 
+    public boolean contains(final Element pointer) {
+        synchronized (mExpandableArrayOfActivePointers) {
+            final int arraySize = mArraySize;
+            for (int index = 0; index < arraySize; index++) {
+                if (mExpandableArrayOfActivePointers.get(index) == pointer) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    public void clearAll() {
+        synchronized (mExpandableArrayOfActivePointers) {
+            final ArrayList<Element> expandableArray = mExpandableArrayOfActivePointers;
+            final int arraySize = mArraySize;
+            for (int index = 0; index < arraySize; index++) {
+                final Element element = expandableArray.get(index);
+                element.cancelTrackingForAction();
+            }
+            expandableArray.clear();
+            mArraySize = 0;
+        }
+    }
+
     public void cancelAllPointerTrackers() {
         synchronized (mExpandableArrayOfActivePointers) {
             if (DEBUG) {

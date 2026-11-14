@@ -12,6 +12,7 @@ import org.futo.inputmethod.latin.SuggestedWords
 import org.futo.inputmethod.latin.SuggestedWords.SuggestedWordInfo
 import org.futo.inputmethod.latin.common.ComposedData
 import org.futo.inputmethod.latin.settings.SettingsValuesForSuggestion
+import org.futo.inputmethod.latin.utils.AutoCorrectionUtils
 import java.util.Arrays
 import java.util.Locale
 
@@ -305,7 +306,8 @@ class LanguageModel(
                 }
             }
         }
-        if (composeInfo.partialWord.isNotEmpty() && canAutocorrect) {
+        val hasPlausibleAutocorrect = composeInfo.partialWord.isNotEmpty() && canAutocorrect
+        if (hasPlausibleAutocorrect) {
             kind =
                 SuggestedWordInfo.KIND_WHITELIST or SuggestedWordInfo.KIND_FLAG_APPROPRIATE_FOR_AUTO_CORRECTION
         }
@@ -318,10 +320,18 @@ class LanguageModel(
             probMult = 10.0f
             probOffset = -100000.0f
         }
+        var validIndex = 0
         for (i in 0 until maxResults - 1) {
             if (outStrings[i] == null) continue
-            var currKind = kind
             val word = outStrings[i]!!.trim { it <= ' ' }
+            var currKind = if (validIndex == 0 && hasPlausibleAutocorrect &&
+                AutoCorrectionUtils.isPlausibleAutoCorrection(composeInfo.partialWord, word)
+            ) {
+                kind
+            } else {
+                SuggestedWordInfo.KIND_PREDICTION
+            }
+            validIndex++
             if (word == composeInfo.partialWord) {
                 currKind = currKind or SuggestedWordInfo.KIND_FLAG_EXACT_MATCH
             }

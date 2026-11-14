@@ -10,8 +10,13 @@ import android.graphics.Color
 import android.inputmethodservice.InputMethodService
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.Gravity
+import androidx.core.view.ViewCompat
+import kotlin.math.max
+import kotlin.math.min
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.CompletionInfo
@@ -106,6 +111,43 @@ private class UnlockedBroadcastReceiver(val onDeviceUnlocked: () -> Unit) : Broa
         if (intent?.action == Intent.ACTION_USER_UNLOCKED) {
             onDeviceUnlocked()
         }
+    }
+}
+
+object ImeInsetsMath {
+    fun resolveEffectiveTouchableHeight(
+        measuredTouchableHeight: Int,
+        legacyKeyboardHeight: Int,
+        actionBarHeightPx: Int,
+        fallbackKeyboardHeight: Int
+    ): Int {
+        if (measuredTouchableHeight > 0) {
+            return measuredTouchableHeight
+        }
+        val baseHeight = if (legacyKeyboardHeight > 0) legacyKeyboardHeight else fallbackKeyboardHeight
+        return max(0, baseHeight) + max(0, actionBarHeightPx)
+    }
+
+    fun computeImeInsetsTopY(
+        composeTopInWindow: Int,
+        composeHeight: Int,
+        decorHeight: Int,
+        effectiveTouchableHeight: Int
+    ): Int {
+        val safeDecorHeight = max(0, decorHeight)
+        val safeTop = if (safeDecorHeight > 0) {
+            composeTopInWindow.coerceIn(0, safeDecorHeight)
+        } else {
+            max(0, composeTopInWindow)
+        }
+        val safeHeight = max(0, composeHeight)
+        val composeBottom = if (safeDecorHeight > 0) {
+            min(safeDecorHeight, safeTop + safeHeight)
+        } else {
+            safeTop + safeHeight
+        }
+        val clampedTouchable = max(0, effectiveTouchableHeight)
+        return max(0, composeBottom - clampedTouchable).coerceAtMost(composeBottom)
     }
 }
 
@@ -525,13 +567,42 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
 
     private var inputViewHeight: Int = -1
 
+    private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
+    private var insetsRefreshScheduled = false
+
+    private fun requestRecomputeInsets() {
+        if (uixManager.getComposeView() == null && legacyInputView == null) {
+            return
+        }
+        if (insetsRefreshScheduled) {
+            return
+        }
+        insetsRefreshScheduled = true
+        mainHandler.post {
+            insetsRefreshScheduled = false
+            val currentView = uixManager.getComposeView() ?: legacyInputView ?: return@post
+            if (currentView.isAttachedToWindow) {
+                currentView.requestLayout()
+                ViewCompat.requestApplyInsets(currentView)
+            }
+        }
+    }
+
     // Both called by UixManager
-    fun updateTouchableHeight(to: Int) { touchableHeight = to }
+    fun updateTouchableHeight(to: Int) {
+        if (to > 0 && touchableHeight != to) {
+            touchableHeight = to
+            requestRecomputeInsets()
+        }
+    }
     fun getInputViewHeight(): Int = inputViewHeight
 
     private var isInputModal = false
     fun setInputModal(to: Boolean) {
-        isInputModal = to
+        if (isInputModal != to) {
+            isInputModal = to
+            requestRecomputeInsets()
+        }
     }
 
     // The keyboard view really doesn't like being detached, so it's always
@@ -620,11 +691,13 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
 
         super.onStartInputView(info, restarting)
         latinIMELegacy.onStartInputView(info, restarting)
+        requestRecomputeInsets()
         lifecycleScope.launch { uixManager.showUpdateNoticeIfNeeded() }
     }
 
     override fun onFinishInputView(finishingInput: Boolean) {
         super.onFinishInputView(finishingInput)
+        isInputModal = false
         latinIMELegacy.onFinishInputView(finishingInput)
         uixManager.onInputFinishing()
     }
@@ -650,6 +723,7 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
 
     override fun onWindowHidden() {
         super.onWindowHidden()
+        isInputModal = false
         latinIMELegacy.onWindowHidden()
 
         uixManager.onInputFinishing()
@@ -707,31 +781,51 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
         val composeView = uixManager.getComposeView()
 
         // This method may be called before {@link #setInputView(View)}.
-        if (legacyInputView == null || composeView == null) {
+        if (outInsets == null || legacyInputView == null || composeView == null) {
             return
         }
 
         val inputHeight: Int = composeView.height
+        val decorHeight: Int = window?.window?.decorView?.height?.takeIf { it > 0 } ?: inputHeight
+        val location = IntArray(2)
+        composeView.getLocationInWindow(location)
+        val composeTopInWindow = location[1].coerceIn(0, decorHeight)
+        val composeBottom = min(decorHeight, composeTopInWindow + max(0, inputHeight))
+
         if (latinIMELegacy.isImeSuppressedByHardwareKeyboard && !legacyInputView!!.isShown) {
             // If there is a hardware keyboard and a visible software keyboard view has been hidden,
             // no visual element will be shown on the screen.
-            latinIMELegacy.setInsets(outInsets!!.apply {
-                contentTopInsets = inputHeight
-                visibleTopInsets = inputHeight
+            val hiddenBottom = max(composeBottom, inputHeight)
+            latinIMELegacy.setInsets(outInsets.apply {
+                contentTopInsets = hiddenBottom
+                visibleTopInsets = hiddenBottom
             })
             return
         }
 
-        val visibleTopY = inputHeight - touchableHeight
+        val fallbackKeyboardHeight = resources.getDimensionPixelSize(R.dimen.config_default_keyboard_height)
+        val actionBarHeightPx = (40f * resources.displayMetrics.density).toInt()
+        val effectiveTouchableHeight = ImeInsetsMath.resolveEffectiveTouchableHeight(
+            measuredTouchableHeight = touchableHeight,
+            legacyKeyboardHeight = inputViewHeight.takeIf { it > 0 } ?: (legacyInputView?.height ?: 0),
+            actionBarHeightPx = actionBarHeightPx,
+            fallbackKeyboardHeight = fallbackKeyboardHeight
+        )
+        val visibleTopY = ImeInsetsMath.computeImeInsetsTopY(
+            composeTopInWindow = composeTopInWindow,
+            composeHeight = inputHeight,
+            decorHeight = decorHeight,
+            effectiveTouchableHeight = effectiveTouchableHeight
+        )
 
-        val touchLeft = 0
-        val touchTop = if(isInputModal) { 0 } else { visibleTopY }
-        val touchRight = composeView.width
-        val touchBottom = inputHeight
+        val touchLeft = max(0, location[0])
+        val touchTop = if (isInputModal) { 0 } else { visibleTopY }
+        val touchRight = max(touchLeft, touchLeft + composeView.width)
+        val touchBottom = max(visibleTopY, composeBottom)
 
-        latinIMELegacy.setInsets(outInsets!!.apply {
-            touchableInsets = Insets.TOUCHABLE_INSETS_REGION;
-            touchableRegion.set(touchLeft, touchTop, touchRight, touchBottom);
+        latinIMELegacy.setInsets(outInsets.apply {
+            touchableInsets = Insets.TOUCHABLE_INSETS_REGION
+            touchableRegion.set(touchLeft, touchTop, touchRight, touchBottom)
             contentTopInsets = visibleTopY
             visibleTopInsets = visibleTopY
         })

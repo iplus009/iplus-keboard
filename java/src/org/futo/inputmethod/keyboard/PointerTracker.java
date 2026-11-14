@@ -219,6 +219,24 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         sPointerTrackerQueue.cancelAllPointerTrackers();
     }
 
+    public static void cancelAllOngoingTrackers() {
+        final int trackersSize = sTrackers.size();
+        for (int i = 0; i < trackersSize; ++i) {
+            final PointerTracker tracker = sTrackers.get(i);
+            sTimerProxy.cancelKeyTimersOf(tracker);
+            tracker.mLayoutChangedOnDown = false;
+            tracker.mDownKeyCode = Constants.NOT_A_CODE;
+            tracker.mIsDetectingGesture = false;
+            tracker.resetKeySelectionByDraggingFinger();
+            tracker.setReleasedKeyGraphics(tracker.mCurrentKey, false /* withAnimation */);
+            tracker.mCurrentKey = null;
+            tracker.mCurrentRepeatingKeyCode = Constants.NOT_A_CODE;
+            tracker.dismissMoreKeysPanel();
+        }
+        sPointerTrackerQueue.clearAll();
+        sInGesture = false;
+    }
+
     public static void setKeyboardActionListener(final KeyboardActionListener listener) {
         sListener = listener;
     }
@@ -240,7 +258,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         final int trackersSize = sTrackers.size();
         for (int i = 0; i < trackersSize; ++i) {
             final PointerTracker tracker = sTrackers.get(i);
-            tracker.setReleasedKeyGraphics(tracker.getKey(), true /* withAnimation */);
+            tracker.setReleasedKeyGraphics(tracker.getKey(), false /* withAnimation */);
         }
     }
 
@@ -366,6 +384,12 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         }
         if (keyDetector == mKeyDetector && keyboard == mKeyboard) {
             return;
+        }
+        if (mIsTrackingForActionDisabled || !sPointerTrackerQueue.contains(this)) {
+            sTimerProxy.cancelKeyTimersOf(this);
+            setReleasedKeyGraphics(mCurrentKey, false /* withAnimation */);
+            mCurrentKey = null;
+            mCurrentRepeatingKeyCode = Constants.NOT_A_CODE;
         }
         mKeyDetector = keyDetector;
         mKeyboard = keyboard;
@@ -1253,9 +1277,12 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
     private void cancelKeyTracking() {
         mLayoutChangedOnDown = false;
         mDownKeyCode = Constants.NOT_A_CODE;
+        sTimerProxy.cancelKeyTimersOf(this);
         resetKeySelectionByDraggingFinger();
         cancelTrackingForAction();
-        setReleasedKeyGraphics(mCurrentKey, true /* withAnimation */);
+        setReleasedKeyGraphics(mCurrentKey, false /* withAnimation */);
+        mCurrentKey = null;
+        mCurrentRepeatingKeyCode = Constants.NOT_A_CODE;
         sPointerTrackerQueue.remove(this);
     }
 
@@ -1272,8 +1299,12 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
     private void onCancelEventInternal() {
         sTimerProxy.cancelKeyTimersOf(this);
-        setReleasedKeyGraphics(mCurrentKey, true /* withAnimation */);
+        setReleasedKeyGraphics(mCurrentKey, false /* withAnimation */);
         resetKeySelectionByDraggingFinger();
+        mCurrentKey = null;
+        mCurrentRepeatingKeyCode = Constants.NOT_A_CODE;
+        mDownKeyCode = Constants.NOT_A_CODE;
+        mLayoutChangedOnDown = false;
         dismissMoreKeysPanel();
     }
 
@@ -1372,6 +1403,10 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
     }
 
     public void onKeyRepeat(final int code, final int repeatCount) {
+        if (mIsTrackingForActionDisabled || sInGesture) {
+            mCurrentRepeatingKeyCode = Constants.NOT_A_CODE;
+            return;
+        }
         final Key key = getKey();
         if (key == null || key.getCode() != code) {
             mCurrentRepeatingKeyCode = Constants.NOT_A_CODE;

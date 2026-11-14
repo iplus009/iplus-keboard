@@ -632,7 +632,7 @@ fun TypingScreen(navController: NavHostController = rememberNavController()) {
             title = stringResource(R.string.auto_correction),
             subtitle = stringResource(R.string.auto_correction_summary),
             key = Settings.PREF_AUTO_CORRECTION,
-            default = true,
+            default = false,
             icon = {
                 Icon(painterResource(id = R.drawable.icon_spellcheck), contentDescription = null,
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f))

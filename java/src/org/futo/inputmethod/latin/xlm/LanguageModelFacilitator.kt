@@ -37,6 +37,7 @@ import org.futo.inputmethod.latin.uix.actions.PersistentEmojiState
 import org.futo.inputmethod.latin.uix.getSetting
 import org.futo.inputmethod.latin.uix.getSettingFlow
 import org.futo.inputmethod.latin.utils.AsyncResultHolder
+import org.futo.inputmethod.latin.utils.AutoCorrectionUtils
 import org.futo.inputmethod.latin.utils.SuggestionResults
 
 
@@ -53,6 +54,14 @@ val BinaryDictTransformerWeightSetting = SettingsKey(
 private fun SuggestedWordInfo.add(other: SuggestedWordInfo): SuggestedWordInfo {
     assert(mWord == other.mWord)
 
+    val keepWhitelist = isKindOf(SuggestedWordInfo.KIND_WHITELIST) ||
+        other.isKindOf(SuggestedWordInfo.KIND_WHITELIST)
+    val baseKind = if (keepWhitelist) {
+        SuggestedWordInfo.KIND_WHITELIST
+    } else {
+        SuggestedWordInfo.KIND_CORRECTION
+    }
+
     val result = SuggestedWordInfo(
         mWord,
         mPrevWordsContext,
@@ -60,7 +69,7 @@ private fun SuggestedWordInfo.add(other: SuggestedWordInfo): SuggestedWordInfo {
             .coerceAtMost(
                 Int.MAX_VALUE.toLong()
             ).toInt(),
-        SuggestedWordInfo.KIND_WHITELIST or SuggestedWordInfo.KIND_FLAG_APPROPRIATE_FOR_AUTO_CORRECTION,
+        baseKind or SuggestedWordInfo.KIND_FLAG_APPROPRIATE_FOR_AUTO_CORRECTION,
         null,
         0,
         0
@@ -358,8 +367,9 @@ public class LanguageModelFacilitator(
 
             var autocorrectWord: SuggestedWordInfo? = null
             val filtered = mutableListOf<SuggestedWordInfo>()
-            if(bothAlgorithmsCameToSameConclusion && maxWord != null && maxWordDict != null){
-                // We can be pretty confident about autocorrecting this
+            if(bothAlgorithmsCameToSameConclusion && maxWord != null && maxWordDict != null
+                    && AutoCorrectionUtils.isPlausibleAutoCorrection(values.composedData.mTypedWord, maxWord.mWord)){
+                // Only consider agreeing LM+dict top candidates when edit distance is plausible.
                 val clone = maxWord.add(maxWordDict)
                 autocorrectWord = clone
                 suggestionResults.add(clone)
@@ -412,7 +422,7 @@ public class LanguageModelFacilitator(
             val wordComposer = inputLogic.mWordComposer ?: return
 
             val suggestedWords = Suggest.obtainNonBatchedInputSuggestedWords(
-                wordComposer, values.inputStyle, true, -1, locale, suggestionResults, settingsValues.mAutoCorrectionThreshold)
+                wordComposer, values.inputStyle, settingsValues.mAutoCorrectionEnabledPerUserSettings, -1, locale, suggestionResults, settingsValues.mAutoCorrectionThreshold)
 
             job.cancel()
 

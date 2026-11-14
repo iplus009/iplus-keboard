@@ -88,10 +88,11 @@ jobs:
           body: |
             iPlus v${{ steps.pkg.outputs.version }} release.
 
-            - Branded app name updated to iPlus across launcher, setup, and settings
-            - Redesigned seamless adaptive & monochrome i+ launcher icon (boxless Nothing Matte blend, removed legacy AOSP/FUTO logos)
-            - Enabled APK v1 + v2 + v3 signature schemes for wider Android package-installer compatibility
-            - Includes crash, stuck-key, voice input, emoji, clipboard, and UI stability fixes
+            - Fixed stuck/repeating keys across fast typing, cancelled touches, and layout switches
+            - Disabled aggressive default spacebar auto-correction and added edit-distance safeguard so Banglish/short words aren't replaced unexpectedly
+            - Increased default keyboard height and vertical key tap spacing for more comfortable touch targets
+            - Fixed IME window insets refresh so comment boxes and bottom text inputs stay visible above the keyboard
+            - Seamless adaptive & monochrome i+ launcher icon and v1 + v2 + v3 APK signing enabled
           files: ${{ steps.pkg.outputs.apk }}
           prerelease: false
           make_latest: true

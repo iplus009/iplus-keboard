@@ -204,6 +204,7 @@ public final class KeyPreviewChoreographer {
     private static class KeyPreviewAnimators extends AnimatorListenerAdapter {
         private final Animator mShowUpAnimator;
         private final Animator mDismissAnimator;
+        private boolean mCanceled = false;
 
         public KeyPreviewAnimators(final Animator showUpAnimator, final Animator dismissAnimator) {
             mShowUpAnimator = showUpAnimator;
@@ -211,11 +212,16 @@ public final class KeyPreviewChoreographer {
         }
 
         public void startShowUp() {
+            mCanceled = false;
             mShowUpAnimator.start();
         }
 
         public void startDismiss() {
+            if (mCanceled) {
+                return;
+            }
             if (mShowUpAnimator.isRunning()) {
+                mShowUpAnimator.removeListener(this);
                 mShowUpAnimator.addListener(this);
                 return;
             }
@@ -223,13 +229,23 @@ public final class KeyPreviewChoreographer {
         }
 
         public void cancel() {
+            mCanceled = true;
+            mShowUpAnimator.removeListener(this);
             mShowUpAnimator.cancel();
             mDismissAnimator.cancel();
         }
 
         @Override
+        public void onAnimationCancel(final Animator animator) {
+            mCanceled = true;
+        }
+
+        @Override
         public void onAnimationEnd(final Animator animator) {
-            mDismissAnimator.start();
+            mShowUpAnimator.removeListener(this);
+            if (!mCanceled) {
+                mDismissAnimator.start();
+            }
         }
     }
 }

@@ -1,5 +1,8 @@
 package org.futo.inputmethod.latin.uix
 
+import org.futo.inputmethod.keyboard.Key
+import org.futo.inputmethod.keyboard.internal.PointerTrackerQueue
+import org.futo.inputmethod.latin.ImeInsetsMath
 import org.futo.inputmethod.latin.uix.actions.CategoryItem
 import org.futo.inputmethod.latin.uix.actions.EmojiItemItem
 import org.futo.inputmethod.latin.uix.actions.EmojiViewItem
@@ -15,6 +18,7 @@ import org.futo.inputmethod.latin.uix.theme.presets.DynamicNothing
 import org.futo.inputmethod.latin.uix.theme.presets.IPlusMatteTheme
 import org.futo.inputmethod.latin.uix.theme.presets.NothingDark
 import org.futo.inputmethod.latin.uix.theme.presets.NothingLight
+import org.futo.inputmethod.latin.utils.AutoCorrectionUtils
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -106,5 +110,83 @@ class BugFixRegressionUnitTest {
         assertFalse(ThemeOptionKeys.contains(LEGACY_ORBIT_THEME_KEY))
         assertEquals(IPlusMatteTheme.key, normalizeThemeKey(LEGACY_ORBIT_THEME_KEY))
         assertEquals(AMOLEDNothing.key, normalizeThemeKey(AMOLEDNothing.key))
+    }
+
+    @Test
+    fun pointerTrackerQueueClearAllAndContainsResetStalePointers() {
+        val queue = PointerTrackerQueue()
+        var canceledCount = 0
+        val elem1 = object : PointerTrackerQueue.Element {
+            override fun isModifier() = false
+            override fun isInDraggingFinger() = false
+            override fun onPhantomUpEvent(eventTime: Long) {}
+            override fun cancelTrackingForAction() {
+                canceledCount++
+            }
+        }
+        val elem2 = object : PointerTrackerQueue.Element {
+            override fun isModifier() = false
+            override fun isInDraggingFinger() = false
+            override fun onPhantomUpEvent(eventTime: Long) {}
+            override fun cancelTrackingForAction() {
+                canceledCount++
+            }
+        }
+
+        queue.add(elem1)
+        queue.add(elem2)
+        assertTrue(queue.contains(elem1))
+        assertTrue(queue.contains(elem2))
+
+        queue.clearAll()
+        assertEquals(2, canceledCount)
+        assertFalse(queue.contains(elem1))
+        assertFalse(queue.contains(elem2))
+
+        // Verify queue remains usable after full clear
+        queue.add(elem1)
+        assertTrue(queue.contains(elem1))
+    }
+
+    @Test
+    fun keyOnReleasedClearsPressedState() {
+        val key = Key("k", "", 'k'.code, null, null, 0, 0, 0, 0, 100, 100, 4, 4)
+        assertFalse(key.isPressed)
+        key.onPressed()
+        assertTrue(key.isPressed)
+        key.onReleased()
+        assertFalse(key.isPressed)
+    }
+
+    @Test
+    fun autoCorrectionGuardRejectsBanglishAndShortWordsWhilePreservingTypos() {
+        assertFalse(AutoCorrectionUtils.isPlausibleAutoCorrection("kicu", "muchi"))
+        assertFalse(AutoCorrectionUtils.isPlausibleAutoCorrection("amar", "army"))
+        assertFalse(AutoCorrectionUtils.isPlausibleAutoCorrection("tumi", "time"))
+        assertFalse(AutoCorrectionUtils.isPlausibleAutoCorrection("ami", "air"))
+        assertFalse(AutoCorrectionUtils.isPlausibleAutoCorrection("ze", "the"))
+        assertFalse(AutoCorrectionUtils.isPlausibleAutoCorrection("ki", "hi"))
+        assertFalse(AutoCorrectionUtils.isPlausibleAutoCorrection("ha", "he"))
+
+        assertTrue(AutoCorrectionUtils.isPlausibleAutoCorrection("teh", "the"))
+        assertTrue(AutoCorrectionUtils.isPlausibleAutoCorrection("helo", "hello"))
+        assertTrue(AutoCorrectionUtils.isPlausibleAutoCorrection("dont", "don't"))
+        assertTrue(AutoCorrectionUtils.isPlausibleAutoCorrection("im", "I'm"))
+        assertTrue(AutoCorrectionUtils.isPlausibleAutoCorrection("i", "I"))
+        assertTrue(AutoCorrectionUtils.isPlausibleAutoCorrection("definately", "definitely"))
+
+        assertEquals(4, AutoCorrectionUtils.damerauLevenshteinDistance("kicu", "muchi"))
+        assertEquals(1, AutoCorrectionUtils.damerauLevenshteinDistance("teh", "the"))
+    }
+
+    @Test
+    fun imeInsetsMathPreventsZeroHeightFrameAndClampsWindowCoordinates() {
+        assertEquals(840, ImeInsetsMath.resolveEffectiveTouchableHeight(0, 720, 120, 600))
+        assertEquals(720, ImeInsetsMath.resolveEffectiveTouchableHeight(0, 0, 120, 600))
+        assertEquals(860, ImeInsetsMath.resolveEffectiveTouchableHeight(860, 720, 120, 600))
+
+        assertEquals(1550, ImeInsetsMath.computeImeInsetsTopY(0, 2400, 2400, 850))
+        assertEquals(1406, ImeInsetsMath.computeImeInsetsTopY(96, 2160, 2400, 850))
+        assertEquals(0, ImeInsetsMath.computeImeInsetsTopY(0, 600, 600, 900))
     }
 }

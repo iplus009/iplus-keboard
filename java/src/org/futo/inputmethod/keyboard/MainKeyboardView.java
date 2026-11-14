@@ -388,18 +388,30 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
      * @see #getKeyboard()
      * @param keyboard the keyboard to display in this view
      */
+    private static void resetPressedKeys(@Nullable final Keyboard keyboard) {
+        if (keyboard == null) {
+            return;
+        }
+        for (final Key key : keyboard.getSortedKeys()) {
+            key.onReleased();
+        }
+    }
+
     @Override
     public void setKeyboard(@Nullable final Keyboard keyboard) {
+        final Keyboard oldKeyboard = getKeyboard();
         // Remove any pending timers/previews so repeating or long-press keys cannot stick across layouts.
         mTimerHandler.cancelLongPressTimers();
         mTimerHandler.cancelKeyRepeatTimers();
         if (mKeyPreviewChoreographer != null) {
             mKeyPreviewChoreographer.cancelAllOngoingEvents();
         }
+        resetPressedKeys(oldKeyboard);
         if (keyboard == null) {
             super.setKeyboard(null);
             return;
         }
+        resetPressedKeys(keyboard);
         super.setKeyboard(keyboard);
         mKeyDetector.setKeyboard(
                 keyboard, -getPaddingLeft(), -getPaddingTop() + getVerticalCorrection());
@@ -759,7 +771,12 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         mGestureFloatingTextDrawingPreview.dismissGestureFloatingPreviewText();
         mSlidingKeyInputDrawingPreview.dismissSlidingKeyInputPreview();
         PointerTracker.dismissAllMoreKeysPanels();
-        PointerTracker.cancelAllPointerTrackers();
+        PointerTracker.cancelAllOngoingTrackers();
+        if (mKeyPreviewChoreographer != null) {
+            mKeyPreviewChoreographer.cancelAllOngoingEvents();
+        }
+        resetPressedKeys(getKeyboard());
+        invalidateAllKeys();
     }
 
     public void closing() {

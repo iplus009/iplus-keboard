@@ -95,6 +95,11 @@ import org.futo.inputmethod.updates.deferManualUpdate
 import org.futo.inputmethod.updates.isManualUpdateTimeExpired
 import org.futo.inputmethod.updates.openManualUpdateCheck
 import org.futo.inputmethod.updates.retrieveSavedLastUpdateCheckResult
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.windowInsetsPadding
 import java.util.Locale
 import org.futo.voiceinput.shared.ui.FakeToast
 
@@ -668,7 +673,7 @@ class UixManager(private val latinIME: LatinIME) {
                                     Surface(modifier = Modifier.onSizeChanged {
                                         latinIME.updateTouchableHeight(it.height)
                                     }, color = latinIME.keyboardColor) {
-                                        Box {
+                                        Box(modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))) {
                                         Column {
                                             when {
                                                 currWindowActionWindow != null -> ActionViewWithHeader(
