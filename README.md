@@ -32,6 +32,102 @@
 | Build channel | GitHub Actions — stable debug universal APK |
 | Official Telegram | [@ismailq01appsstore](https://t.me/ismailq01appsstore) |
 
+## What makes Keybird different
+
+| Experience area | Typical stock / generic keyboards | Keybird |
+|---|---|---|
+| **Signature visual style** | Uniform monochrome rectangles | **Keybird Matte** (Bauhaus color-block palette + dot-matrix key legends) alongside **Nothing / AMOLED**, **Emerald**, **Cotton Candy**, and **Material You** presets across `20` theme modes |
+| **Action strip footprint** | Stacked double toolbars eating screen height | **Single `40dp` inline ActionBar** — tap `>` / `<` to swap inline between suggestions and shortcuts (`Undo`, `Redo`, `Text Editor`, `Clipboard`, `One-Handed`, `Theme`) without adding a second row |
+| **Portrait comfort height** | Frequently clamped too short (`~243dp`) on tall phones | **Option B ergonomic height** (`292.0dp` default key grid, `55%p` cap) tuned for ~5.2–5.5 cm two-thumb reach |
+| **Bangla typing depth** | Usually phonetic-only or 1 fixed layout | **4 built-in Bangla layouts** (`Avro (অভ্র)`, `Probhat (প্রভাত)`, `Jatiyo (জাতীয়)`, and alphabetical `Bangla (বাংলা)`) + `English` — up to **5 active subtypes** switchable right from the spacebar |
+| **One-Handed ergonomics** | Basic shrink-to-side box | Dedicated opposite-side **control rail** (`18%` width) with one-tap **Swap Left/Right** and **Expand Full Width**, synced with Split Keyboard |
+| **Custom photo personalization** | Simple image overlay that washes out keys | Live **Dim (`0–85%`)**, **Zoom (`1.0x–2.5x`)**, **X/Y pan**, **softening blur (`0–20`)**, **light/dark contrast switch**, and **named reusable presets** |
+| **Settings & privacy UX** | Cluttered flat preferences + cloud trackers | **Nothing-inspired dot-matrix UI** with an instant **"Try typing here..."** playground, Banglish auto-correct guardrails, and no third-party ad SDKs |
+
+## Theme showcase
+
+Captured directly from `Keybird v2.0.4` (`com.iplus.keyboard`) on Android emulator (`avro26`, API 26):
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/theme-keybird-matte.png" alt="Keybird Matte Bauhaus theme with collapsed single-bar ActionBar" width="210" />
+      <br />
+      <b>Keybird Matte</b><br />
+      <sub>Bauhaus color-block & dot-matrix legends</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/theme-nothing-amoled.png" alt="AMOLED Nothing theme with Nothing Red accents" width="210" />
+      <br />
+      <b>AMOLED Nothing</b><br />
+      <sub>True black surface & crimson accents</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/theme-emerald.png" alt="Emerald dark theme on Bangla Probhat layout" width="210" />
+      <br />
+      <b>Emerald</b><br />
+      <sub>Deep forest palette & neon green keys</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/theme-cotton-candy.png" alt="Cotton Candy light pastel theme on Bangla Probhat layout" width="210" />
+      <br />
+      <b>Cotton Candy</b><br />
+      <sub>Crisp light pastel contrast & rose accents</sub>
+    </td>
+  </tr>
+</table>
+
+<details>
+<summary><b>View Theme Picker Gallery &amp; all 20 built-in / custom theme modes</b></summary>
+<br />
+<p align="center">
+  <img src="docs/assets/showcase/theme-gallery.png" alt="Keybird in-app Theme Picker showing My Photo, Keybird Matte, Nothing, Material, and AMOLED presets" width="240" />
+</p>
+
+- **Signature & Custom:** `My Photo` (`CustomPhotoTheme`), `Keybird Matte` (`IPlusMatteTheme`), `VoiceInputTheme`
+- **Adaptive / Material You:** `DynamicNothing`, `DynamicSystemTheme`, `DynamicDarkTheme`, `DynamicLightTheme`
+- **Dark & AMOLED:** `AMOLEDNothing`, `AMOLEDDarkPurple`, `NothingDark`, `ClassicMaterialDark`, `DeepSeaDark`, `Emerald`
+- **Light & Pastel:** `NothingLight`, `ClassicMaterialLight`, `Sunflower`, `Snowfall`, `SteelGray`, `CottonCandy`, `DeepSeaLight`
+
+</details>
+
+## Feature samples in action
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/feature-inline-actionbar.png" alt="Expanded single-bar inline ActionBar with Undo, Redo, Text Editor, Clipboard, One-Handed, and Theme shortcuts" width="210" />
+      <br />
+      <b>Inline ActionBar</b><br />
+      <sub>Expands tools inside the same 40dp bar</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/feature-avro-bangla.png" alt="Avro phonetic Bangla layout active on Keybird spacebar switcher" width="210" />
+      <br />
+      <b>Avro Phonetic (অভ্র)</b><br />
+      <sub>Spacebar swipe/arrows switch up to 5 subtypes</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/feature-jatiyo-bangla.png" alt="Jatiyo fixed Bangla layout active on Keybird" width="210" />
+      <br />
+      <b>4 Bangla Layouts</b><br />
+      <sub>Avro, Probhat, Jatiyo &amp; Bangla Alphabetical</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/feature-one-handed.png" alt="One-Handed Mode with opposite-side Swap and Full-Width rail buttons" width="210" />
+      <br />
+      <b>One-Handed + Side Rail</b><br />
+      <sub>1-tap Left/Right swap &amp; expand-full controls</sub>
+    </td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/assets/showcase/feature-settings-ui.png" alt="Keybird Nothing-inspired dot-matrix Settings home screen with quick Bangla toggles and Try typing here playground" width="240" />
+  <br />
+  <sub><b>Dot-Matrix Settings Home:</b> version pill, quick Bangla layout switches, and instant <i>"Try typing here..."</i> playground.</sub>
+</p>
+
 ## Feature overview
 
 ### Typing, comfort, and layout controls
