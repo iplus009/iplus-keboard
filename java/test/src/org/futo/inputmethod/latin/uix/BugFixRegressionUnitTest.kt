@@ -1,6 +1,9 @@
 package org.futo.inputmethod.latin.uix
 
+import android.speech.SpeechRecognizer
 import org.futo.inputmethod.keyboard.Key
+import org.futo.inputmethod.keyboard.internal.CloudTranslationHandler
+import org.futo.inputmethod.keyboard.internal.KeyboardBuilder
 import org.futo.inputmethod.keyboard.internal.PointerTrackerQueue
 import org.futo.inputmethod.latin.ImeInsetsMath
 import org.futo.inputmethod.latin.uix.actions.AllActionsMap
@@ -11,9 +14,13 @@ import org.futo.inputmethod.latin.uix.actions.EmojiItemItem
 import org.futo.inputmethod.latin.uix.actions.EmojiViewItem
 import org.futo.inputmethod.latin.uix.actions.OneHandedAction
 import org.futo.inputmethod.latin.uix.actions.OneHandedModeHelper
+import org.futo.inputmethod.latin.uix.actions.buildVoiceSpeechLanguageOptions
 import org.futo.inputmethod.latin.uix.actions.emoji.EmojiItem
 import org.futo.inputmethod.latin.uix.actions.resolveCategoryForScrollPosition
 import org.futo.inputmethod.latin.uix.actions.resolveSpeechLocaleTag
+import org.futo.inputmethod.latin.uix.actions.resolveVoiceSpeechCandidates
+import org.futo.inputmethod.latin.uix.actions.shouldAutoCommitOnSpeechError
+import org.futo.inputmethod.latin.uix.actions.shouldRetrySpeechRecognizerError
 import org.futo.inputmethod.latin.uix.actions.sortLanguagesForPicker
 import org.futo.inputmethod.updates.UpdateChecker
 import org.futo.inputmethod.latin.uix.theme.CustomPhotoTheme
@@ -252,5 +259,131 @@ class BugFixRegressionUnitTest {
         assertTrue(UpdateChecker.isMatchingReleaseMetadata("v2.0.4", "Keybird v2.0.4"))
         assertTrue(UpdateChecker.isMatchingReleaseMetadata("v2.0.3", "iPlus v2.0.3"))
         assertFalse(UpdateChecker.isMatchingReleaseMetadata("custom-tag", "Other App"))
+    }
+
+    @Test
+    fun keyboardSizeMultiplierClampsAndSnapsWithinSafeBounds() {
+        assertEquals(MIN_KEYBOARD_HEIGHT_MULTIPLIER, clampKeyboardHeightMultiplier(0.33f), 0.0001f)
+        assertEquals(MIN_KEYBOARD_HEIGHT_MULTIPLIER, clampKeyboardHeightMultiplier(-1.0f), 0.0001f)
+        assertEquals(MAX_KEYBOARD_HEIGHT_MULTIPLIER, clampKeyboardHeightMultiplier(1.75f), 0.0001f)
+        assertEquals(DEFAULT_KEYBOARD_HEIGHT_MULTIPLIER, clampKeyboardHeightMultiplier(Float.NaN), 0.0001f)
+        assertEquals(DEFAULT_KEYBOARD_HEIGHT_MULTIPLIER, clampKeyboardHeightMultiplier(Float.POSITIVE_INFINITY), 0.0001f)
+        assertEquals(0.85f, clampKeyboardHeightMultiplier(0.85f), 0.0001f)
+
+        assertEquals(0.75f, snapKeyboardHeightMultiplier(0.76f), 0.0001f)
+        assertEquals(0.85f, snapKeyboardHeightMultiplier(0.84f), 0.0001f)
+        assertEquals(1.00f, snapKeyboardHeightMultiplier(0.998f), 0.0001f)
+        assertEquals(1.30f, snapKeyboardHeightMultiplier(1.29f), 0.0001f)
+    }
+
+    @Test
+    fun keyboardBuilderClampsScaledHeightToDisplaySafeRange() {
+        // 2400px portrait screen: min 16% = 384px, max 65% = 1560px
+        assertEquals(657, KeyboardBuilder.clampScaledKeyboardHeight(657, 2400))
+        assertEquals(1140, KeyboardBuilder.clampScaledKeyboardHeight(1140, 2400))
+        assertEquals(384, KeyboardBuilder.clampScaledKeyboardHeight(200, 2400))
+        assertEquals(1560, KeyboardBuilder.clampScaledKeyboardHeight(1800, 2400))
+        assertEquals(500, KeyboardBuilder.clampScaledKeyboardHeight(500, 0))
+        assertEquals(1, KeyboardBuilder.clampScaledKeyboardHeight(-10, 0))
+    }
+
+    @Test
+    fun voiceSpeechHelpersHandleLanguageOptionsCandidatesRetryAndAutoCommit() {
+        val bnOptions = buildVoiceSpeechLanguageOptions("bn-BD")
+        assertEquals(listOf("bn-BD" to "বাংলা", "en-US" to "English"), bnOptions)
+
+        val extraOptions = buildVoiceSpeechLanguageOptions("ar-SA")
+        assertEquals(3, extraOptions.size)
+        assertEquals("ar-SA", extraOptions.first().first)
+
+        assertEquals("আমি ভালো আছি", resolveVoiceSpeechCandidates(listOf(" ", "আমি ভালো আছি"), "fallback"))
+        assertEquals("partial text", resolveVoiceSpeechCandidates(emptyList(), " partial text "))
+        assertEquals("", resolveVoiceSpeechCandidates(null, "   "))
+
+        assertTrue(shouldAutoCommitOnSpeechError(SpeechRecognizer.ERROR_NO_MATCH, true, "hello"))
+        assertTrue(shouldAutoCommitOnSpeechError(SpeechRecognizer.ERROR_SPEECH_TIMEOUT, true, "বাংলা"))
+        assertFalse(shouldAutoCommitOnSpeechError(SpeechRecognizer.ERROR_NO_MATCH, false, "hello"))
+        assertFalse(shouldAutoCommitOnSpeechError(SpeechRecognizer.ERROR_NO_MATCH, true, "   "))
+
+        assertTrue(shouldRetrySpeechRecognizerError(SpeechRecognizer.ERROR_RECOGNIZER_BUSY, 0))
+        assertTrue(shouldRetrySpeechRecognizerError(SpeechRecognizer.ERROR_CLIENT, 0))
+        assertFalse(shouldRetrySpeechRecognizerError(SpeechRecognizer.ERROR_RECOGNIZER_BUSY, 1))
+        assertFalse(shouldRetrySpeechRecognizerError(SpeechRecognizer.ERROR_AUDIO, 0))
+    }
+
+    @Test
+    fun cloudTranslationCacheNormalizesWhitespaceAndSameLanguageShortcut() {
+        CloudTranslationHandler.clearCacheForTest()
+        assertEquals("bn|en|হ্যালো", CloudTranslationHandler.buildCacheKey("bn", "en", "  হ্যালো  "))
+        assertEquals("", CloudTranslationHandler.getCached("bn", "en", "   "))
+        assertEquals("hello", CloudTranslationHandler.getCached("en", "en", " hello "))
+
+        CloudTranslationHandler.putCachedForTest("bn", "en", "কেমন আছেন", "How are you")
+        assertEquals("How are you", CloudTranslationHandler.getCached("bn", "en", " কেমন আছেন "))
+        assertTrue(CloudTranslationHandler.buildTranslateUrl("bn", "en", " হ্যালো ").contains("sl=bn&tl=en"))
+        CloudTranslationHandler.clearCacheForTest()
+    }
+
+    @Test
+    fun updateCheckerRejectsUnrelatedIplusApksAndArbitraryVTags() {
+        assertFalse(UpdateChecker.isMatchingApkAsset("iplusgames-v1.apk"))
+        assertFalse(UpdateChecker.isMatchingApkAsset("com.iplus.notes.apk"))
+        assertFalse(UpdateChecker.isMatchingApkAsset("iplus_wallpaper_hd.apk"))
+        assertFalse(UpdateChecker.isMatchingReleaseMetadata("v1.0.0", "Other App"))
+        assertFalse(UpdateChecker.isMatchingReleaseMetadata("v2.5", "Games Release"))
+    }
+
+    @Test
+    fun coerceFiniteInReplacesNonFinitePhotoParameters() {
+        assertEquals(1.0f, Float.NaN.coerceFiniteIn(1.0f, 1.0f, 2.5f))
+        assertEquals(0.0f, Float.POSITIVE_INFINITY.coerceFiniteIn(0.0f, -1f, 1f))
+        assertEquals(0.35f, Float.NEGATIVE_INFINITY.coerceFiniteIn(0.35f, 0f, 0.85f))
+        assertEquals(2.5f, 5.0f.coerceFiniteIn(1.0f, 1.0f, 2.5f))
+        assertEquals(0.25f, 0.25f.coerceFiniteIn(0.35f, 0f, 0.85f))
+    }
+
+    @Test
+    fun themeNameTruncationAndCollisionAvoidSurrogateSplitsAndPresetLoss() {
+        val boundaryEmoji = "a".repeat(31) + "\uD83D\uDE2D"
+        val truncated = truncateThemeNameSafely(boundaryEmoji, 32)
+        assertEquals("a".repeat(31), truncated)
+        assertFalse(Character.isHighSurrogate(truncated.last()))
+
+        val allEmojis = "\uD83D\uDE2D".repeat(17)
+        val trimmedEmojis = truncateThemeNameSafely(allEmojis, 32)
+        assertEquals(32, trimmedEmojis.length)
+        assertEquals("\uD83D\uDE2D".repeat(16), trimmedEmojis)
+
+        val saved = listOf(
+            "Sunset|uri1|0.2|0.0|1.0|0.0|0.0",
+            "Night|uri1|0.2|0.0|1.0|0.0|0.0"
+        )
+        assertTrue(hasThemeNameCollision(saved, "sunset"))
+        assertTrue(hasThemeNameCollision(saved, "Sunset", excludingRecord = saved[1]))
+        assertFalse(hasThemeNameCollision(saved, "Sunset", excludingRecord = saved[0]))
+        assertFalse(hasThemeNameCollision(saved, "Ocean"))
+    }
+
+    @Test
+    fun cryAndBanglaExpressionSearchPrioritizesFacesOverNoise() {
+        val sample = listOf(
+            org.futo.inputmethod.latin.uix.actions.emoji.EmojiItem("🚗", "automobile", "Travel & Places", false, emptyList(), listOf("car")),
+            org.futo.inputmethod.latin.uix.actions.emoji.EmojiItem("🐱", "cat face", "Animals & Nature", false, emptyList(), listOf("cat")),
+            org.futo.inputmethod.latin.uix.actions.emoji.EmojiItem("🔑", "key", "Objects", false, emptyList(), listOf("key")),
+            org.futo.inputmethod.latin.uix.actions.emoji.EmojiItem("😢", "crying face", "Smileys & Emotion", false, listOf("sad", "tear", "cry", "crying"), listOf("cry")),
+            org.futo.inputmethod.latin.uix.actions.emoji.EmojiItem("😭", "loudly crying face", "Smileys & Emotion", false, listOf("sad", "cry", "crying", "tear"), listOf("sob")),
+            org.futo.inputmethod.latin.uix.actions.emoji.EmojiItem("🥹", "face holding back tears", "Smileys & Emotion", false, listOf("tears", "tear", "cry", "sad"), listOf("face_holding_back_tears")),
+            org.futo.inputmethod.latin.uix.actions.emoji.EmojiItem("😿", "crying cat", "Smileys & Emotion", false, listOf("sad", "tear", "cry", "crying", "cat"), listOf("crying_cat_face"))
+        )
+
+        val cryMatches = org.futo.inputmethod.latin.uix.actions.searchEmojiItems(sample, "cry").map { it.emoji }
+        assertTrue(cryMatches.containsAll(listOf("😢", "😭", "🥹", "😿")))
+        assertFalse(cryMatches.contains("🚗"))
+        assertFalse(cryMatches.contains("🐱"))
+        assertFalse(cryMatches.contains("🔑"))
+
+        val banglaMatches = org.futo.inputmethod.latin.uix.actions.searchEmojiItems(sample, "কান্না").map { it.emoji }
+        assertTrue(banglaMatches.containsAll(listOf("😢", "😭", "🥹", "😿")))
+        assertFalse(banglaMatches.contains("🚗"))
     }
 }

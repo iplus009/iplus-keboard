@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Adversarial Stress Test Suite for Orbit Board Crash Remediation.
+ * Adversarial Stress Test Suite for Keybird Crash Remediation.
  * Validates edge cases, mathematical boundary conditions, and null-safety guards:
  * 1. KeyPreviewView.setTextAndScaleX arithmetic with maxWidth <= 0, width == 0.0f, NaN, +Infinity, -Infinity.
  * 2. MoreKeysKeyboard with parentKeyboardWidth < keyWidth, keyWidth == 0, single more-key, many more-keys.
@@ -71,7 +71,7 @@ public class AdversarialStressTest {
         // Intrinsic width equals total padding -> maxWidth = 0
         assertNull(simulateKeyPreviewScaleX(40, 20, 20, 30.0f));
 
-        // Intrinsic width is -1 (ShapeDrawable default in Orbit themes) -> maxWidth = -1
+        // Intrinsic width is -1 (ShapeDrawable default in custom ShapeDrawable themes) -> maxWidth = -1
         assertNull(simulateKeyPreviewScaleX(-1, 0, 0, 50.0f));
 
         // Intrinsic width is -1 with padding -> maxWidth = -21

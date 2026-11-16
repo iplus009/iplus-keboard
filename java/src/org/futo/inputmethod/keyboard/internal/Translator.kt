@@ -1,29 +1,111 @@
 package org.futo.inputmethod.keyboard.internal
 
 import android.util.Log
-import android.util.LruCache
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.ConnectionPool
+import okhttp3.Dns
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
 import org.json.JSONArray
 import java.io.IOException
 import java.net.ConnectException
-import java.net.HttpURLConnection
+import java.net.Inet4Address
+import java.net.InetAddress
 import java.net.SocketTimeoutException
-import java.net.URL
 import java.net.URLEncoder
 import java.net.UnknownHostException
+import java.util.Collections
+import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 object CloudTranslationHandler {
     private const val TAG = "CloudTranslationHandler"
-    private const val CACHE_SIZE = 64
+    private const val CACHE_SIZE = 256
     private const val MAX_ATTEMPTS = 2
-    private const val RETRY_BACKOFF_MS = 350L
+    private const val RETRY_BACKOFF_MS = 200L
+    private const val PREWARM_COOLDOWN_MS = 60_000L
 
-    private val translationCache = LruCache<String, String>(CACHE_SIZE)
+    private val translationCache: MutableMap<String, String> = Collections.synchronizedMap(
+        object : LinkedHashMap<String, String>(CACHE_SIZE, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>?): Boolean {
+                return size > CACHE_SIZE
+            }
+        }
+    )
+
+    private val preferIpv4Dns = object : Dns {
+        override fun lookup(hostname: String): List<InetAddress> {
+            val all = Dns.SYSTEM.lookup(hostname)
+            val ipv4 = all.filterIsInstance<Inet4Address>()
+            return if (ipv4.isNotEmpty()) ipv4 + all.filterNot { it is Inet4Address } else all
+        }
+    }
+
+    private val httpClient: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectionPool(ConnectionPool(4, 2, TimeUnit.MINUTES))
+            .dns(preferIpv4Dns)
+            .connectTimeout(4, TimeUnit.SECONDS)
+            .readTimeout(5, TimeUnit.SECONDS)
+            .callTimeout(8, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
+            .build()
+    }
+
+    @Volatile
+    private var lastPrewarmMs = 0L
 
     internal fun buildCacheKey(source: String, target: String, text: String): String =
-        "$source|$target|$text"
+        "$source|$target|${text.trim()}"
+
+    internal fun buildTranslateUrl(source: String, target: String, text: String): String {
+        val encodedSource = URLEncoder.encode(source, "UTF-8")
+        val encodedTarget = URLEncoder.encode(target, "UTF-8")
+        val encodedText = URLEncoder.encode(text.trim(), "UTF-8")
+        return "https://translate.googleapis.com/translate_a/single?client=gtx&sl=$encodedSource&tl=$encodedTarget&dt=t&q=$encodedText"
+    }
+
+    fun getCached(source: String, target: String, text: String): String? {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return ""
+        if (source != "auto" && source == target) return trimmed
+        return translationCache[buildCacheKey(source, target, trimmed)]
+    }
+
+    internal fun putCachedForTest(source: String, target: String, text: String, translated: String) {
+        translationCache[buildCacheKey(source, target, text)] = translated
+    }
+
+    internal fun clearCacheForTest() {
+        translationCache.clear()
+    }
+
+    fun prewarm() {
+        val now = System.currentTimeMillis()
+        if (now - lastPrewarmMs < PREWARM_COOLDOWN_MS) return
+        lastPrewarmMs = now
+        runCatching {
+            val request = Request.Builder()
+                .url("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=bn&dt=t&q=hi")
+                .head()
+                .header("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:100.0) Gecko/100.0 Firefox/100.0")
+                .build()
+            httpClient.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {}
+                override fun onResponse(call: Call, response: Response) {
+                    response.close()
+                }
+            })
+        }
+    }
 
     internal fun parseTranslationResponse(response: String): String {
         val outerArray = JSONArray(response)
@@ -58,40 +140,52 @@ object CloudTranslationHandler {
         }
     }
 
-    suspend fun translate(source: String, target: String, text: String): Result<String> = withContext(Dispatchers.IO) {
-        if (text.isBlank()) return@withContext Result.success("")
+    private suspend fun executeCancellable(request: Request): Pair<Int, String> =
+        suspendCancellableCoroutine { cont ->
+            val call = httpClient.newCall(request)
+            cont.invokeOnCancellation { call.cancel() }
+            call.enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    if (cont.isActive) {
+                        cont.resumeWithException(e)
+                    }
+                }
 
-        val cacheKey = buildCacheKey(source, target, text)
-        translationCache.get(cacheKey)?.let { cached ->
+                override fun onResponse(call: Call, response: Response) {
+                    response.use { res ->
+                        val bodyStr = runCatching { res.body?.string().orEmpty() }.getOrDefault("")
+                        if (cont.isActive) {
+                            cont.resume(res.code to bodyStr)
+                        }
+                    }
+                }
+            })
+        }
+
+    suspend fun translate(source: String, target: String, text: String): Result<String> = withContext(Dispatchers.IO) {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return@withContext Result.success("")
+        if (source != "auto" && source == target) return@withContext Result.success(trimmed)
+
+        val cacheKey = buildCacheKey(source, target, trimmed)
+        translationCache[cacheKey]?.let { cached ->
             return@withContext Result.success(cached)
         }
 
-        val encodedSource = URLEncoder.encode(source, "UTF-8")
-        val encodedTarget = URLEncoder.encode(target, "UTF-8")
-        val encodedText = URLEncoder.encode(text, "UTF-8")
-        val urlString =
-            "https://translate.googleapis.com/translate_a/single?client=gtx&sl=$encodedSource&tl=$encodedTarget&dt=t&q=$encodedText"
+        val urlString = buildTranslateUrl(source, target, trimmed)
+        val request = Request.Builder()
+            .url(urlString)
+            .get()
+            .header("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:100.0) Gecko/100.0 Firefox/100.0")
+            .build()
 
         var lastException: Exception? = null
         for (attempt in 0 until MAX_ATTEMPTS) {
-            var connection: HttpURLConnection? = null
             try {
-                val url = URL(urlString)
-                connection = (url.openConnection() as HttpURLConnection).apply {
-                    requestMethod = "GET"
-                    setRequestProperty(
-                        "User-Agent",
-                        "Mozilla/5.0 (Android; Mobile; rv:100.0) Gecko/100.0 Firefox/100.0"
-                    )
-                    connectTimeout = 8000
-                    readTimeout = 8000
-                }
-
-                val responseCode = connection.responseCode
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    val response = connection.inputStream.bufferedReader().use { it.readText() }
-                    val translatedText = parseTranslationResponse(response)
-                    translationCache.put(cacheKey, translatedText)
+                val (responseCode, responseBody) = executeCancellable(request)
+                if (responseCode == 200) {
+                    val translatedText = parseTranslationResponse(responseBody)
+                    translationCache[cacheKey] = translatedText
                     return@withContext Result.success(translatedText)
                 } else {
                     val errorMsg = formatTranslationError(null, responseCode)
@@ -102,6 +196,8 @@ object CloudTranslationHandler {
                     }
                     return@withContext Result.failure(TranslationException(errorMsg))
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 lastException = e
                 Log.e(TAG, "Translation exception (attempt ${attempt + 1})", e)
@@ -112,8 +208,6 @@ object CloudTranslationHandler {
                 return@withContext Result.failure(
                     TranslationException(formatTranslationError(e), e)
                 )
-            } finally {
-                connection?.disconnect()
             }
         }
 

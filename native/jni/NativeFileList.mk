@@ -21,6 +21,7 @@ LATIN_IME_JNI_SRC_FILES := \
     org_futo_inputmethod_latin_xlm_AdapterTrainer.cpp \
     org_futo_inputmethod_latin_xlm_ModelInfoLoader.cpp \
     org_futo_voiceinput_WhisperGGML.cpp \
+    org_futo_inputmethod_latin_themestore_security_ThemeNativeGuard.cpp \
     jni_common.cpp
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/src/sentencepiece/builtin_pb

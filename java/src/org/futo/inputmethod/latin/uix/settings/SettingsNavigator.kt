@@ -53,6 +53,7 @@ fun SettingsNavigator(
         addTypingNavigation(navController)
 
         composable("themes") { ThemeScreen(navController) }
+        composable("themestore") { org.futo.inputmethod.latin.themestore.ui.ThemeStoreScreen(navController) }
         composable("voiceInput") { VoiceInputScreen(navController) }
         composable("credits") { CreditsScreen(navController) }
         composable("help") { HelpScreen(navController) }

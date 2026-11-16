@@ -44,7 +44,7 @@ private val iPlusMatteColorScheme = darkColorScheme(
 val IPlusMatteTheme = ThemeOption(
     dynamic = false,
     key = "IPlusMatteTheme",
-    name = R.string.theme_orbit,
+    name = R.string.theme_keybird_matte,
     available = { true }
 ) {
     iPlusMatteColorScheme

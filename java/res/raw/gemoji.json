@@ -305,7 +305,12 @@
                         "smiling_face_with_tear"
                     ],
         "tags":  [
-
+                     "tear",
+                     "cry",
+                     "sad",
+                     "smile",
+                     "proud",
+                     "relieved"
                  ],
         "unicode_version":  "13.0",
         "ios_version":  "14.0"
@@ -440,7 +445,11 @@
                         "face_with_peeking_eye"
                     ],
         "tags":  [
-
+                     "peek",
+                     "shy",
+                     "embarrassed",
+                     "scared",
+                     "nervous"
                  ],
         "unicode_version":  "14.0",
         "ios_version":  "15.4"
@@ -467,7 +476,10 @@
                         "thinking"
                     ],
         "tags":  [
-
+                     "think",
+                     "wonder",
+                     "curious",
+                     "hmm"
                  ],
         "unicode_version":  "8.0",
         "ios_version":  "9.1"
@@ -533,7 +545,9 @@
                         "expressionless"
                     ],
         "tags":  [
-
+                     "blank",
+                     "annoyed",
+                     "meh"
                  ],
         "unicode_version":  "6.1",
         "ios_version":  "6.0"
@@ -612,7 +626,10 @@
                         "roll_eyes"
                     ],
         "tags":  [
-
+                     "annoyed",
+                     "sarcasm",
+                     "whatever",
+                     "eyeroll"
                  ],
         "unicode_version":  "8.0",
         "ios_version":  "9.1"
@@ -625,7 +642,9 @@
                         "grimacing"
                     ],
         "tags":  [
-
+                     "awkward",
+                     "nervous",
+                     "oops"
                  ],
         "unicode_version":  "6.1",
         "ios_version":  "6.0"
@@ -638,7 +657,10 @@
                         "face_exhaling"
                     ],
         "tags":  [
-
+                     "sigh",
+                     "relieved",
+                     "tired",
+                     "exhausted"
                  ],
         "unicode_version":  "13.1",
         "ios_version":  "14.0"
@@ -690,7 +712,11 @@
                         "pensive"
                     ],
         "tags":  [
-
+                     "sad",
+                     "cry",
+                     "upset",
+                     "disappointed",
+                     "down"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -973,7 +999,10 @@
                         "monocle_face"
                     ],
         "tags":  [
-
+                     "inspect",
+                     "curious",
+                     "suspicious",
+                     "thinking"
                  ],
         "unicode_version":  "11.0",
         "ios_version":  "12.1"
@@ -986,7 +1015,9 @@
                         "confused"
                     ],
         "tags":  [
-
+                     "unsure",
+                     "puzzled",
+                     "sad"
                  ],
         "unicode_version":  "6.1",
         "ios_version":  "6.0"
@@ -999,7 +1030,10 @@
                         "face_with_diagonal_mouth"
                     ],
         "tags":  [
-                     "confused"
+                     "confused",
+                     "unsure",
+                     "meh",
+                     "disappointed"
                  ],
         "unicode_version":  "14.0",
         "ios_version":  "15.4"
@@ -1012,7 +1046,10 @@
                         "worried"
                     ],
         "tags":  [
-                     "nervous"
+                     "nervous",
+                     "sad",
+                     "anxious",
+                     "upset"
                  ],
         "unicode_version":  "6.1",
         "ios_version":  "6.0"
@@ -1025,7 +1062,10 @@
                         "slightly_frowning_face"
                     ],
         "tags":  [
-
+                     "sad",
+                     "frown",
+                     "unhappy",
+                     "disappointed"
                  ],
         "unicode_version":  "7.0",
         "ios_version":  "9.1"
@@ -1038,7 +1078,10 @@
                         "frowning_face"
                     ],
         "tags":  [
-
+                     "sad",
+                     "frown",
+                     "unhappy",
+                     "upset"
                  ],
         "unicode_version":  "",
         "ios_version":  "9.1"
@@ -1094,7 +1137,11 @@
                         "flushed"
                     ],
         "tags":  [
-
+                     "blush",
+                     "embarrassed",
+                     "shy",
+                     "shock",
+                     "surprised"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -1108,7 +1155,11 @@
                     ],
         "tags":  [
                      "puppy",
-                     "eyes"
+                     "eyes",
+                     "cry",
+                     "tear",
+                     "sad",
+                     "please"
                  ],
         "unicode_version":  "11.0",
         "ios_version":  "12.1"
@@ -1122,6 +1173,11 @@
                     ],
         "tags":  [
                      "tears",
+                     "tear",
+                     "cry",
+                     "crying",
+                     "sad",
+                     "touched",
                      "gratitude"
                  ],
         "unicode_version":  "14.0",
@@ -1135,7 +1191,10 @@
                         "frowning"
                     ],
         "tags":  [
-
+                     "sad",
+                     "shock",
+                     "surprised",
+                     "upset"
                  ],
         "unicode_version":  "6.1",
         "ios_version":  "6.0"
@@ -1148,7 +1207,9 @@
                         "anguished"
                     ],
         "tags":  [
-                     "stunned"
+                     "stunned",
+                     "sad",
+                     "hurt"
                  ],
         "unicode_version":  "6.1",
         "ios_version":  "6.0"
@@ -1163,7 +1224,9 @@
         "tags":  [
                      "scared",
                      "shocked",
-                     "oops"
+                     "oops",
+                     "fear",
+                     "afraid"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -1176,7 +1239,10 @@
                         "cold_sweat"
                     ],
         "tags":  [
-                     "nervous"
+                     "nervous",
+                     "anxious",
+                     "worried",
+                     "fear"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -1191,7 +1257,11 @@
         "tags":  [
                      "phew",
                      "sweat",
-                     "nervous"
+                     "nervous",
+                     "sad",
+                     "cry",
+                     "tear",
+                     "upset"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -1205,7 +1275,11 @@
                     ],
         "tags":  [
                      "sad",
-                     "tear"
+                     "tear",
+                     "tears",
+                     "cry",
+                     "crying",
+                     "upset"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -1220,7 +1294,11 @@
         "tags":  [
                      "sad",
                      "cry",
-                     "bawling"
+                     "crying",
+                     "tear",
+                     "tears",
+                     "bawling",
+                     "upset"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -1247,7 +1325,10 @@
                         "confounded"
                     ],
         "tags":  [
-
+                     "sad",
+                     "cry",
+                     "upset",
+                     "frustrated"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -1260,7 +1341,10 @@
                         "persevere"
                     ],
         "tags":  [
-                     "struggling"
+                     "struggling",
+                     "sad",
+                     "upset",
+                     "hurt"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -1273,7 +1357,10 @@
                         "disappointed"
                     ],
         "tags":  [
-                     "sad"
+                     "sad",
+                     "cry",
+                     "upset",
+                     "down"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -1286,7 +1373,11 @@
                         "sweat"
                     ],
         "tags":  [
-
+                     "sad",
+                     "cry",
+                     "upset",
+                     "stressed",
+                     "sweat"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -1299,7 +1390,11 @@
                         "weary"
                     ],
         "tags":  [
-                     "tired"
+                     "tired",
+                     "sad",
+                     "cry",
+                     "upset",
+                     "whine"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -1313,7 +1408,10 @@
                     ],
         "tags":  [
                      "upset",
-                     "whine"
+                     "whine",
+                     "sad",
+                     "cry",
+                     "exhausted"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -1326,7 +1424,10 @@
                         "yawning_face"
                     ],
         "tags":  [
-
+                     "tired",
+                     "sleepy",
+                     "bored",
+                     "exhausted"
                  ],
         "unicode_version":  "12.0",
         "ios_version":  "13.0"
@@ -1339,7 +1440,10 @@
                         "triumph"
                     ],
         "tags":  [
-                     "smug"
+                     "smug",
+                     "angry",
+                     "frustrated",
+                     "annoyed"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -1353,7 +1457,10 @@
                         "pout"
                     ],
         "tags":  [
-                     "angry"
+                     "angry",
+                     "mad",
+                     "annoyed",
+                     "upset"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"
@@ -1380,7 +1487,10 @@
                         "cursing_face"
                     ],
         "tags":  [
-                     "foul"
+                     "foul",
+                     "angry",
+                     "mad",
+                     "curse"
                  ],
         "unicode_version":  "11.0",
         "ios_version":  "12.1"
@@ -1652,7 +1762,10 @@
                     ],
         "tags":  [
                      "sad",
-                     "tear"
+                     "tear",
+                     "cry",
+                     "crying",
+                     "cat"
                  ],
         "unicode_version":  "6.0",
         "ios_version":  "6.0"

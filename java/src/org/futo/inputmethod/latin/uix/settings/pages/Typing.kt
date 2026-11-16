@@ -2,10 +2,18 @@ package org.futo.inputmethod.latin.uix.settings.pages
 
 import android.content.Context
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -18,6 +26,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,7 +35,9 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -33,8 +45,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.booleanResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.content.edit
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -55,16 +69,21 @@ import org.futo.inputmethod.latin.settings.name
 import org.futo.inputmethod.latin.settings.toEncodedString
 import org.futo.inputmethod.latin.settings.toLongPressKeyLayoutItems
 import org.futo.inputmethod.latin.uix.AndroidTextInput
+import org.futo.inputmethod.latin.uix.DEFAULT_KEYBOARD_HEIGHT_MULTIPLIER
 import org.futo.inputmethod.latin.uix.KeyHintColorSetting
 import org.futo.inputmethod.latin.uix.KeyHintsSetting
 import org.futo.inputmethod.latin.uix.KeyboardBottomOffsetSetting
 import org.futo.inputmethod.latin.uix.KeyboardFontSetting
+import org.futo.inputmethod.latin.uix.MAX_KEYBOARD_HEIGHT_MULTIPLIER
+import org.futo.inputmethod.latin.uix.MIN_KEYBOARD_HEIGHT_MULTIPLIER
 import org.futo.inputmethod.latin.uix.SpacebarColorSetting
 import org.futo.inputmethod.latin.uix.KeyboardHeightMultiplierSetting
 import org.futo.inputmethod.latin.uix.OneHandedModeSetting
 import org.futo.inputmethod.latin.uix.PreferenceUtils
 import org.futo.inputmethod.latin.uix.SHOW_EMOJI_SUGGESTIONS
 import org.futo.inputmethod.latin.uix.SettingsKey
+import org.futo.inputmethod.latin.uix.clampKeyboardHeightMultiplier
+import org.futo.inputmethod.latin.uix.snapKeyboardHeightMultiplier
 import org.futo.inputmethod.latin.uix.actions.ActionEditor
 import org.futo.inputmethod.latin.uix.actions.ActionsEditor
 import org.futo.inputmethod.latin.uix.actions.ClipboardHistoryEnabled
@@ -72,6 +91,7 @@ import org.futo.inputmethod.latin.uix.getSettingBlocking
 import org.futo.inputmethod.latin.uix.settings.DataStoreItem
 import org.futo.inputmethod.latin.uix.settings.NavigationItem
 import org.futo.inputmethod.latin.uix.settings.NavigationItemStyle
+import org.futo.inputmethod.latin.uix.settings.NeuCard
 import org.futo.inputmethod.latin.uix.settings.ScreenTitle
 import org.futo.inputmethod.latin.uix.settings.ScrollableList
 import org.futo.inputmethod.latin.uix.settings.SettingItem
@@ -85,6 +105,7 @@ import org.futo.inputmethod.latin.uix.settings.SettingToggleSharedPrefs
 import org.futo.inputmethod.latin.uix.settings.useDataStore
 import org.futo.inputmethod.latin.uix.settings.useSharedPrefsBool
 import org.futo.inputmethod.latin.uix.settings.useSharedPrefsInt
+import org.futo.inputmethod.latin.uix.theme.Typography
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 import kotlin.math.sign
@@ -131,16 +152,112 @@ fun ActionEditorScreen(navController: NavHostController = rememberNavController(
 @Composable
 fun ResizeScreen(navController: NavHostController = rememberNavController()) {
     val context = LocalContext.current
+    val heightItem = useDataStore(KeyboardHeightMultiplierSetting, blocking = true)
+    val offsetItem = useDataStore(KeyboardBottomOffsetSetting, blocking = true)
+    val clampedMultiplier = clampKeyboardHeightMultiplier(heightItem.value)
+    val baseHeightDp = remember(context) {
+        val density = context.resources.displayMetrics.density.coerceAtLeast(1f)
+        context.resources.getDimension(R.dimen.config_default_keyboard_height) / density
+    }
+    val estimatedHeightDp = (baseHeightDp * clampedMultiplier).roundToInt()
+    val minPercent = (MIN_KEYBOARD_HEIGHT_MULTIPLIER * 100f).roundToInt()
+    val maxPercent = (MAX_KEYBOARD_HEIGHT_MULTIPLIER * 100f).roundToInt()
+    val presets = listOf(
+        "Min" to MIN_KEYBOARD_HEIGHT_MULTIPLIER,
+        "Compact" to 0.85f,
+        "Default" to DEFAULT_KEYBOARD_HEIGHT_MULTIPLIER,
+        "Max" to MAX_KEYBOARD_HEIGHT_MULTIPLIER
+    )
+
     Box {
         ScrollableList {
-            ScreenTitle("Resize Keyboard", showBack = true, navController)
+            ScreenTitle("Keyboard Size", showBack = true, navController)
+
+            NeuCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                contentPadding = 14.dp
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Current Size",
+                            style = Typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "${(clampedMultiplier * 100f).roundToInt()}% (~$estimatedHeightDp dp)",
+                            style = Typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Text(
+                        text = "Min $minPercent% • Max $maxPercent%",
+                        style = Typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    presets.forEach { (label, target) ->
+                        val selected = (clampedMultiplier - target).absoluteValue < 0.025f
+                        val chipShape = RoundedCornerShape(10.dp)
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .border(
+                                    width = if (selected) 2.dp else 1.dp,
+                                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                    shape = chipShape
+                                )
+                                .clip(chipShape)
+                                .clickable { heightItem.setValue(target) },
+                            color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                            shape = chipShape
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = label,
+                                    style = Typography.labelSmall,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "${(target * 100f).roundToInt()}%",
+                                    style = Typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
+            }
 
             SettingSlider(
                 title = "Keyboard Height",
+                subtitle = "Set from $minPercent% (minimum) to $maxPercent% (maximum)",
                 setting = KeyboardHeightMultiplierSetting,
-                range = 0.33f..1.75f, transform = { it },
-                indicator = { "${(it * 100.0f).roundToInt()}%" },
-                steps = 16
+                range = MIN_KEYBOARD_HEIGHT_MULTIPLIER..MAX_KEYBOARD_HEIGHT_MULTIPLIER,
+                transform = { snapKeyboardHeightMultiplier(it) },
+                indicator = { "${(clampKeyboardHeightMultiplier(it) * 100.0f).roundToInt()}%" },
+                steps = 10
             )
             SettingSlider(
                 title = "Keyboard Offset",
@@ -152,50 +269,20 @@ fun ResizeScreen(navController: NavHostController = rememberNavController()) {
                 steps = 9
             )
 
+            OutlinedButton(
+                onClick = {
+                    heightItem.setValue(DEFAULT_KEYBOARD_HEIGHT_MULTIPLIER)
+                    offsetItem.setValue(KeyboardBottomOffsetSetting.default)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text("Reset to Default (100%)")
+            }
+
             AndroidTextInput(allowPredictions = false)
         }
-
-        /*
-        AndroidView(factory = {
-            val ctx = ContextThemeWrapper(context, R.style.KeyboardTheme_LXX_Light)
-
-            val inputView = LayoutInflater.from(ctx).inflate(
-                R.layout.input_view, null, false
-            ) as InputView
-
-            val settingsValues = Settings.getInstance().current
-
-            val builder = KeyboardLayoutSet.Builder(ctx, null)
-            val res: Resources = ctx.resources
-
-            val currentSubtype = RichInputMethodSubtype(Subtypes.getActiveSubtype(ctx))
-
-            val keyboardWidth = ResourceUtils.getDefaultKeyboardWidth(res)
-            val keyboardHeight = ResourceUtils.getKeyboardHeight(res, settingsValues)
-            builder.setKeyboardGeometry(keyboardWidth, keyboardHeight)
-            builder.setSubtype(currentSubtype)
-            builder.setVoiceInputKeyEnabled(settingsValues.mShowsVoiceInputKey)
-            builder.setBottomActionKey(settingsValues.mShowsActionKey, settingsValues.mActionKeyId)
-            builder.setSplitLayoutEnabledByUser(
-                ProductionFlags.IS_SPLIT_KEYBOARD_SUPPORTED
-                        && settingsValues.mIsSplitKeyboardEnabled
-            )
-            builder.setNumberRow(settingsValues.mIsNumberRowEnabled)
-
-
-            val keyboardLayoutSet = builder.build()
-
-            val keyboardView = inputView.findViewById<View>(R.id.keyboard_view) as MainKeyboardView
-
-            keyboardView.setKeyboard(keyboardLayoutSet.getKeyboard(KeyboardId.ELEMENT_ALPHABET))
-            /*
-            mMainKeyboardFrame = mCurrentInputView!!.findViewById<View>(R.id.main_keyboard_frame)
-            mKeyboardView =
-                mCurrentInputView!!.findViewById<View>(R.id.keyboard_view) as MainKeyboardView
-            */
-            inputView
-        }, modifier = Modifier.align(Alignment.BottomCenter))
-        */
     }
 }
 
@@ -505,8 +592,8 @@ fun TypingScreen(navController: NavHostController = rememberNavController()) {
         )
 
         NavigationItem(
-            title = "Resize Keyboard",
-            subtitle = "Change the height and offset of the keyboard",
+            title = "Keyboard Size",
+            subtitle = "Set minimum to maximum height (75%–130%) and offset",
             style = NavigationItemStyle.Misc,
             navigate = { navController.navigate("resize") },
             icon = painterResource(id = R.drawable.maximize)

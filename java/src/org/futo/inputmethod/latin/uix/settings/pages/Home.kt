@@ -443,6 +443,30 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
                         .background(DividerColor)
                 )
                 NavigationItem(
+                    title = "Theme Store",
+                    style = NavigationItemStyle.HomePrimary,
+                    navigate = { navController.navigate("themestore") },
+                    icon = painterResource(id = R.drawable.themes)
+                )
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(DividerColor)
+                )
+                NavigationItem(
+                    title = "Keyboard Size",
+                    style = NavigationItemStyle.HomePrimary,
+                    navigate = { navController.navigate("resize") },
+                    icon = painterResource(id = R.drawable.maximize)
+                )
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(DividerColor)
+                )
+                NavigationItem(
                     title = "Announcements",
                     style = NavigationItemStyle.HomeSecondary,
                     navigate = {

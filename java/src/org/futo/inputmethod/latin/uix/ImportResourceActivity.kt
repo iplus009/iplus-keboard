@@ -463,7 +463,10 @@ class ImportResourceActivity : ComponentActivity() {
         setContent {
             themeOption.value?.let { themeOption ->
                 val themeIdx = useDataStore(key = THEME_KEY.key, default = themeOption.key)
-                val theme: ThemeOption = ThemeOptions[themeIdx.value] ?: themeOption
+                val theme: ThemeOption = org.futo.inputmethod.latin.uix.theme.resolveThemeOption(
+                    LocalContext.current,
+                    org.futo.inputmethod.latin.uix.normalizeThemeKey(themeIdx.value)
+                ) ?: themeOption
                 UixThemeWrapper(theme.obtainColors(LocalContext.current)) {
                     StatusBarColorSetter()
                     Surface(
@@ -498,7 +501,10 @@ class ImportResourceActivity : ComponentActivity() {
         }
 
         deferGetSetting(THEME_KEY) {
-            val themeOptionFromSettings = ThemeOptions[it]
+            val themeOptionFromSettings = org.futo.inputmethod.latin.uix.theme.resolveThemeOption(
+                this,
+                org.futo.inputmethod.latin.uix.normalizeThemeKey(it)
+            )
             val themeOption = when {
                 themeOptionFromSettings == null -> VoiceInputTheme
                 !themeOptionFromSettings.available(this) -> VoiceInputTheme

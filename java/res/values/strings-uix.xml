@@ -30,13 +30,14 @@
     <string name="action_kind_disabled">Hidden Actions</string>
 
     <string name="amoled_dark_theme_name">AMOLED Dark Purple</string>
-    <string name="theme_orbit">Keybird Matte</string>
+    <string name="theme_keybird_matte">Keybird Matte</string>
     <string name="amoled_nothing_theme_name">Nothing</string>
     <string name="nothing_light_theme_name">Nothing Light</string>
     <string name="nothing_dark_theme_name">Nothing Dark</string>
     <string name="classic_material_dark_theme_name">AOSP Material Dark</string>
     <string name="classic_material_light_theme_name">AOSP Material Light</string>
     <string name="voice_input_theme_name">Nothing Theme</string>
+    <string name="store_theme_fallback_name">Store Theme</string>
 
 
     <string name="deep_sea_light_theme_name">Deep Sea Light</string>

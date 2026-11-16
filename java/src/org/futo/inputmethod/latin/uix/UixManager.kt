@@ -135,7 +135,7 @@ private class LatinIMEActionInputTransaction(
         if(isFinished) return
         previousText = text
         inputLogic.mConnection.setComposingText(
-            transformText(text),
+            if (text.isEmpty()) "" else transformText(text),
             1
         )
     }
@@ -143,15 +143,33 @@ private class LatinIMEActionInputTransaction(
     override fun commit(text: String) {
         if(isFinished) return
         isFinished = true
-        inputLogic.mConnection.commitText(
-            transformText(text),
-            1
-        )
+        if (text.isEmpty()) {
+            inputLogic.mConnection.setComposingText("", 1)
+            inputLogic.mConnection.finishComposingText()
+        } else {
+            inputLogic.mConnection.commitText(
+                transformText(text),
+                1
+            )
+        }
         inputLogic.endSuppressingLogic()
     }
 
     override fun cancel() {
-        commit(previousText)
+        if (previousText.isBlank()) {
+            discard()
+        } else {
+            commit(previousText)
+        }
+    }
+
+    override fun discard() {
+        if (isFinished) return
+        isFinished = true
+        previousText = ""
+        inputLogic.mConnection.setComposingText("", 1)
+        inputLogic.mConnection.finishComposingText()
+        inputLogic.endSuppressingLogic()
     }
 }
 

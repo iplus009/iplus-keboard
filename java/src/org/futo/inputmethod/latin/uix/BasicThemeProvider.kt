@@ -48,6 +48,38 @@ import org.futo.inputmethod.latin.uix.theme.CustomPhotoTheme
 import org.futo.inputmethod.latin.uix.theme.DarkColorScheme
 import kotlin.math.roundToInt
 
+internal fun Float.coerceFiniteIn(default: Float, min: Float, max: Float): Float =
+    if (isFinite()) coerceIn(min, max) else default
+
+internal fun truncateThemeNameSafely(name: String, maxChars: Int = 32): String {
+    if (maxChars <= 0) return ""
+    var end = minOf(name.length, maxChars)
+    while (end > 0 && Character.isHighSurrogate(name[end - 1])) {
+        end--
+    }
+    return name.substring(0, end)
+}
+
+internal fun extractPresetNameFromRecord(record: String, decoder: (String) -> String): String? {
+    val parts = record.split("|")
+    if (parts.size != 7) return null
+    return decoder(parts[0]).trim()
+}
+
+internal fun hasThemeNameCollision(
+    savedRecords: Collection<String>,
+    candidateName: String,
+    excludingRecord: String? = null,
+    decoder: (String) -> String = { it }
+): Boolean {
+    val normalizedCandidate = candidateName.trim().lowercase()
+    if (normalizedCandidate.isEmpty()) return false
+    return savedRecords.any { record ->
+        record != excludingRecord &&
+            extractPresetNameFromRecord(record, decoder)?.lowercase() == normalizedCandidate
+    }
+}
+
 val KeyBordersSetting = SettingsKey(booleanPreferencesKey("keyBorders"), true)
 val KeyOpacitySetting = SettingsKey(floatPreferencesKey("key_opacity"), 1.0f)
 val KeyShapeSetting = SettingsKey(stringPreferencesKey("key_shape"), "classic")
@@ -71,7 +103,24 @@ fun keyShapeToCornerRadiusDp(keyShape: String): Dp = when (keyShape) {
     else -> 8.dp
 }
 
-val KeyboardHeightMultiplierSetting = SettingsKey(floatPreferencesKey("keyboardHeightMultiplier"), 1.0f)
+const val MIN_KEYBOARD_HEIGHT_MULTIPLIER = 0.75f
+const val DEFAULT_KEYBOARD_HEIGHT_MULTIPLIER = 1.00f
+const val MAX_KEYBOARD_HEIGHT_MULTIPLIER = 1.30f
+const val KEYBOARD_HEIGHT_STEP = 0.05f
+
+fun clampKeyboardHeightMultiplier(value: Float): Float {
+    if (!value.isFinite()) return DEFAULT_KEYBOARD_HEIGHT_MULTIPLIER
+    return value.coerceIn(MIN_KEYBOARD_HEIGHT_MULTIPLIER, MAX_KEYBOARD_HEIGHT_MULTIPLIER)
+}
+
+fun snapKeyboardHeightMultiplier(value: Float): Float {
+    val clamped = clampKeyboardHeightMultiplier(value)
+    val steps = Math.round((clamped - MIN_KEYBOARD_HEIGHT_MULTIPLIER) / KEYBOARD_HEIGHT_STEP)
+    return (MIN_KEYBOARD_HEIGHT_MULTIPLIER + steps * KEYBOARD_HEIGHT_STEP)
+        .coerceIn(MIN_KEYBOARD_HEIGHT_MULTIPLIER, MAX_KEYBOARD_HEIGHT_MULTIPLIER)
+}
+
+val KeyboardHeightMultiplierSetting = SettingsKey(floatPreferencesKey("keyboardHeightMultiplier"), DEFAULT_KEYBOARD_HEIGHT_MULTIPLIER)
 val KeyboardBottomOffsetSetting = SettingsKey(floatPreferencesKey("keyboardOffset"), 0.0f)
 val OneHandedModeSetting = SettingsKey(stringPreferencesKey("one_handed_mode"), "off")
 
@@ -146,16 +195,17 @@ private fun loadCustomPhotoBackground(context: Context, uriValue: String, dimAmo
             decoded
         }
 
-        val scale = maxOf(targetWidth / bitmap.width.toFloat(), targetHeight / bitmap.height.toFloat()) * zoom.coerceIn(1.0f, 2.5f)
+        val scale = maxOf(targetWidth / bitmap.width.toFloat(), targetHeight / bitmap.height.toFloat()) * zoom.coerceFiniteIn(1.0f, 1.0f, 2.5f)
         val drawnWidth = bitmap.width * scale
         val drawnHeight = bitmap.height * scale
-        val left = (targetWidth - drawnWidth) / 2f + offsetX.coerceIn(-1f, 1f) * (drawnWidth - targetWidth) / 2f
-        val top = (targetHeight - drawnHeight) / 2f + offsetY.coerceIn(-1f, 1f) * (drawnHeight - targetHeight) / 2f
+        val left = (targetWidth - drawnWidth) / 2f + offsetX.coerceFiniteIn(0.0f, -1f, 1f) * (drawnWidth - targetWidth) / 2f
+        val top = (targetHeight - drawnHeight) / 2f + offsetY.coerceFiniteIn(0.0f, -1f, 1f) * (drawnHeight - targetHeight) / 2f
         val cropped = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
         Canvas(cropped).drawBitmap(bitmap, null, RectF(left, top, left + drawnWidth, top + drawnHeight), Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
         bitmap.recycle()
-        val displayBitmap = if (blurAmount > 0.1f) {
-            val reduction = (1.0f + blurAmount.coerceIn(0.0f, 20.0f) * 0.35f).coerceIn(1.0f, 8.0f)
+        val safeBlur = blurAmount.coerceFiniteIn(0.0f, 0.0f, 20.0f)
+        val displayBitmap = if (safeBlur > 0.1f) {
+            val reduction = (1.0f + safeBlur * 0.35f).coerceFiniteIn(1.0f, 1.0f, 8.0f)
             val small = Bitmap.createScaledBitmap(
                 cropped,
                 (targetWidth / reduction).toInt().coerceAtLeast(1),
@@ -176,7 +226,7 @@ private fun loadCustomPhotoBackground(context: Context, uriValue: String, dimAmo
             arrayOf(
                 photo,
                 android.graphics.drawable.GradientDrawable().apply {
-                    setColor(android.graphics.Color.argb((dimAmount.coerceIn(0f, 0.85f) * 255).roundToInt(), 0, 0, 0))
+                    setColor(android.graphics.Color.argb((dimAmount.coerceFiniteIn(0.35f, 0f, 0.85f) * 255).roundToInt(), 0, 0, 0))
                 }
             )
         )
@@ -190,6 +240,15 @@ class BasicThemeProvider(
 ) : DynamicThemeProvider {
     val currentThemeKey: String = normalizeThemeKey(themeKey ?: context.getSettingBlocking(THEME_KEY))
     val isIPlusMatteTheme: Boolean = currentThemeKey == IPlusMatteTheme.key
+    val storeRevision: Int = org.futo.inputmethod.latin.themestore.engine.ThemeRegistry.revision.value
+    private val storeProfile =
+        org.futo.inputmethod.latin.themestore.engine.ThemeRegistry.resolveStoreRenderProfile(
+            context,
+            currentThemeKey
+        )
+    private val storeDelegate = storeProfile?.let {
+        org.futo.inputmethod.latin.themestore.engine.StoreKeyVisualDelegate(context, it)
+    }
     override val primaryKeyboardColor: Int
     override val keyColor: Int
 
@@ -298,7 +357,7 @@ class BasicThemeProvider(
                 || np.get(KeyShapeSetting) != keyShape
                 || np.get(KeyHintsSetting) != showKeyHints
                 || np.get(KeyHintColorSetting) != keyHintColor
-                || np.get(KeyboardHeightMultiplierSetting) != keyboardHeight
+                || clampKeyboardHeightMultiplier(np.get(KeyboardHeightMultiplierSetting)) != keyboardHeight
                 || np.get(KeyboardFontSetting) != keyboardFont
                 || np.get(SpacebarColorSetting) != spacebarColorPref
                 || np.get(CustomKeyboardBackgroundUriSetting) != customKeyboardBackgroundUri
@@ -309,6 +368,7 @@ class BasicThemeProvider(
                 || np.get(CustomKeyboardBackgroundYSetting) != customKeyboardBackgroundY
                 || np.get(CustomPhotoTextContrastSetting) != customPhotoTextContrast
                 || np.get(OneHandedModeSetting) != oneHandedMode
+                || org.futo.inputmethod.latin.themestore.engine.ThemeRegistry.revision.value != storeRevision
     }
 
 
@@ -332,7 +392,7 @@ class BasicThemeProvider(
         keyShape = context.getSettingBlocking(KeyShapeSetting)
         showKeyHints = context.getSettingBlocking(KeyHintsSetting)
         keyHintColor = context.getSettingBlocking(KeyHintColorSetting)
-        keyboardHeight = context.getSettingBlocking(KeyboardHeightMultiplierSetting)
+        keyboardHeight = clampKeyboardHeightMultiplier(context.getSettingBlocking(KeyboardHeightMultiplierSetting))
         keyboardFont = context.getSettingBlocking(KeyboardFontSetting)
         spacebarColorPref = context.getSettingBlocking(SpacebarColorSetting)
         customKeyboardBackgroundUri = context.getSettingBlocking(CustomKeyboardBackgroundUriSetting)
@@ -367,7 +427,7 @@ class BasicThemeProvider(
             else -> null
         }
         IPlusMatteThemeHelper.customSpacebarColor = customSpaceColor
-        keyboardTypeface = when (keyboardFont) {
+        keyboardTypeface = storeDelegate?.resolveTypefaceOrNull() ?: when (keyboardFont) {
             "normal", "clean" -> Typeface.create("sans-serif", Typeface.NORMAL)
             "doto", "pixel" -> ResourcesCompat.getFont(context, R.font.doto) ?: Typeface.DEFAULT
             "inter", "rounded" -> if (keyboardFont == "rounded") Typeface.create("sans-serif-rounded", Typeface.NORMAL) else ResourcesCompat.getFont(context, R.font.inter) ?: Typeface.DEFAULT
@@ -401,14 +461,15 @@ class BasicThemeProvider(
 
         val transparent = Color.Transparent.toArgb()
         val yellowAccent = 0xFFFFCC00.toInt()
-        primaryKeyboardColor = if(keyBorders) {
+        val primaryKeyboardBase = storeProfile?.primaryBgColor ?: if(keyBorders) {
             colorScheme.background.toArgb()
         } else {
             colorScheme.surface.toArgb()
         }
+        primaryKeyboardColor = primaryKeyboardBase
 
         val ratio = 1.5f
-        val keyColor = if(keyBorders) {
+        val keyColor = storeProfile?.keyBgColor ?: if(keyBorders) {
             var c = adjustColorBrightnessForContrast(primaryKeyboardColor, primaryKeyboardColor, ratio)
             if(c == primaryKeyboardColor) {
                 // May happen if the color is already 100% white
@@ -446,8 +507,23 @@ class BasicThemeProvider(
         colors[R.styleable.Keyboard_Key_keyShiftedLetterHintActivatedColor] = hintColor
         colors[R.styleable.Keyboard_Key_keyPreviewTextColor] = onSecondary
         colors[R.styleable.MainKeyboardView_languageOnSpacebarTextColor] = yellowAccent
-        colors[R.styleable.MainKeyboardView_gestureTrailColor] = primary
-        colors[R.styleable.MainKeyboardView_slidingKeyInputPreviewColor] = primary
+        colors[R.styleable.MainKeyboardView_gestureTrailColor] = storeProfile?.gestureTrailColor ?: primary
+        colors[R.styleable.MainKeyboardView_slidingKeyInputPreviewColor] = storeProfile?.gestureTrailColor ?: primary
+
+        if (storeProfile != null) {
+            colors[R.styleable.Keyboard_Key_keyTextColor] = storeProfile.keyTextColor
+            colors[R.styleable.Keyboard_Key_keyTextInactivatedColor] =
+                ColorUtils.setAlphaComponent(storeProfile.keyTextColor, 128)
+            colors[R.styleable.Keyboard_Key_keyPressedTextColor] = storeProfile.enterKeyFgColor
+            colors[R.styleable.Keyboard_Key_actionKeyTextColor] = storeProfile.enterKeyFgColor
+            colors[R.styleable.Keyboard_Key_functionalTextColor] = storeProfile.keyTextColor
+            colors[R.styleable.Keyboard_Key_keyHintLetterColor] = storeProfile.keyHintColor
+            colors[R.styleable.Keyboard_Key_keyHintLabelColor] = storeProfile.keyHintColor
+            colors[R.styleable.Keyboard_Key_keyShiftedLetterHintInactivatedColor] = storeProfile.keyHintColor
+            colors[R.styleable.Keyboard_Key_keyShiftedLetterHintActivatedColor] = storeProfile.keyHintColor
+            colors[R.styleable.Keyboard_Key_keyPreviewTextColor] = storeProfile.popupTextColor
+            colors[R.styleable.MainKeyboardView_languageOnSpacebarTextColor] = storeProfile.spacebarStrokeColor
+        }
 
         addIcon(KeyboardIconsSet.NAME_SHIFT_KEY, R.drawable.nth_shift, onBackground)
         addIcon(KeyboardIconsSet.NAME_SHIFT_KEY_SHIFTED, R.drawable.nth_shifted, onBackground)
@@ -496,7 +572,9 @@ class BasicThemeProvider(
             colors[R.styleable.Keyboard_Key_functionalTextColor] = onBackgroundThird
         }
 
-        keyboardBackground = if (currentThemeKey == "CustomPhotoTheme") {
+        keyboardBackground = if (storeDelegate != null) {
+            storeDelegate.createKeyboardBackground()
+        } else if (currentThemeKey == "CustomPhotoTheme") {
             loadCustomPhotoBackground(context, customKeyboardBackgroundUri, customKeyboardBackgroundDim, customKeyboardBackgroundBlur, customKeyboardBackgroundZoom, customKeyboardBackgroundX, customKeyboardBackgroundY)
                 ?: coloredRectangle(primaryKeyboardColor)
         } else if (isIPlusMatteTheme) {
@@ -505,7 +583,9 @@ class BasicThemeProvider(
             coloredRectangle(primaryKeyboardColor)
         }
 
-        keyBackground = StateListDrawable().apply {
+        keyBackground = if (storeDelegate != null) {
+            storeDelegate.createKeyBackgroundStateList(keyBorders)
+        } else StateListDrawable().apply {
             addStateWithHighlightLayerOnPressed(highlight, intArrayOf(android.R.attr.state_active),
                 coloredRoundedRectangle(enterKeyBackground, dp(128.dp)),
                 cornerRadius = 128.dp
@@ -576,7 +656,9 @@ class BasicThemeProvider(
             }
         }
 
-        spaceBarBackground = StateListDrawable().apply {
+        spaceBarBackground = if (storeDelegate != null) {
+            storeDelegate.createSpaceBarBackground()
+        } else StateListDrawable().apply {
             addState(intArrayOf(android.R.attr.state_pressed),
                 LayerDrawable(
                     arrayOf(
@@ -590,7 +672,13 @@ class BasicThemeProvider(
             )
         }
 
-        keyFeedback = ShapeDrawable().apply {
+        keyFeedback = if (storeDelegate != null) {
+            storeDelegate.createKeyFeedback(
+                dp(48.dp).roundToInt(),
+                dp(24.dp).roundToInt(),
+                dp(50.dp).roundToInt()
+            )
+        } else ShapeDrawable().apply {
             paint.color = secondary
             shape = RoundRectShape(
                 floatArrayOf(
@@ -605,15 +693,23 @@ class BasicThemeProvider(
             setPadding(0, 0, 0, dp(50.dp).roundToInt())
         }
 
-        moreKeysTextColor = onPrimaryContainer
-        moreKeysKeyboardBackground = coloredRoundedRectangle(primaryContainer, keyCornerRadiusPx)
-        popupKey = StateListDrawable().apply {
+        moreKeysTextColor = storeProfile?.popupTextColor ?: onPrimaryContainer
+        moreKeysKeyboardBackground = if (storeProfile != null) {
+            coloredRoundedRectangle(storeProfile.popupBgColor, dp(storeProfile.keyCornerRadiusDp.dp))
+        } else {
+            coloredRoundedRectangle(primaryContainer, keyCornerRadiusPx)
+        }
+        popupKey = if (storeDelegate != null) {
+            storeDelegate.createPopupKey(pill = false)
+        } else StateListDrawable().apply {
             addStateWithHighlightLayerOnPressed(primary, intArrayOf(),
                 coloredRoundedRectangle(primaryContainer, keyCornerRadiusPx),
                 cornerRadius = keyCornerRadius
             )
         }
-        actionPopupKey = StateListDrawable().apply {
+        actionPopupKey = if (storeDelegate != null) {
+            storeDelegate.createPopupKey(pill = true)
+        } else StateListDrawable().apply {
             addStateWithHighlightLayerOnPressed(primary, intArrayOf(),
                 coloredRoundedRectangle(primaryContainer, dp(128.dp)),
                 128.dp
@@ -644,11 +740,13 @@ class BasicThemeProvider(
     }
 
     override fun getKeyTextColor(key: Key): Int? {
+        if (storeDelegate != null && !expertMode) return storeDelegate.getKeyTextColor(key)
         if (!isIPlusMatteTheme) return null
         return IPlusMatteThemeHelper.getKeyTextColor(key)
     }
 
     override fun getKeyHintColor(key: Key): Int? {
+        if (storeDelegate != null && showKeyHints && !expertMode) return storeDelegate.getKeyHintColor()
         if (!isIPlusMatteTheme) return null
         return IPlusMatteThemeHelper.getKeyHintColor(key)
     }

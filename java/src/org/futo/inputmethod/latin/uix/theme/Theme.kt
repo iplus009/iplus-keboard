@@ -11,6 +11,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -118,11 +120,16 @@ fun UixThemeAuto(content: @Composable () -> Unit) {
     val context = LocalContext.current
 
     val themeIdx = useDataStoreValue(THEME_KEY)
+    val storeRevision by org.futo.inputmethod.latin.themestore.engine.ThemeRegistry.revision.collectAsState()
 
-    val theme: ThemeOption = themeIdx?.let { ThemeOptions[it].ensureAvailable(context) }
-        ?: VoiceInputTheme
+    val theme: ThemeOption = themeIdx?.let {
+        org.futo.inputmethod.latin.uix.theme.resolveThemeOption(
+            context,
+            org.futo.inputmethod.latin.uix.normalizeThemeKey(it)
+        ).ensureAvailable(context)
+    } ?: VoiceInputTheme
 
-    val colors = remember(theme.key) { theme.obtainColors(context) }
+    val colors = remember(theme.key, storeRevision) { theme.obtainColors(context) }
 
     UixThemeWrapper(colorScheme = colors, content)
 }

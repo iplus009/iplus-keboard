@@ -54,6 +54,7 @@
 
 -keep class org.tensorflow.lite.Interpreter** { *; }
 -keep class org.futo.pocketfft.** { *; }
+-keep class org.futo.inputmethod.latin.themestore.** { *; }
 
 -dontobfuscate
 -optimizations !code/allocation/variable

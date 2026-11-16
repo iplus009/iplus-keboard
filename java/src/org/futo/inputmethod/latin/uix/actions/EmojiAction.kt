@@ -118,8 +118,8 @@ import kotlin.streams.toList
 import java.text.Normalizer
 
 internal val banglaEmojiAliases: Map<String, List<String>> = mapOf(
-    "হাসি" to listOf("smile", "laugh", "grin"),
-    "কান্না" to listOf("cry", "sob", "tear"),
+    "হাসি" to listOf("smile", "laugh", "grin", "joy", "smiling"),
+    "কান্না" to listOf("cry", "crying", "sob", "tear", "tears", "sad", "pleading"),
     "ভালোবাসা" to listOf("love", "heart", "affection"),
     "ভালবাসা" to listOf("love", "heart", "affection"),
     "হৃদয়" to listOf("heart"),
@@ -184,6 +184,25 @@ internal val banglaEmojiAliases: Map<String, List<String>> = mapOf(
     "শক্তি" to listOf("muscle", "flex"),
     "বুদ্ধি" to listOf("brain", "thinking"),
     "অসুস্থ" to listOf("sick", "thermometer", "nauseated"),
+    "কান্নাকাটি" to listOf("cry", "crying", "sob", "tear", "tears", "sad", "bawling"),
+    "চোখের জল" to listOf("tear", "tears", "cry", "crying", "sad"),
+    "অশ্রু" to listOf("tear", "tears", "cry", "sad"),
+    "দুঃখ" to listOf("sad", "cry", "crying", "tear", "disappointed", "pensive", "unhappy", "broken_heart"),
+    "কষ্ট" to listOf("sad", "cry", "hurt", "disappointed", "upset", "anguished", "broken_heart"),
+    "মন খারাপ" to listOf("sad", "pensive", "disappointed", "worried", "frown", "cry", "upset"),
+    "অভিমান" to listOf("sad", "upset", "pout", "pleading", "frown", "tear"),
+    "হতাশ" to listOf("disappointed", "sad", "down", "pensive", "confused"),
+    "চিন্তা" to listOf("think", "thinking", "worried", "nervous", "confused", "curious"),
+    "ভাবনা" to listOf("think", "thinking", "pensive", "wonder"),
+    "অবাক" to listOf("astonished", "surprised", "wow", "shock", "open_mouth", "hushed", "flushed"),
+    "বিস্ময়" to listOf("astonished", "surprised", "amazed", "wow", "shock"),
+    "ভয়" to listOf("fear", "fearful", "scared", "scream", "horror", "nervous", "anxious"),
+    "লজ্জা" to listOf("shy", "blush", "embarrassed", "flushed", "peek", "smiling"),
+    "ক্লান্ত" to listOf("tired", "weary", "exhausted", "sleepy", "yawning"),
+    "বিরক্ত" to listOf("annoyed", "unamused", "roll_eyes", "angry", "frustrated", "meh"),
+    "রাগ" to listOf("angry", "rage", "mad", "annoyed", "pout", "curse"),
+    "খুশি" to listOf("happy", "joy", "smile", "grin", "excited"),
+    "মজা" to listOf("laugh", "joy", "rofl", "wink", "silly"),
 )
 
 private val normalizedBanglaEmojiAliases: Map<String, List<String>> = banglaEmojiAliases
@@ -219,7 +238,7 @@ internal fun searchEmojiItems(emojis: List<EmojiItem>, searchFilter: String): Li
             item.aliases.map { it.replace("_", " ") } +
             item.tags +
             item.aliases.filter { it.contains("_") }.flatMap { it.split("_") }
-    }.take(30)
+    }.take(48)
 }
 
 private fun levenshteinDistance(lhs: CharSequence, rhs: CharSequence): Int {
@@ -256,21 +275,35 @@ private fun <T> List<T>.searchMultiple(searchTarget: String, keyFunction: (T) ->
 
 private fun <T> List<T>.searchMultipleTargets(searchTargets: List<String>, keyFunction: (T) -> List<String>): List<T> {
     if (searchTargets.isEmpty()) return emptyList()
+    val normalizedTargets = searchTargets
+        .map { it.trim().lowercase() }
+        .filter { it.isNotEmpty() }
+    if (normalizedTargets.isEmpty()) return emptyList()
+
     return this.mapNotNull { item ->
         val keys = keyFunction(item)
-        var bestDistance: Int? = null
-        for (target in searchTargets) {
-            val maxDistance = target.length * 2 / 3
-            val minDistance = keys.minOfOrNull { key ->
-                if (key.equals(target, ignoreCase = true)) 0 else levenshteinDistance(target, key)
-            }
-            if (minDistance != null && minDistance <= maxDistance) {
-                if (bestDistance == null || minDistance < bestDistance) {
-                    bestDistance = minDistance
+            .map { it.trim().lowercase() }
+            .filter { it.isNotEmpty() }
+        var bestScore: Int? = null
+        for (target in normalizedTargets) {
+            for (key in keys) {
+                val score = when {
+                    key == target -> 0
+                    target.length >= 2 && key.startsWith(target) -> 1
+                    target.length >= 3 && key.contains(target) -> 2
+                    target.length >= 4 -> {
+                        val maxDistance = if (target.length >= 8) 2 else 1
+                        val distance = levenshteinDistance(target, key)
+                        if (distance <= maxDistance) 3 + distance else null
+                    }
+                    else -> null
+                }
+                if (score != null && (bestScore == null || score < bestScore)) {
+                    bestScore = score
                 }
             }
         }
-        bestDistance?.let { Pair(item, it) }
+        bestScore?.let { Pair(item, it) }
     }.sortedBy { it.second }.map { it.first }
 }
 

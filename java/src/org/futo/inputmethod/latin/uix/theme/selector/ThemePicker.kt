@@ -43,6 +43,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
@@ -254,7 +255,7 @@ fun ThemePreview(
 
             // Theme name and action bar
             Text(
-                text = overrideName ?: stringResource(theme.name),
+                text = overrideName ?: theme.displayName ?: stringResource(theme.name),
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -368,12 +369,12 @@ fun AddCustomThemeButton(onClick: () -> Unit = { }) {
     }
 }
 
-private fun openThemeSettings(context: Context) {
+private fun openThemeSettings(context: Context, dest: String = "themes") {
     val intent = Intent(context, SettingsActivity::class.java).apply {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or
             Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED or
             Intent.FLAG_ACTIVITY_CLEAR_TOP
-        putExtra("navDest", "themes")
+        putExtra("navDest", dest)
     }
     context.startActivity(intent)
 }
@@ -396,6 +397,7 @@ private fun rememberOptionalPhotoPickerLauncher(
 @Composable
 fun ThemePicker(
     isInInputMethod: Boolean = false,
+    onOpenStore: (() -> Unit)? = null,
     onSelected: (ThemeOption) -> Unit
 ) {
     val context = LocalContext.current
@@ -448,10 +450,19 @@ fun ThemePicker(
     }
 
     val isInspecting = LocalInspectionMode.current
-    val availableThemeOptions = remember(isInspecting) {
-        ThemeOptionKeys.mapNotNull { key ->
+    val storeRevision by org.futo.inputmethod.latin.themestore.engine.ThemeRegistry.revision.collectAsState()
+    val availableThemeOptions = remember(isInspecting, storeRevision) {
+        val builtIn = ThemeOptionKeys.mapNotNull { key ->
             ThemeOptions[key]?.let { Pair(key, it) }
-        }.filter {
+        }
+        val storeThemes = if (isInspecting) {
+            emptyList()
+        } else {
+            org.futo.inputmethod.latin.themestore.engine.ThemeRegistry
+                .getInstalledStoreThemeOptions(context)
+                .map { Pair(it.key, it) }
+        }
+        (storeThemes + builtIn).filter {
             it.second.available(context)
         }.filter {
             when (isInspecting) {
@@ -465,6 +476,16 @@ fun ThemePicker(
     val originalDirection = LocalLayoutDirection.current
 
     Column {
+        if (isInInputMethod || onOpenStore != null) {
+            androidx.compose.material3.OutlinedButton(
+                onClick = { onOpenStore?.invoke() ?: openThemeSettings(context, "themestore") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text("Browse Keybird Theme Store")
+            }
+        }
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             LazyVerticalGrid(
                 modifier = Modifier.fillMaxWidth(),
@@ -610,26 +631,43 @@ fun ThemePicker(
                                 Text("Save current photo theme", style = Typography.titleMedium)
                                 OutlinedTextField(
                                     value = newThemeName.value,
-                                    onValueChange = { newThemeName.value = it.take(32) },
+                                    onValueChange = {
+                                        newThemeName.value = org.futo.inputmethod.latin.uix.truncateThemeNameSafely(it, 32)
+                                    },
                                     label = { Text("Theme name") },
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth()
                                 )
                                 Button(
                                     onClick = {
-                                        val name = newThemeName.value.trim()
+                                        val name = org.futo.inputmethod.latin.uix
+                                            .truncateThemeNameSafely(newThemeName.value.trim(), 32)
+                                            .trim()
                                         if (name.isNotEmpty() && photoUri.value.isNotBlank()) {
-                                            val record = listOf(
-                                                android.net.Uri.encode(name),
-                                                android.net.Uri.encode(photoUri.value),
-                                                photoDim.value.toString(),
-                                                photoBlur.value.toString(),
-                                                photoZoom.value.toString(),
-                                                photoX.value.toString(),
-                                                photoY.value.toString()
-                                            ).joinToString("|")
-                                            context.setSettingBlocking(SavedCustomPhotoThemesSetting.key, savedThemes.value + record)
-                                            newThemeName.value = ""
+                                            if (org.futo.inputmethod.latin.uix.hasThemeNameCollision(
+                                                    savedThemes.value,
+                                                    name,
+                                                    decoder = android.net.Uri::decode
+                                                )
+                                            ) {
+                                                android.widget.Toast.makeText(
+                                                    context,
+                                                    "A saved theme with this name already exists",
+                                                    android.widget.Toast.LENGTH_SHORT
+                                                ).show()
+                                            } else {
+                                                val record = listOf(
+                                                    android.net.Uri.encode(name),
+                                                    android.net.Uri.encode(photoUri.value),
+                                                    photoDim.value.toString(),
+                                                    photoBlur.value.toString(),
+                                                    photoZoom.value.toString(),
+                                                    photoX.value.toString(),
+                                                    photoY.value.toString()
+                                                ).joinToString("|")
+                                                context.setSettingBlocking(SavedCustomPhotoThemesSetting.key, savedThemes.value + record)
+                                                newThemeName.value = ""
+                                            }
                                         }
                                     },
                                     enabled = newThemeName.value.trim().isNotEmpty() && photoUri.value.isNotBlank(),
@@ -720,7 +758,9 @@ fun ThemePicker(
                 text = {
                     OutlinedTextField(
                         value = renameName.value,
-                        onValueChange = { renameName.value = it.take(32) },
+                        onValueChange = {
+                            renameName.value = org.futo.inputmethod.latin.uix.truncateThemeNameSafely(it, 32)
+                        },
                         singleLine = true,
                         label = { Text("Theme name") }
                     )
@@ -729,12 +769,30 @@ fun ThemePicker(
                     TextButton(onClick = {
                         val old = renameTarget.value
                         val parts = old?.split("|")
-                        val name = renameName.value.trim()
+                        val name = org.futo.inputmethod.latin.uix
+                            .truncateThemeNameSafely(renameName.value.trim(), 32)
+                            .trim()
                         if (old != null && parts != null && parts.size == 7 && name.isNotEmpty()) {
-                            val renamed = (listOf(android.net.Uri.encode(name)) + parts.drop(1)).joinToString("|")
-                            context.setSettingBlocking(SavedCustomPhotoThemesSetting.key, (savedThemes.value - old) + renamed)
+                            if (org.futo.inputmethod.latin.uix.hasThemeNameCollision(
+                                    savedThemes.value,
+                                    name,
+                                    excludingRecord = old,
+                                    decoder = android.net.Uri::decode
+                                )
+                            ) {
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "A saved theme with this name already exists",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                val renamed = (listOf(android.net.Uri.encode(name)) + parts.drop(1)).joinToString("|")
+                                context.setSettingBlocking(SavedCustomPhotoThemesSetting.key, (savedThemes.value - old) + renamed)
+                                renameTarget.value = null
+                            }
+                        } else {
+                            renameTarget.value = null
                         }
-                        renameTarget.value = null
                     }) { Text("Save") }
                 },
                 dismissButton = {

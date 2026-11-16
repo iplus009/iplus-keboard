@@ -33,8 +33,11 @@ data class ThemeOption(
     val key: String,
     @StringRes val name: Int,
     val available: (Context) -> Boolean,
+    val displayName: String? = null,
     val obtainColors: (Context) -> ColorScheme,
-)
+) {
+    fun resolveName(context: Context): String = displayName ?: context.getString(name)
+}
 
 val CustomPhotoLightColorScheme = lightColorScheme(
     primary = NothingRed,
@@ -102,3 +105,7 @@ val ThemeOptions = mapOf(
 )
 
 val ThemeOptionKeys = ThemeOptions.keys - "OrbitTheme"
+
+fun resolveThemeOption(context: Context, key: String): ThemeOption? =
+    ThemeOptions[key]
+        ?: org.futo.inputmethod.latin.themestore.engine.ThemeRegistry.resolveThemeOption(context, key)

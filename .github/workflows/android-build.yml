@@ -88,11 +88,10 @@ jobs:
           body: |
             Keybird v${{ steps.pkg.outputs.version }} release.
 
-            - Rebranded app-facing UI to Keybird with refreshed Keybird adaptive & monochrome logo
-            - Option B portrait keyboard height (`292.0dp` key grid, ~5.2–5.5 cm total with action bar) for comfortable two-thumb typing
-            - Merged action bar into a single inline `40dp` strip (chevron toggles inline between Suggestions and Shortcuts without stacking a second row)
-            - Fixed One-Handed Mode layout updates, added quick ActionBar toggle, and added opposite-side swap & expand-full controls
-            - Increased emoji grid density (`~60+` visible at once) with full 1,979-emoji dataset including Unicode 16.0
+            - Added built-in Keybird Theme Store (`Settings → Theme Store`, Theme settings & keyboard Theme Switcher)
+            - Added 4-state catalog (`All | Free | Paid | My Themes`), multi-theme cart checkout with Unique Paisa Offset bKash/Nagad & TrxID submission
+            - Added 1-Time API Key activation, offline Ed25519 receipt & revocation verification, Android Keystore AES-256-GCM vault, and C++ JNI guard
+            - Added self-serve Device Deactivation, Recovery Token / TrxID restore, Direct Boot theme reload, and Keybird Matte / emoji / translator / voice refinements
           files: ${{ steps.pkg.outputs.apk }}
           prerelease: false
           make_latest: true

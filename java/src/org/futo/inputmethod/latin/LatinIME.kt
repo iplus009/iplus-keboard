@@ -298,7 +298,9 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
                 deferSetSetting(THEME_KEY, IPlusMatteTheme.key)
             }
             if(key != activeThemeOption?.key) {
-                ThemeOptions[key]?.let { if(it.available(this)) updateTheme(it) }
+                org.futo.inputmethod.latin.uix.theme.resolveThemeOption(this, key)?.let {
+                    if(it.available(this)) updateTheme(it)
+                }
             }
         }
     }
@@ -390,7 +392,8 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
 
         getSettingBlocking(THEME_KEY).let { rawKey ->
             val normalizedKey = normalizeThemeKey(rawKey)
-            val themeOptionFromSettings = ThemeOptions[normalizedKey]
+            val themeOptionFromSettings =
+                org.futo.inputmethod.latin.uix.theme.resolveThemeOption(this@LatinIME, normalizedKey)
             val themeOption = when {
                 themeOptionFromSettings == null -> VoiceInputTheme
                 !themeOptionFromSettings.available(this@LatinIME) -> VoiceInputTheme
@@ -431,6 +434,20 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
                             }
                         }
                     }
+                }
+            }
+        }
+        launchJob {
+            var lastStoreRev = org.futo.inputmethod.latin.themestore.engine.ThemeRegistry.revision.value
+            org.futo.inputmethod.latin.themestore.engine.ThemeRegistry.revision.collect { rev ->
+                if (rev != lastStoreRev) {
+                    lastStoreRev = rev
+                    val rawKey = getSettingBlocking(THEME_KEY)
+                    val normalizedKey = normalizeThemeKey(rawKey)
+                    val resolved = org.futo.inputmethod.latin.uix.theme.resolveThemeOption(this@LatinIME, normalizedKey)
+                        ?.takeIf { it.available(this@LatinIME) }
+                        ?: VoiceInputTheme
+                    updateTheme(resolved)
                 }
             }
         }
@@ -1158,6 +1175,13 @@ class LatinIME : InputMethodService(), LifecycleOwner, ViewModelStoreOwner, Save
         // Mainly Settings singleton needs to be refreshed
         Settings.init(applicationContext)
         Settings.getInstance().onSharedPreferenceChanged(null /* unused */, "")
+        val rawKey = getSettingBlocking(THEME_KEY)
+        val normalizedKey = normalizeThemeKey(rawKey)
+        val resolved = org.futo.inputmethod.latin.uix.theme.resolveThemeOption(this, normalizedKey)
+            ?.takeIf { it.available(this) }
+        if (resolved != null && resolved.key != activeThemeOption?.key) {
+            updateTheme(resolved)
+        }
         latinIMELegacy.loadSettings()
         recreateKeyboard()
 

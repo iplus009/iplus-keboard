@@ -334,13 +334,29 @@ private fun<T: Number> SettingSliderForDataStoreItem(
     val context = LocalContext.current
 
     val (value, setValue) = item
+    val minVirtual = range.start.pow(1.0f / power)
+    val maxVirtual = range.endInclusive.pow(1.0f / power)
+    val safeMinVirtual = minOf(minVirtual, maxVirtual)
+    val safeMaxVirtual = maxOf(minVirtual, maxVirtual)
     var virtualValue by remember { mutableFloatStateOf(value.toFloat().let {
         if(it == Float.POSITIVE_INFINITY || it == Float.NEGATIVE_INFINITY) {
             it
         } else {
             it.pow(1.0f / power)
         }
-    }) }
+    }.coerceIn(safeMinVirtual, safeMaxVirtual)) }
+    LaunchedEffect(value, safeMinVirtual, safeMaxVirtual, power) {
+        val nextVirtual = value.toFloat().let {
+            if (it == Float.POSITIVE_INFINITY || it == Float.NEGATIVE_INFINITY) {
+                it
+            } else {
+                it.pow(1.0f / power)
+            }
+        }.coerceIn(safeMinVirtual, safeMaxVirtual)
+        if (kotlin.math.abs(virtualValue - nextVirtual) > 0.0001f) {
+            virtualValue = nextVirtual
+        }
+    }
     var isTextFieldVisible by remember { mutableStateOf(false) }
     var hasTextFieldFocusedYet by remember { mutableStateOf(false) }
     var textFieldValue by remember(value) {
@@ -416,11 +432,11 @@ private fun<T: Number> SettingSliderForDataStoreItem(
                 )
             }
             Slider(
-                value = virtualValue,
+                value = virtualValue.coerceIn(safeMinVirtual, safeMaxVirtual),
                 onValueChange = {
                     virtualValue = it
                     setValue(transform(it.pow(power))) },
-                valueRange = range.start.pow(1.0f / power) .. range.endInclusive.pow(1.0f / power),
+                valueRange = safeMinVirtual .. safeMaxVirtual,
                 enabled = !isTextFieldVisible,
                 modifier = Modifier.weight(1.0f),
                 steps = steps

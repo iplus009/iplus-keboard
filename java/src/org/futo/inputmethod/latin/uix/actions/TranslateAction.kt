@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -563,6 +564,7 @@ val TranslateAction = Action(
             private val isLoading = mutableStateOf(false)
             private val error = mutableStateOf<String?>(null)
             private var debounceJob: Job? = null
+            private var lastCommittedTranslation: String? = null
             @Volatile
             private var closed = false
 
@@ -582,34 +584,52 @@ val TranslateAction = Action(
                 val languageTo = remember(targetPref) { mutableStateOf(targetPref) }
                 val coroutineScope = rememberCoroutineScope()
 
+                LaunchedEffect(Unit) {
+                    CloudTranslationHandler.prewarm()
+                }
+
+                val commitIfChanged: (String) -> Unit = { value ->
+                    if (lastCommittedTranslation != value) {
+                        lastCommittedTranslation = value
+                        manager.replaceAllText(value)
+                    }
+                }
+
                 val launchTranslation: (String, Long) -> Unit = { updatedString, debounceMs ->
                     debounceJob?.cancel()
-                    if (updatedString.isEmpty()) {
+                    val trimmed = updatedString.trim()
+                    if (trimmed.isEmpty()) {
                         isLoading.value = false
                         error.value = null
                         translatedText.value = ""
                     } else {
-                        debounceJob = coroutineScope.launch {
-                            isLoading.value = true
+                        val cached = CloudTranslationHandler.getCached(
+                            languageFrom.value,
+                            languageTo.value,
+                            trimmed
+                        )
+                        if (cached != null) {
                             error.value = null
-                            if (debounceMs > 0L) delay(debounceMs)
-                            if (closed) return@launch
-                            if (languageFrom.value == languageTo.value) {
-                                translatedText.value = updatedString
-                                manager.replaceAllText(updatedString)
-                                isLoading.value = false
-                            } else {
+                            translatedText.value = cached
+                            commitIfChanged(cached)
+                            isLoading.value = false
+                        } else {
+                            debounceJob = coroutineScope.launch {
+                                isLoading.value = true
+                                error.value = null
+                                if (debounceMs > 0L) delay(debounceMs)
+                                if (closed) return@launch
                                 val result = CloudTranslationHandler.translate(
                                     languageFrom.value,
                                     languageTo.value,
-                                    updatedString
+                                    trimmed
                                 )
                                 if (closed) return@launch
                                 result.fold(
                                     onSuccess = {
                                         Log.d(TAG, "Translation Success")
                                         translatedText.value = it
-                                        manager.replaceAllText(it)
+                                        commitIfChanged(it)
                                         isLoading.value = false
                                     },
                                     onFailure = {
@@ -619,8 +639,8 @@ val TranslateAction = Action(
                                     }
                                 )
                             }
+                            Log.d(TAG, "Initiated Translation")
                         }
-                        Log.d(TAG, "Initiated Translation")
                     }
                 }
 
@@ -630,7 +650,7 @@ val TranslateAction = Action(
                     errorText = error.value,
                     searchText = searchText,
                     onTextChange = { updatedString ->
-                        launchTranslation(updatedString, 500L)
+                        launchTranslation(updatedString, 250L)
                     },
                     onLanguagesChanged = {
                         if (searchText.value.isNotEmpty()) {

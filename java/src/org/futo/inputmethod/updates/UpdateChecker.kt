@@ -109,8 +109,7 @@ object UpdateChecker {
                 lower.contains("iplus-keyboard") ||
                 lower.contains("ipluskeyboard") ||
                 lower.contains("iplus_keyboard") ||
-                lower.contains("iplus-kbd") ||
-                lower.contains("iplus")
+                lower.contains("iplus-kbd")
             )
     }
 
@@ -120,8 +119,7 @@ object UpdateChecker {
         return lowerTitle.contains("keybird") ||
             lowerTag.contains("keybird") ||
             lowerTitle.contains("iplus") ||
-            lowerTag.contains("iplus") ||
-            lowerTag.startsWith("v")
+            lowerTag.contains("iplus")
     }
 
     private fun fetchFromReleasesApi(urlString: String, currentVersion: String): AppUpdate? {

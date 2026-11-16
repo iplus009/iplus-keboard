@@ -185,7 +185,7 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
     }
 
     private fun resolveThemeOption(rawKey: String): ThemeOption {
-        val candidate = ThemeOptions[normalizeThemeKey(rawKey)]
+        val candidate = org.futo.inputmethod.latin.uix.theme.resolveThemeOption(this, normalizeThemeKey(rawKey))
         return when {
             candidate == null -> VoiceInputTheme
             !candidate.available(this) -> VoiceInputTheme
@@ -223,7 +223,8 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
                 this@SettingsActivity.themeOption.value = themeOption
                 this@SettingsActivity.themeProvider = BasicThemeProvider(
                     context = this@SettingsActivity,
-                    overrideColorScheme = themeOption.obtainColors(this@SettingsActivity)
+                    overrideColorScheme = themeOption.obtainColors(this@SettingsActivity),
+                    themeKey = themeOption.key
                 )
 
                 updateEdgeToEdge()
@@ -236,7 +237,8 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
             this.themeOption.value = themeOption
             this.themeProvider = BasicThemeProvider(
                 context = this@SettingsActivity,
-                overrideColorScheme = themeOption.obtainColors(this@SettingsActivity)
+                overrideColorScheme = themeOption.obtainColors(this@SettingsActivity),
+                themeKey = themeOption.key
             )
 
             updateEdgeToEdge()

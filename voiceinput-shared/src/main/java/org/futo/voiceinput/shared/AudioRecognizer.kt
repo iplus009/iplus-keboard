@@ -208,10 +208,10 @@ class AudioRecognizer(
     }
 
     fun reset() {
-        recorder?.stop()
+        runCatching { recorder?.stop() }
         recorderJob?.cancel()
 
-        recorder?.release()
+        runCatching { recorder?.release() }
         recorder = null
 
         modelJob?.cancel()
@@ -437,12 +437,12 @@ class AudioRecognizer(
     @Throws(SecurityException::class)
     private fun createRecorderAndJob(preferBluetoothMic: Boolean): MicrophoneDeviceState {
         isRecording = false
-        recorder?.stop()
+        runCatching { recorder?.stop() }
 
         val bluetoothInfo = setCommunicationDevice(preferBluetoothMic)
 
         val task = {
-            recorder?.release()
+            runCatching { recorder?.release() }
 
             val recorder = createAudioRecorder()
 

@@ -260,6 +260,15 @@ public class KeyboardBuilder<KP extends KeyboardParams> {
         }
     }
 
+    public static int clampScaledKeyboardHeight(final int rawHeight, final int displayHeight) {
+        if (displayHeight <= 0) {
+            return Math.max(1, rawHeight);
+        }
+        final int minAllowed = Math.max(1, Math.round(displayHeight * 0.16f));
+        final int maxAllowed = Math.max(minAllowed, Math.round(displayHeight * 0.65f));
+        return Math.max(minAllowed, Math.min(rawHeight, maxAllowed));
+    }
+
     private void parseKeyboardAttributes(final XmlPullParser parser) {
         final AttributeSet attr = Xml.asAttributeSet(parser);
         final TypedArray keyboardAttr = mContext.obtainStyledAttributes(
@@ -279,7 +288,11 @@ public class KeyboardBuilder<KP extends KeyboardParams> {
                 gapMultiplier = mResources.getFraction(R.fraction.keyboardGapMultiplierAddl, 1, 1);
             }
 
-            final int height = (int) (params.mId.mHeight * heightMultiplier);
+            final int rawHeight = (int) (params.mId.mHeight * heightMultiplier);
+            final int displayHeight = mResources.getDisplayMetrics().heightPixels;
+            final int height = params.mIsMainKeyboard
+                    ? clampScaledKeyboardHeight(rawHeight, displayHeight)
+                    : rawHeight;
             final int width = params.mId.mWidth;
             params.mOccupiedHeight = height;
             params.mOccupiedWidth = width;

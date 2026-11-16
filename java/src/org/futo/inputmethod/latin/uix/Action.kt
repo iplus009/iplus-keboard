@@ -22,6 +22,7 @@ interface ActionInputTransaction {
     fun updatePartial(text: String)
     fun commit(text: String)
     fun cancel()
+    fun discard() {}
 }
 
 data class DialogRequestItem(
