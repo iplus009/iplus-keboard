@@ -1,32 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="title desc">
   <title id="title">Keybird</title>
-  <desc id="desc">Keybird emblem featuring a purple-magenta-amber plus cross, white arch, and golden flying bird on a midnight navy background.</desc>
+  <desc id="desc">Keybird emblem featuring a stylized gradient songbird in violet head, magenta-to-amber sweeping wing, and blue-violet tail feathers on midnight navy.</desc>
   <defs>
     <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0F1F88" />
-      <stop offset="50%" stop-color="#070E4B" />
-      <stop offset="100%" stop-color="#020319" />
+      <stop offset="0%" stop-color="#0E1B7A" />
+      <stop offset="50%" stop-color="#050A3E" />
+      <stop offset="100%" stop-color="#02041E" />
     </linearGradient>
-    <linearGradient id="plusGrad" x1="115" y1="315" x2="282" y2="255" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#7B3CFF" />
-      <stop offset="52%" stop-color="#E83BBA" />
-      <stop offset="82%" stop-color="#FF9142" />
-      <stop offset="100%" stop-color="#FFCA3A" />
+    <linearGradient id="headGrad" x1="150" y1="90" x2="290" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5B21B6" />
+      <stop offset="55%" stop-color="#7E22CE" />
+      <stop offset="100%" stop-color="#A855F7" />
     </linearGradient>
-    <linearGradient id="birdGrad" x1="238" y1="202" x2="345" y2="248" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FF5E14" />
-      <stop offset="55%" stop-color="#FF9E1C" />
-      <stop offset="100%" stop-color="#FFD13B" />
+    <linearGradient id="wingGrad" x1="125" y1="180" x2="395" y2="330" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E11D74" />
+      <stop offset="52%" stop-color="#F43F5E" />
+      <stop offset="82%" stop-color="#FB923C" />
+      <stop offset="100%" stop-color="#FDBA74" />
+    </linearGradient>
+    <linearGradient id="tailGrad" x1="190" y1="300" x2="390" y2="410" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1D4ED8" />
+      <stop offset="55%" stop-color="#7C3AED" />
+      <stop offset="100%" stop-color="#A855F7" />
     </linearGradient>
   </defs>
 
-  <rect x="24" y="24" width="464" height="464" rx="108" fill="url(#bgGrad)" stroke="#1B2A7A" stroke-width="3" />
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#bgGrad)" stroke="#243594" stroke-width="3" />
 
-  <g transform="translate(0, -24)">
-    <path d="M178,202 H216 A10,10 0 0,1 226,212 V263 H277 A10,10 0 0,1 287,273 V311 A10,10 0 0,1 277,321 H226 V372 A10,10 0 0,1 216,382 H178 A10,10 0 0,1 168,372 V321 H117 A10,10 0 0,1 107,311 V273 A10,10 0 0,1 117,263 H168 V212 A10,10 0 0,1 178,202 Z" fill="url(#plusGrad)" />
-    <path d="M168,132 H303 A104,104 0 0,1 303,340 V288 A52,52 0 0,0 303,184 H168 V132 Z" fill="#FFFFFF" />
-    <path d="M238,198 C264,200 288,208 308,219 C316,211 325,209 332,213 L345,219 L333,223 C331,238 316,251 296,252 C286,252 278,250 272,248 C276,245 279,243 282,241 C269,240 258,238 251,235 C263,234 273,233 280,231 C265,229 252,226 244,221 C258,220 270,219 278,217 C261,213 248,206 238,198 Z" fill="url(#birdGrad)" />
+  <g transform="translate(0, -18)">
+    <!-- Head & Beak -->
+    <path d="M148,166 C140,118 184,78 232,96 C250,103 268,108 292,115 C262,126 240,148 250,180 C214,182 178,176 148,166 Z" fill="url(#headGrad)" />
+    <!-- Sweeping Wing -->
+    <path d="M138,164 C178,200 232,190 278,198 C326,206 346,274 374,312 C384,326 396,328 398,320 C390,342 360,346 322,324 C272,296 226,274 176,262 C140,252 126,214 138,164 Z" fill="url(#wingGrad)" />
+    <!-- Upper Speed Tail Feather -->
+    <path d="M188,282 C252,306 298,354 342,356 C366,357 386,348 396,336 C382,368 350,382 316,368 C274,350 234,316 188,282 Z" fill="url(#tailGrad)" />
+    <!-- Lower Speed Tail Feather -->
+    <path d="M198,308 C244,344 274,384 316,388 C336,390 352,384 360,376 C348,402 318,412 290,398 C256,380 228,344 198,308 Z" fill="url(#tailGrad)" />
   </g>
 
-  <text x="256" y="432" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="64" font-weight="800" letter-spacing="-1">Keybird</text>
+  <text x="256" y="446" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="56" font-weight="800" letter-spacing="-1">Keybird</text>
 </svg>

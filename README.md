@@ -1,7 +1,7 @@
 # Keybird
 
 <p align="center">
-  <img src="docs/assets/iplus-logo.svg" alt="Keybird logo" width="200" />
+  <img src="docs/assets/keybird-logo.png" alt="Keybird logo" width="180" />
 </p>
 
 <p align="center">
@@ -15,7 +15,7 @@
 
 **Keybird** (formerly *iPlus Keyboard*) is an Android keyboard project focused on Bangla and English input, a customizable typing experience, and a clean app-facing interface built on top of the open-source keyboard engine while preserving upstream licensing and attribution.
 
-> **Download:** Get the latest universal Android APK (`Keybird-v2.0.4.apk` via CI release) from **[Releases (Latest APK)](https://github.com/iplus009/iplus-keboard/releases/latest)** or browse all builds on the **[Releases page](https://github.com/iplus009/iplus-keboard/releases)**.
+> **Download:** Get the latest universal Android APK (`Keybird-v2.2.1.apk` via CI release) from **[Releases (Latest APK)](https://github.com/iplus009/iplus-keboard/releases/latest)** or browse all builds on the **[Releases page](https://github.com/iplus009/iplus-keboard/releases)**.
 >
 > **Development status:** Universal APK builds are generated via GitHub Actions. Physical-device regression testing is ongoing.
 
@@ -25,7 +25,7 @@
 |---|---|
 | Platform | Android (API 24–35) |
 | App name | Keybird |
-| Version | `v2.0.4` (`versionCode 20004`) |
+| Version | `v2.2.1` (`versionCode 20201`) |
 | Main input focus | Bangla and English |
 | Source branch | `main` |
 | Application ID | `com.iplus.keyboard` (retained for compatibility) |
@@ -38,6 +38,7 @@
 |---|---|---|
 | **Signature visual style** | Uniform monochrome rectangles | **Keybird Matte** (Bauhaus color-block palette + dot-matrix key legends) alongside **Nothing / AMOLED**, **Emerald**, **Cotton Candy**, and **Material You** presets across `20` theme modes |
 | **Action strip footprint** | Stacked double toolbars eating screen height | **Single `40dp` inline ActionBar** — tap `>` / `<` to swap inline between suggestions and customizable shortcuts, plus **`...` All Actions** drawer (`Translate`, `Voice Input`, `Text Editor`, `Clipboard`, `Undo/Redo`, `Cut/Copy/Paste`) |
+| **Inline Theme Store & Sync** | Hardcoded static themes only | **Live Cloud Theme Store (`88+` themes)** — Category pills, admin live pricing & discounts, Supabase **Email + Google** accounts, lifetime `OWNED` library across reinstalls, and on-demand optional downloads |
 | **Voice typing** | Fixed system-only dictation popup | **Mixed Bangla + English Voice Input** with **Live transcription**, **Voice punctuation**, Bluetooth mic preference, offline Whisper support, and `Use Device Voice` fallback |
 | **Inline translator** | Requires leaving app or switching keyboards | **Built-in Translator** right inside the keyboard with **Auto Detect**, one-tap **`Bn ⇄ En`** toggle, language swap (`⇄`), and direct insert |
 | **Precision editing & clipboard** | Basic cursor drag on spacebar | **Full Text Editor** pad (4-way directional arrows, Shift-Select, Select Word/All, Copy/Paste, Undo/Redo) + **Clipboard Manager** (`50` items / `7` days, password/sensitive-text exclusion) |
@@ -49,7 +50,7 @@
 
 ## Theme showcase
 
-Captured directly from `Keybird v2.0.4` (`com.iplus.keyboard`) on Android emulator (`avro26`, API 26):
+Captured directly from `Keybird` (`com.iplus.keyboard`) on Android emulator (`avro26`, API 26):
 
 <table>
   <tr>
@@ -162,11 +163,25 @@ Captured directly from `Keybird v2.0.4` (`com.iplus.keyboard`) on Android emulat
       <b>Privacy-First Clipboard</b><br />
       <sub>50 items / 7 days, skips passwords</sub>
     </td>
-    <td align="center" width="25%" colspan="2">
-      <img src="docs/assets/showcase/feature-settings-ui.png" alt="Keybird Nothing-inspired dot-matrix Settings home screen with quick Bangla toggles and Try typing here playground" width="210" />
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/feature-settings-ui.png" alt="Keybird v2.2.1 Settings home screen with updated bird logo, Bangla toggles and Try typing here playground" width="210" />
       <br />
-      <b>Dot-Matrix Settings Home</b><br />
-      <sub>Quick Bangla switches &amp; instant <i>"Try typing here..."</i> test box</sub>
+      <b>Keybird v2.2.1 Home</b><br />
+      <sub>Updated bird logo, Bangla switches &amp; test box</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/feature-theme-store.png" alt="Keybird Theme Store showing live categories, free and paid themes, and Supabase account sync bar" width="210" />
+      <br />
+      <b>Live Theme Store (88+)</b><br />
+      <sub>Categories, discounts &amp; account sync</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="25%" colspan="4">
+      <img src="docs/assets/showcase/feature-store-login.png" alt="Keybird Store Supabase login dialog with Email Password and Continue with Google" width="210" />
+      <br />
+      <b>Lifetime Account Login</b><br />
+      <sub>Email + Google login keeps paid themes forever</sub>
     </td>
   </tr>
 </table>
@@ -220,7 +235,7 @@ On Windows PowerShell:
 .\gradlew.bat --no-daemon testStableDebugUnitTest assembleStableDebug
 ```
 
-Generated APKs are placed under `build/outputs/apk/stable/debug/` (with universal builds named `keybird-v2.0.4-stable-universal-debug.apk`). CI packages and publishes `Keybird-v<version>.apk` to GitHub Releases on push to `main`.
+Generated APKs are placed under `build/outputs/apk/stable/debug/` (with universal builds named `keybird-v2.2.1-stable-universal-debug.apk`). CI packages and publishes `Keybird-v<version>.apk` to GitHub Releases on push to `main`.
 
 ## Upstream source and legal notices
 
