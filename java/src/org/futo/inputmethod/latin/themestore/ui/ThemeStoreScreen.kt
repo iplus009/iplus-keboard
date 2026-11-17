@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -56,7 +57,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -68,6 +71,7 @@ import org.futo.inputmethod.latin.themestore.engine.ThemeRegistry
 import org.futo.inputmethod.latin.themestore.model.StoreCatalogEntry
 import org.futo.inputmethod.latin.themestore.model.StoreThemeState
 import org.futo.inputmethod.latin.themestore.model.ThemeFilter
+import org.futo.inputmethod.latin.themestore.network.SupabaseAuthClient
 import org.futo.inputmethod.latin.uix.THEME_KEY
 import org.futo.inputmethod.latin.uix.normalizeThemeKey
 import org.futo.inputmethod.latin.uix.settings.ScreenTitle
@@ -80,17 +84,21 @@ fun ThemeStoreScreen(navController: NavHostController) {
     val repo = remember(context) { ThemeStoreRepository(context) }
 
     val revision by ThemeRegistry.revision.collectAsState()
+    val accountSession by SupabaseAuthClient.sessionFlow.collectAsState()
     val rawThemeKey = useDataStoreValue(THEME_KEY)
     val activeThemeKey = normalizeThemeKey(rawThemeKey)
 
     var allEntries by remember { mutableStateOf(repo.getCachedEntries()) }
     var activeFilter by remember { mutableStateOf(ThemeFilter.ALL) }
+    var selectedCategory by remember { mutableStateOf("all") }
     var searchQuery by remember { mutableStateOf("") }
     var selectedPaidIds by remember { mutableStateOf(setOf<String>()) }
     var busyThemeId by remember { mutableStateOf<String?>(null) }
     var isSyncing by remember { mutableStateOf(false) }
     var syncError by remember { mutableStateOf<String?>(null) }
 
+    var showAuthDialog by remember { mutableStateOf(false) }
+    var pendingAuthAction by remember { mutableStateOf<String?>(null) }
     var showRedeemDialog by remember { mutableStateOf(false) }
     var showRecoveryDialog by remember { mutableStateOf(false) }
     var showCheckoutDialog by remember { mutableStateOf(false) }
@@ -121,15 +129,35 @@ fun ThemeStoreScreen(navController: NavHostController) {
     }
 
     LaunchedEffect(Unit) {
+        SupabaseAuthClient.currentSession(context)
         triggerSync()
+    }
+
+    LaunchedEffect(accountSession?.userId) {
+        refreshFromCache()
+        if (accountSession != null && showAuthDialog) {
+            showAuthDialog = false
+            when (pendingAuthAction) {
+                "checkout" -> showCheckoutDialog = true
+                "redeem" -> showRedeemDialog = true
+            }
+            pendingAuthAction = null
+        }
     }
 
     LaunchedEffect(revision) {
         refreshFromCache()
     }
 
-    val filteredEntries = remember(allEntries, activeFilter, searchQuery) {
-        StoreCatalogFilter.applyFilter(allEntries, activeFilter, searchQuery)
+    val categoryCounts = remember(allEntries) {
+        allEntries.groupingBy { it.category.trim().lowercase().ifEmpty { "general" } }.eachCount()
+    }
+    val availableCategories = remember(categoryCounts) {
+        listOf("all") + categoryCounts.keys.sorted()
+    }
+
+    val filteredEntries = remember(allEntries, activeFilter, selectedCategory, searchQuery) {
+        StoreCatalogFilter.applyFilter(allEntries, activeFilter, searchQuery, selectedCategory)
     }
 
     val selectedCartEntries = remember(allEntries, selectedPaidIds) {
@@ -144,6 +172,79 @@ fun ThemeStoreScreen(navController: NavHostController) {
         Column(modifier = Modifier.fillMaxSize()) {
             ScreenTitle("Theme Store", showBack = true, navController = navController)
 
+            // Account status bar: keeps paid purchases saved forever across reinstalls
+            val ownedPaidCount = remember(allEntries) { allEntries.count { it.isPaid && it.isOwned } }
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = null,
+                            tint = if (accountSession != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = accountSession?.email?.ifBlank { "Signed In" } ?: "Sign in to save purchases forever",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = if (accountSession != null) {
+                                    "$ownedPaidCount lifetime paid theme(s) • Synced"
+                                } else {
+                                    "Sign in before buying or unlocking themes"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    if (accountSession != null) {
+                        TextButton(
+                            onClick = {
+                                repo.signOutAccount()
+                                selectedPaidIds = emptySet()
+                                refreshFromCache()
+                                Toast.makeText(context, "Signed out. Log back in anytime to restore your themes.", Toast.LENGTH_SHORT).show()
+                            }
+                        ) {
+                            Text("Logout")
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                pendingAuthAction = null
+                                showAuthDialog = true
+                            },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text("Login")
+                        }
+                    }
+                }
+            }
+
             // Quick toolbar: Redeem Key | Restore & Device | Sync
             Row(
                 modifier = Modifier
@@ -153,7 +254,14 @@ fun ThemeStoreScreen(navController: NavHostController) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
-                    onClick = { showRedeemDialog = true },
+                    onClick = {
+                        if (accountSession == null) {
+                            pendingAuthAction = "redeem"
+                            showAuthDialog = true
+                        } else {
+                            showRedeemDialog = true
+                        }
+                    },
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
                 ) {
@@ -218,6 +326,28 @@ fun ThemeStoreScreen(navController: NavHostController) {
                 }
                 StoreFilterPill("My Themes", activeFilter == ThemeFilter.MY_THEMES) {
                     activeFilter = ThemeFilter.MY_THEMES
+                }
+            }
+
+            if (availableCategories.size > 2) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    availableCategories.forEach { cat ->
+                        val countLabel = if (cat == "all") {
+                            "All Categories (${allEntries.size})"
+                        } else {
+                            val titleCat = cat.replaceFirstChar { it.uppercase() }
+                            "$titleCat (${categoryCounts[cat] ?: 0})"
+                        }
+                        StoreFilterPill(countLabel, selectedCategory == cat) {
+                            selectedCategory = cat
+                        }
+                    }
                 }
             }
 
@@ -322,7 +452,12 @@ fun ThemeStoreScreen(navController: NavHostController) {
                             },
                             onInstantBuy = {
                                 selectedPaidIds = selectedPaidIds + entry.themeId
-                                showCheckoutDialog = true
+                                if (accountSession == null) {
+                                    pendingAuthAction = "checkout"
+                                    showAuthDialog = true
+                                } else {
+                                    showCheckoutDialog = true
+                                }
                             }
                         )
                     }
@@ -366,7 +501,14 @@ fun ThemeStoreScreen(navController: NavHostController) {
                     TextButton(onClick = { selectedPaidIds = emptySet() }) {
                         Text("Clear")
                     }
-                    Button(onClick = { showCheckoutDialog = true }) {
+                    Button(onClick = {
+                        if (accountSession == null) {
+                            pendingAuthAction = "checkout"
+                            showAuthDialog = true
+                        } else {
+                            showCheckoutDialog = true
+                        }
+                    }) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
                         Text("Buy Now")
@@ -374,6 +516,30 @@ fun ThemeStoreScreen(navController: NavHostController) {
                 }
             }
         }
+    }
+
+    if (showAuthDialog) {
+        AccountAuthDialog(
+            onDismiss = {
+                showAuthDialog = false
+                pendingAuthAction = null
+            },
+            onSignedIn = {
+                val synced = repo.syncAccountEntitlements().getOrDefault(emptyList())
+                refreshFromCache()
+                showAuthDialog = false
+                Toast.makeText(
+                    context,
+                    if (synced.isNotEmpty()) "Welcome back! ${synced.size} owned theme(s) ready" else "Signed in!",
+                    Toast.LENGTH_SHORT
+                ).show()
+                when (pendingAuthAction) {
+                    "checkout" -> showCheckoutDialog = true
+                    "redeem" -> showRedeemDialog = true
+                }
+                pendingAuthAction = null
+            }
+        )
     }
 
     if (showCheckoutDialog && selectedCartEntries.isNotEmpty()) {
@@ -491,8 +657,11 @@ private fun StoreThemeCard(
     ) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // Mini keyboard visual swatch preview
-            val isLightPreview = entry.themeId.contains("light", ignoreCase = true) ||
-                entry.themeId.contains("paper", ignoreCase = true)
+            val isLightPreview = remember(entry.themeId, entry.description) {
+                entry.themeId.contains("light", ignoreCase = true) ||
+                    entry.themeId.contains("paper", ignoreCase = true) ||
+                    Regex("\\blight\\b", RegexOption.IGNORE_CASE).containsMatchIn(entry.description)
+            }
             val boardTop = if (isLightPreview) Color(0xFFF3F4F6) else Color(0xFF101318)
             val keyColor = if (isLightPreview) Color(0xFFFFFFFF) else Color(0xFF1E222B)
 
@@ -558,6 +727,7 @@ private fun StoreThemeCard(
                     entry.state == StoreThemeState.DOWNLOADED -> "DOWNLOADED" to Color(0xFF2E7D32)
                     entry.state == StoreThemeState.OWNED -> "OWNED" to Color(0xFF0288D1)
                     entry.state == StoreThemeState.FREE -> "FREE" to Color(0xFF2E7D32)
+                    entry.hasDiscount -> (entry.discountLabel.ifBlank { "${entry.discountPercent}% OFF" }) to Color(0xFFDC2626)
                     else -> formatBdtFromPaisa(entry.priceBdtPaisa) to Color(0xFFD97706)
                 }
                 Box(
@@ -570,6 +740,7 @@ private fun StoreThemeCard(
                     Text(
                         text = badgeLabel,
                         style = MaterialTheme.typography.labelSmall,
+                        fontFamily = FontFamily.SansSerif,
                         color = Color.White,
                         fontWeight = FontWeight.Bold
                     )
@@ -607,9 +778,28 @@ private fun StoreThemeCard(
                         if (entry.description.isNotBlank()) " • ${entry.description}" else "",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
+                    maxLines = if (entry.state == StoreThemeState.PAID && entry.hasDiscount) 1 else 2,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (entry.state == StoreThemeState.PAID && entry.hasDiscount) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = formatBdtFromPaisa(entry.originalPriceBdtPaisa),
+                            style = MaterialTheme.typography.labelMedium,
+                            textDecoration = TextDecoration.LineThrough,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = formatBdtFromPaisa(entry.priceBdtPaisa),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD97706)
+                        )
+                    }
+                }
             }
 
             when (entry.state) {
@@ -646,7 +836,7 @@ private fun StoreThemeCard(
                         entry.hasUpdate -> "Update"
                         entry.state == StoreThemeState.DOWNLOADED && isActive -> "Applied"
                         entry.state == StoreThemeState.DOWNLOADED -> "Apply"
-                        entry.state == StoreThemeState.OWNED -> "Install"
+                        entry.state == StoreThemeState.OWNED -> "Download"
                         else -> "Get & Apply"
                     }
                     Button(

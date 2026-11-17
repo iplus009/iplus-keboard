@@ -247,7 +247,16 @@ class BasicThemeProvider(
             currentThemeKey
         )
     private val storeDelegate = storeProfile?.let {
-        org.futo.inputmethod.latin.themestore.engine.StoreKeyVisualDelegate(context, it)
+        org.futo.inputmethod.latin.themestore.engine.StoreKeyVisualDelegate(
+            context,
+            it,
+            // User sliders blend on top of Store Themes (blended when not locked)
+            org.futo.inputmethod.latin.themestore.engine.KeyStyleOverrides(
+                keyBorders = context.getSettingBlocking(KeyBordersSetting),
+                keyOpacity = context.getSettingBlocking(KeyOpacitySetting).coerceIn(0.15f, 1.0f),
+                keyShape = context.getSettingBlocking(KeyShapeSetting)
+            )
+        )
     }
     override val primaryKeyboardColor: Int
     override val keyColor: Int
@@ -584,7 +593,7 @@ class BasicThemeProvider(
         }
 
         keyBackground = if (storeDelegate != null) {
-            storeDelegate.createKeyBackgroundStateList(keyBorders)
+            storeDelegate.createKeyBackgroundStateList()
         } else StateListDrawable().apply {
             addStateWithHighlightLayerOnPressed(highlight, intArrayOf(android.R.attr.state_active),
                 coloredRoundedRectangle(enterKeyBackground, dp(128.dp)),
@@ -734,6 +743,13 @@ class BasicThemeProvider(
     }
 
     override fun getKeyBackground(key: Key, isPressed: Boolean): Drawable? {
+        if (storeDelegate != null) {
+            // Phase 2: character-art keys compose the resolved asset inside a code-drawn
+            // rounded capsule with frosted rim, bottom scrim, and pressed highlight.
+            // Returns null (=> default StateListDrawable) when the key has no art asset.
+            storeDelegate.getArtPackKeyBackground(key, isPressed)?.let { return it }
+            return null
+        }
         if (!isIPlusMatteTheme) return null
         ensureDimensions()
         return IPlusMatteThemeHelper.getKeyBackground(key, isPressed, cachedCornerRadius)

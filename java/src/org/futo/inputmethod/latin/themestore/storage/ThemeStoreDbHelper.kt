@@ -58,6 +58,9 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
                 theme_type TEXT NOT NULL,
                 is_paid INTEGER NOT NULL,
                 price_bdt_paisa INTEGER NOT NULL,
+                original_price_bdt_paisa INTEGER NOT NULL DEFAULT 0,
+                discount_percent INTEGER NOT NULL DEFAULT 0,
+                discount_label TEXT NOT NULL DEFAULT '',
                 remote_version INTEGER NOT NULL,
                 preview_url TEXT NOT NULL,
                 accent_hex TEXT NOT NULL,
@@ -121,7 +124,11 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // Future migrations handled explicitly without dropping verified entitlements
+        if (oldVersion < 2) {
+            runCatching { db.execSQL("ALTER TABLE catalog_cache ADD COLUMN original_price_bdt_paisa INTEGER NOT NULL DEFAULT 0") }
+            runCatching { db.execSQL("ALTER TABLE catalog_cache ADD COLUMN discount_percent INTEGER NOT NULL DEFAULT 0") }
+            runCatching { db.execSQL("ALTER TABLE catalog_cache ADD COLUMN discount_label TEXT NOT NULL DEFAULT ''") }
+        }
     }
 
     fun replaceCatalog(items: List<CatalogThemeItem>) {
@@ -141,6 +148,9 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
                     put("theme_type", item.themeType)
                     put("is_paid", item.isPaid)
                     put("price_bdt_paisa", item.priceBdtPaisa)
+                    put("original_price_bdt_paisa", item.originalPriceBdtPaisa)
+                    put("discount_percent", item.discountPercent)
+                    put("discount_label", item.discountLabel)
                     put("remote_version", item.currentVersion)
                     put("preview_url", item.previewUrl)
                     put("accent_hex", item.accentHex)
@@ -165,6 +175,9 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
             null
         ).use { c ->
             while (c.moveToNext()) {
+                val origIdx = c.getColumnIndex("original_price_bdt_paisa")
+                val pctIdx = c.getColumnIndex("discount_percent")
+                val labelIdx = c.getColumnIndex("discount_label")
                 list.add(
                     CatalogThemeItem(
                         themeId = c.getString(c.getColumnIndexOrThrow("theme_id")),
@@ -175,6 +188,9 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
                         themeType = c.getString(c.getColumnIndexOrThrow("theme_type")),
                         isPaid = c.getInt(c.getColumnIndexOrThrow("is_paid")),
                         priceBdtPaisa = c.getInt(c.getColumnIndexOrThrow("price_bdt_paisa")),
+                        originalPriceBdtPaisa = if (origIdx >= 0) c.getInt(origIdx) else 0,
+                        discountPercent = if (pctIdx >= 0) c.getInt(pctIdx) else 0,
+                        discountLabel = if (labelIdx >= 0) c.getString(labelIdx).orEmpty() else "",
                         currentVersion = c.getInt(c.getColumnIndexOrThrow("remote_version")),
                         previewUrl = c.getString(c.getColumnIndexOrThrow("preview_url")),
                         accentHex = c.getString(c.getColumnIndexOrThrow("accent_hex")),
@@ -393,12 +409,40 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
         }
     }
 
+    /**
+     * Phase 2: stores a `.iplustheme` ZIP encrypted with AES-GCM bound to
+     * (app_id, theme_id, device_hash) AAD so a copied bundle cannot be read on another device.
+     * Paid bundles live under the vault (purged on deactivate); free bundles live under
+     * `free_art` so deactivation does not destroy freely-downloaded packs.
+     */
+    fun writeArtBundle(themeId: String, isPaid: Boolean, zipBytes: ByteArray, deviceHash: String): File {
+        val dir = artBundleDir(isPaid).apply { mkdirs() }
+        val aad = ThemeVaultCrypto.buildAad("keybird", themeId, deviceHash)
+        val encrypted = ThemeVaultCrypto.encrypt(zipBytes, aad)
+        return File(dir, "$themeId.iplustheme.enc").apply { writeBytes(encrypted) }
+    }
+
+    /** Phase 2: decrypts a stored art bundle (returns null when missing/undecryptable). */
+    fun readArtBundle(themeId: String, isPaid: Boolean, deviceHash: String): ByteArray? {
+        if (!appContext.isDirectBootUnlocked) return null
+        val file = File(artBundleDir(isPaid), "$themeId.iplustheme.enc")
+        if (!file.exists()) return null
+        val aad = ThemeVaultCrypto.buildAad("keybird", themeId, deviceHash)
+        return ThemeVaultCrypto.decrypt(file.readBytes(), aad)
+    }
+
+    private fun artBundleDir(isPaid: Boolean): File = artBundleDir(appContext, isPaid)
+
     companion object {
         private const val DB_NAME = "keybird_themestore.db"
-        private const val DB_VERSION = 1
+        private const val DB_VERSION = 2
 
         private fun vaultDir(context: Context): File =
             File(context.filesDir, "theme_store/vault")
+
+        private fun artBundleDir(context: Context, isPaid: Boolean): File =
+            if (isPaid) File(vaultDir(context), "art")
+            else File(context.filesDir, "theme_store/free_art")
 
         @Volatile
         private var instance: ThemeStoreDbHelper? = null

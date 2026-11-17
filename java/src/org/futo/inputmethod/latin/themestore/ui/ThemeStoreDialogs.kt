@@ -3,7 +3,11 @@ package org.futo.inputmethod.latin.themestore.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,6 +53,8 @@ import org.futo.inputmethod.latin.themestore.model.CreateOrderResponse
 import org.futo.inputmethod.latin.themestore.model.OrderHistoryEntry
 import org.futo.inputmethod.latin.themestore.model.PaymentAccountsDto
 import org.futo.inputmethod.latin.themestore.model.StoreCatalogEntry
+import org.futo.inputmethod.latin.themestore.network.SignUpOutcome
+import org.futo.inputmethod.latin.themestore.network.SupabaseAuthClient
 
 private val TRX_ID_REGEX = Regex("^[A-Z0-9]{8,12}$")
 
@@ -127,11 +133,21 @@ fun PurchaseRequestDialog(
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.weight(1f)
                             )
-                            Text(
-                                text = formatBdtFromPaisa(theme.priceBdtPaisa),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                if (theme.hasDiscount) {
+                                    Text(
+                                        text = formatBdtFromPaisa(theme.originalPriceBdtPaisa),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        textDecoration = TextDecoration.LineThrough,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Text(
+                                    text = formatBdtFromPaisa(theme.priceBdtPaisa),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
@@ -746,6 +762,206 @@ fun RecoveryAndDeviceDialog(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss, enabled = !isBusy) {
                         Text("Close")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AccountAuthDialog(
+    onDismiss: () -> Unit,
+    onSignedIn: suspend () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var isSignUp by remember { mutableStateOf(false) }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var isBusy by remember { mutableStateOf(false) }
+    var infoMsg by remember { mutableStateOf<String?>(null) }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
+
+    Dialog(onDismissRequest = { if (!isBusy) onDismiss() }) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 620.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = if (isSignUp) "Create Keybird Account" else "Sign In to Keybird Store",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Themes you buy or unlock stay saved to your account forever. After reinstalling, just log in and download only the ones you want.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MethodToggleChip(
+                        label = "Sign In",
+                        selected = !isSignUp,
+                        onClick = { isSignUp = false; errorMsg = null },
+                        modifier = Modifier.weight(1f)
+                    )
+                    MethodToggleChip(
+                        label = "Create Account",
+                        selected = isSignUp,
+                        onClick = { isSignUp = true; errorMsg = null },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                OutlinedButton(
+                    enabled = !isBusy,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        errorMsg = null
+                        val authUrl = SupabaseAuthClient.startGoogleOAuthUrl(context)
+                        runCatching {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(authUrl)))
+                            infoMsg = "Finish signing in with Google in your browser to return automatically."
+                        }.onFailure {
+                            errorMsg = "Unable to open browser for Google sign-in"
+                        }
+                    }
+                ) {
+                    Text("Continue with Google", fontWeight = FontWeight.SemiBold)
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    HorizontalDivider(modifier = Modifier.weight(1f))
+                    Text("OR", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    HorizontalDivider(modifier = Modifier.weight(1f))
+                }
+
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it; errorMsg = null },
+                    label = { Text("Email address") },
+                    placeholder = { Text("you@gmail.com") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it; errorMsg = null },
+                    label = { Text("Password (min 6 chars)") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (!isSignUp) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(
+                            enabled = !isBusy,
+                            onClick = {
+                                val targetEmail = email.trim()
+                                if (!targetEmail.contains("@")) {
+                                    errorMsg = "Enter your email above first, then tap Forgot Password"
+                                    return@TextButton
+                                }
+                                isBusy = true
+                                errorMsg = null
+                                scope.launch {
+                                    SupabaseAuthClient.sendPasswordReset(targetEmail)
+                                        .onSuccess {
+                                            infoMsg = "Password reset link sent to $targetEmail"
+                                        }
+                                        .onFailure { err ->
+                                            errorMsg = err.message ?: "Unable to send reset email"
+                                        }
+                                    isBusy = false
+                                }
+                            }
+                        ) {
+                            Text("Forgot Password?")
+                        }
+                    }
+                }
+
+                infoMsg?.let {
+                    Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+                }
+                errorMsg?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss, enabled = !isBusy) {
+                        Text("Close")
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        enabled = !isBusy,
+                        onClick = {
+                            isBusy = true
+                            errorMsg = null
+                            infoMsg = null
+                            scope.launch {
+                                if (isSignUp) {
+                                    SupabaseAuthClient.signUpWithEmail(context, email, password)
+                                        .onSuccess { outcome ->
+                                            when (outcome) {
+                                                is SignUpOutcome.SignedIn -> {
+                                                    onSignedIn()
+                                                }
+                                                is SignUpOutcome.ConfirmationRequired -> {
+                                                    infoMsg = "Verification email sent to ${outcome.email}. Confirm your inbox link, then Sign In."
+                                                    isSignUp = false
+                                                }
+                                            }
+                                        }
+                                        .onFailure { err ->
+                                            errorMsg = err.message ?: "Sign-up failed"
+                                        }
+                                } else {
+                                    SupabaseAuthClient.signInWithEmail(context, email, password)
+                                        .onSuccess {
+                                            onSignedIn()
+                                        }
+                                        .onFailure { err ->
+                                            errorMsg = err.message ?: "Sign-in failed"
+                                        }
+                                }
+                                isBusy = false
+                            }
+                        }
+                    ) {
+                        if (isBusy) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .height(16.dp)
+                                    .width(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(if (isSignUp) "Create Account" else "Sign In")
+                        }
                     }
                 }
             }

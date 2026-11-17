@@ -2,7 +2,9 @@ package org.futo.inputmethod.latin.themestore
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.futo.inputmethod.latin.common.Constants
 import org.futo.inputmethod.latin.themestore.domain.StoreCatalogFilter
+import org.futo.inputmethod.latin.themestore.engine.ArtBundleCodec
 import org.futo.inputmethod.latin.themestore.engine.ThemeManifestEngine
 import org.futo.inputmethod.latin.themestore.model.CatalogThemeItem
 import org.futo.inputmethod.latin.themestore.model.EntitlementReceiptPayload
@@ -10,6 +12,7 @@ import org.futo.inputmethod.latin.themestore.model.SignedEntitlementReceipt
 import org.futo.inputmethod.latin.themestore.model.SignedRevocationList
 import org.futo.inputmethod.latin.themestore.model.StoreThemeState
 import org.futo.inputmethod.latin.themestore.model.ThemeFilter
+import org.futo.inputmethod.latin.themestore.network.SupabaseAuthClient
 import org.futo.inputmethod.latin.themestore.security.Ed25519Verifier
 import org.futo.inputmethod.latin.themestore.security.ThemeLicenseGuard
 import org.futo.inputmethod.latin.themestore.security.ThemeNativeGuard
@@ -22,9 +25,12 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.ByteArrayOutputStream
 import java.security.KeyPairGenerator
 import java.security.Signature
 import java.util.Base64
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import javax.crypto.KeyGenerator
 
 class ThemeStoreUnitTest {
@@ -273,5 +279,276 @@ class ThemeStoreUnitTest {
 
         val queryGold = StoreCatalogFilter.applyFilter(entries.values.toList(), ThemeFilter.ALL, "gold")
         assertEquals(listOf("kb_royal_gold"), queryGold.map { it.themeId })
+
+        val neonCat = StoreCatalogFilter.applyFilter(entries.values.toList(), ThemeFilter.ALL, "", "neon")
+        assertEquals(listOf("kb_cyber_crimson"), neonCat.map { it.themeId })
+    }
+
+    private fun buildZip(vararg entries: Pair<String, ByteArray>): ByteArray {
+        val bos = ByteArrayOutputStream()
+        ZipOutputStream(bos).use { z ->
+            entries.forEach { (name, data) ->
+                z.putNextEntry(ZipEntry(name))
+                z.write(data)
+                z.closeEntry()
+            }
+        }
+        return bos.toByteArray()
+    }
+
+    @Test
+    fun resolveArtAssetKey_matchesLettersShiftSlotsAndGroupFallbacks() {
+        val keymap = mapOf(
+            "k_a" to "assets/keys/k_a_ace.webp",
+            "k_l" to "assets/keys/k_l_luffy.webp",
+            "k_z" to "assets/keys/k_z_zoro.webp",
+            "k_shift" to "assets/keys/k_shift_shanks.webp",
+            "slot_r1_c0" to "assets/keys/k_bangla1.webp",
+            "slot_r2_c3" to "assets/keys/k_bangla2.webp"
+        )
+        val fallbacks = mapOf(
+            "letter" to "assets/groups/letter_glass_ocean.webp",
+            "functional" to "assets/groups/functional_glass.webp",
+            "accent" to "assets/groups/accent_gold_glass.webp",
+            "space" to "assets/keys/k_space_crew_banner.webp",
+            "default" to "assets/groups/letter_glass_ocean.webp"
+        )
+
+        // English letter keys resolve via k_<letter> (A = Ace, L = Luffy, Z = Zoro)
+        assertEquals("assets/keys/k_a_ace.webp",
+            ThemeManifestEngine.resolveArtAssetKey(keymap, fallbacks, 'a'.code, "a", 0, 0, 100, 100))
+        assertEquals("assets/keys/k_l_luffy.webp",
+            ThemeManifestEngine.resolveArtAssetKey(keymap, fallbacks, 'l'.code, "l", 0, 0, 100, 100))
+        assertEquals("assets/keys/k_z_zoro.webp",
+            ThemeManifestEngine.resolveArtAssetKey(keymap, fallbacks, 'z'.code, "z", 0, 0, 100, 100))
+
+        // Shift resolves via code, not label
+        assertEquals("assets/keys/k_shift_shanks.webp",
+            ThemeManifestEngine.resolveArtAssetKey(keymap, fallbacks, Constants.CODE_SHIFT, null, 0, 0, 100, 100))
+
+        // Bangla Avro/Probhat keys resolve via slot_r<row>_c<col> (label is a Bengali letter)
+        assertEquals("assets/keys/k_bangla1.webp",
+            ThemeManifestEngine.resolveArtAssetKey(keymap, fallbacks, 'ক'.code, "ক", 0, 100, 100, 100))
+        assertEquals("assets/keys/k_bangla2.webp",
+            ThemeManifestEngine.resolveArtAssetKey(keymap, fallbacks, 'ক'.code, "ক", 300, 200, 100, 100))
+
+        // Unknown letter falls back to group_fallbacks["letter"]
+        assertEquals("assets/groups/letter_glass_ocean.webp",
+            ThemeManifestEngine.resolveArtAssetKey(keymap, fallbacks, '?'.code, "?", 0, 0, 100, 100))
+
+        // Unknown group (accent) falls back to group_fallbacks["accent"]
+        assertEquals("assets/groups/accent_gold_glass.webp",
+            ThemeManifestEngine.resolveArtAssetKey(keymap, fallbacks, Constants.CODE_ENTER, null, 0, 0, 100, 100))
+
+        // Missing group falls back to "default"
+        assertEquals("assets/groups/letter_glass_ocean.webp",
+            ThemeManifestEngine.resolveArtAssetKey(
+                keymap,
+                mapOf("default" to "assets/groups/letter_glass_ocean.webp"),
+                'x'.code, "x", 0, 0, 100, 100
+            ))
+    }
+
+    @Test
+    fun onePieceArtPack_matchesAlphabetToCharacterRule() {
+        // Mirrors kb_one_piece_master manifest: every k_<letter> portrait's name starts with that letter.
+        val keymap = mapOf(
+            "k_q" to "assets/keys/k_q_queen.webp",
+            "k_w" to "assets/keys/k_w_whitebeard.webp",
+            "k_e" to "assets/keys/k_e_enel.webp",
+            "k_r" to "assets/keys/k_r_robin.webp",
+            "k_t" to "assets/keys/k_t_trafalgar_law.webp",
+            "k_y" to "assets/keys/k_y_yamato.webp",
+            "k_u" to "assets/keys/k_u_usopp.webp",
+            "k_i" to "assets/keys/k_i_imu.webp",
+            "k_o" to "assets/keys/k_o_oden.webp",
+            "k_p" to "assets/keys/k_p_perona.webp",
+            "k_a" to "assets/keys/k_a_ace.webp",
+            "k_s" to "assets/keys/k_s_sanji.webp",
+            "k_d" to "assets/keys/k_d_doflamingo.webp",
+            "k_f" to "assets/keys/k_f_franky.webp",
+            "k_g" to "assets/keys/k_g_garp.webp",
+            "k_h" to "assets/keys/k_h_hancock.webp",
+            "k_j" to "assets/keys/k_j_jinbe.webp",
+            "k_k" to "assets/keys/k_k_kaido.webp",
+            "k_l" to "assets/keys/k_l_luffy.webp",
+            "k_z" to "assets/keys/k_z_zoro.webp",
+            "k_x" to "assets/keys/k_x_x_drake.webp",
+            "k_c" to "assets/keys/k_c_chopper.webp",
+            "k_v" to "assets/keys/k_v_vivi.webp",
+            "k_b" to "assets/keys/k_b_brook.webp",
+            "k_n" to "assets/keys/k_n_nami.webp",
+            "k_m" to "assets/keys/k_m_mihawk.webp"
+        )
+        keymap.forEach { (keyId, assetPath) ->
+            if (keyId.length != 2 || !keyId[1].isLetter()) return@forEach
+            val letter = keyId[1]
+            val basename = assetPath.substringAfterLast('/')
+            val prefix = "k_${letter}_"
+            assertTrue(
+                "Expected $keyId asset '$basename' to start with '$prefix'",
+                basename.startsWith(prefix)
+            )
+            val characterToken = basename.removePrefix(prefix).substringBefore('.')
+            assertTrue(
+                "Letter-match violated for $keyId: character '$characterToken' must start with '${letter.uppercase()}'",
+                characterToken.isNotEmpty() && characterToken[0].uppercaseChar() == letter.uppercaseChar()
+            )
+        }
+        // Explicit A/Ace, L/Luffy, Z/Zoro spot-checks per the mandate.
+        assertEquals("assets/keys/k_a_ace.webp", keymap["k_a"])
+        assertEquals("assets/keys/k_l_luffy.webp", keymap["k_l"])
+        assertEquals("assets/keys/k_z_zoro.webp", keymap["k_z"])
+    }
+
+    @Test
+    fun artBundleCodec_verifiesShaAndRejectsMismatch() {
+        val bytes = "Keybird iplustheme bundle bytes".toByteArray(Charsets.UTF_8)
+        val sha = ArtBundleCodec.sha256Hex(bytes)
+        assertEquals(64, sha.length)
+        assertTrue(ArtBundleCodec.validateBundleSha256(bytes, sha))
+        assertTrue(ArtBundleCodec.validateBundleSha256(bytes, sha.uppercase()))
+        assertFalse(ArtBundleCodec.validateBundleSha256(bytes, "0".repeat(64)))
+        assertFalse(ArtBundleCodec.validateBundleSha256(bytes, ""))
+        assertFalse(ArtBundleCodec.validateBundleSha256("tampered".toByteArray(), sha))
+        assertFalse(ArtBundleCodec.isLikelyZip(bytes))
+    }
+
+    @Test
+    fun artBundleCodec_sanitizesPaths_andBlocksZipSlip() {
+        assertNull(ArtBundleCodec.sanitizeAssetPath("../etc/passwd"))
+        assertNull(ArtBundleCodec.sanitizeAssetPath("assets/../../evil.webp"))
+        assertNull(ArtBundleCodec.sanitizeAssetPath("/abs/path.webp"))
+        assertNull(ArtBundleCodec.sanitizeAssetPath(""))
+        assertNull(ArtBundleCodec.sanitizeAssetPath("assets//keys.webp"))
+        assertEquals("assets/keys/k_a.webp", ArtBundleCodec.sanitizeAssetPath("assets\\keys\\k_a.webp"))
+        assertEquals("assets/keys/k_a.webp", ArtBundleCodec.sanitizeAssetPath("assets/keys/k_a.webp"))
+    }
+
+    @Test
+    fun artBundleCodec_extractsManifestAndAssets_safely() {
+        val zip = buildZip(
+            "manifest.json" to """{"schema":1,"theme_id":"kb_art","title":"Art"}""".toByteArray(Charsets.UTF_8),
+            "assets/keys/k_a_ace.webp" to byteArrayOf(1, 2, 3, 4),
+            "assets/groups/letter_glass_ocean.webp" to byteArrayOf(5, 6),
+            "assets/keys/../evil.webp" to byteArrayOf(9, 9, 9)
+        )
+        assertTrue(ArtBundleCodec.isLikelyZip(zip))
+
+        assertArrayEquals(byteArrayOf(1, 2, 3, 4), ArtBundleCodec.extractAsset(zip, "assets/keys/k_a_ace.webp"))
+        assertArrayEquals(byteArrayOf(5, 6), ArtBundleCodec.extractAsset(zip, "assets/groups/letter_glass_ocean.webp"))
+
+        // Non-assets paths and traversal paths are refused even when the ZIP contains such entries.
+        assertNull(ArtBundleCodec.extractAsset(zip, "manifest.json"))
+        assertNull(ArtBundleCodec.extractAsset(zip, "../evil.webp"))
+        assertNull(ArtBundleCodec.extractAsset(zip, "assets/keys/../evil.webp"))
+        assertNull(ArtBundleCodec.extractAsset(zip, "assets/missing.webp"))
+
+        val manifest = ArtBundleCodec.extractManifestJson(zip)
+        assertNotNull(manifest)
+        assertTrue(manifest!!.contains("kb_art"))
+        assertEquals(
+            setOf("manifest.json", "assets/keys/k_a_ace.webp", "assets/groups/letter_glass_ocean.webp", "assets/keys/../evil.webp"),
+            ArtBundleCodec.listEntries(zip).toSet()
+        )
+    }
+
+    @Test
+    fun storeCatalogFilter_passesBundleSha256Through() {
+        val catalog = listOf(
+            CatalogThemeItem(
+                themeId = "kb_one_piece_grandline",
+                title = "One Piece",
+                category = "anime",
+                isPaid = 1,
+                currentVersion = 1,
+                bundleSha256 = "abc123".repeat(10)
+            )
+        )
+        val entries = StoreCatalogFilter.buildEntries(
+            catalog = catalog,
+            installed = emptyMap(),
+            ownedThemeIds = setOf("kb_one_piece_grandline"),
+            hasFullAccess = false
+        )
+        assertEquals("abc123".repeat(10), entries.first().bundleSha256)
+    }
+
+    @Test
+    fun storeCatalogFilter_mapsDiscountsAndSeparatesOwnedFromDownloaded() {
+        val catalog = listOf(
+            CatalogThemeItem(
+                themeId = "kb_sale_owned",
+                title = "Sale Owned",
+                category = "anime",
+                isPaid = 1,
+                priceBdtPaisa = 7000,
+                originalPriceBdtPaisa = 10000,
+                discountPercent = 30,
+                discountLabel = "30% OFF",
+                currentVersion = 2
+            ),
+            CatalogThemeItem(
+                themeId = "kb_full_price",
+                title = "Full Price",
+                category = "matte",
+                isPaid = 1,
+                priceBdtPaisa = 5000,
+                originalPriceBdtPaisa = 5000,
+                discountPercent = 0,
+                discountLabel = ""
+            )
+        )
+        val entries = StoreCatalogFilter.buildEntries(
+            catalog = catalog,
+            installed = emptyMap(),
+            ownedThemeIds = setOf("kb_sale_owned"),
+            hasFullAccess = false
+        )
+        val owned = entries.first { it.themeId == "kb_sale_owned" }
+        assertTrue(owned.hasDiscount)
+        assertEquals(10000, owned.originalPriceBdtPaisa)
+        assertEquals(7000, owned.priceBdtPaisa)
+        assertEquals("30% OFF", owned.discountLabel)
+        assertTrue(owned.isOwned)
+        assertFalse(owned.isDownloaded)
+        assertEquals(StoreThemeState.OWNED, owned.state)
+
+        val unowned = entries.first { it.themeId == "kb_full_price" }
+        assertFalse(unowned.hasDiscount)
+        assertEquals(StoreThemeState.PAID, unowned.state)
+    }
+
+    @Test
+    fun supabaseAuthClient_buildsPkceChallengeAndParsesOAuthCallbacks() {
+        val verifier = SupabaseAuthClient.generatePkceVerifier()
+        assertTrue(verifier.length >= 43)
+        assertFalse(verifier.contains("="))
+
+        val challenge = SupabaseAuthClient.computePkceS256Challenge(verifier)
+        assertEquals(43, challenge.length)
+        assertFalse(challenge.contains("+") || challenge.contains("/") || challenge.contains("="))
+
+        val url = SupabaseAuthClient.buildGoogleAuthorizeUrl(challenge)
+        assertTrue(url.startsWith("${SupabaseAuthClient.SUPABASE_URL}/auth/v1/authorize?"))
+        assertTrue(url.contains("provider=google"))
+        assertTrue(url.contains("code_challenge_method=s256"))
+        assertTrue(url.contains("keybird%3A%2F%2Fauth-callback"))
+
+        val codeCb = SupabaseAuthClient.parseOAuthCallbackParams("keybird://auth-callback?code=abc-123-xyz")
+        assertEquals("abc-123-xyz", codeCb.code)
+        assertNull(codeCb.errorDescription)
+
+        val fragCb = SupabaseAuthClient.parseOAuthCallbackParams(
+            "keybird://auth-callback#access_token=tok_1&refresh_token=ref_1&expires_in=7200"
+        )
+        assertEquals("tok_1", fragCb.accessToken)
+        assertEquals("ref_1", fragCb.refreshToken)
+        assertEquals(7200L, fragCb.expiresInSec)
+
+        val errCb = SupabaseAuthClient.parseOAuthCallbackParams(
+            "keybird://auth-callback?error=access_denied&error_description=User%20cancelled"
+        )
+        assertEquals("User cancelled", errCb.errorDescription)
     }
 }

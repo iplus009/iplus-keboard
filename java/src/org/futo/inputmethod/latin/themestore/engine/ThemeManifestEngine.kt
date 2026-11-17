@@ -1,26 +1,45 @@
 package org.futo.inputmethod.latin.themestore.engine
 
 import android.content.Context
-import android.graphics.Color as AndroidColor
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.ColorFilter
+import android.graphics.LinearGradient
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RectF
+import android.graphics.Shader
 import android.graphics.Typeface
+import android.graphics.Color as AndroidColor
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.StateListDrawable
 import android.graphics.drawable.shapes.RoundRectShape
+import android.util.LruCache
 import android.util.TypedValue
+import android.view.Gravity
 import androidx.annotation.ColorInt
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.ColorUtils
 import kotlinx.serialization.json.Json
 import org.futo.inputmethod.keyboard.Key
 import org.futo.inputmethod.latin.R
 import org.futo.inputmethod.latin.common.Constants
 import org.futo.inputmethod.latin.themestore.model.KeybirdThemeManifestV1
+import org.futo.inputmethod.latin.themestore.model.ManifestArtPackV1
+import org.futo.inputmethod.latin.themestore.security.ThemeLicenseGuard
+import org.futo.inputmethod.latin.themestore.storage.ThemeStoreDbHelper
+import org.futo.inputmethod.latin.uix.isDirectBootUnlocked
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 data class StoreThemeRenderProfile(
@@ -43,7 +62,13 @@ data class StoreThemeRenderProfile(
     @ColorInt val popupBgColor: Int,
     @ColorInt val popupTextColor: Int,
     @ColorInt val gestureTrailColor: Int,
-    val fontStyle: String
+    val fontStyle: String,
+    /** Phase 2: bottom readability scrim alpha (0..1) for art-pack capsules. */
+    val scrimAlpha: Float = 0f,
+    /** Phase 2: draw the frosted rim + outer glow on art-pack capsules. */
+    val glassRimGlow: Boolean = false,
+    /** Phase 2: per-key character artwork + backdrop/spacebar banner bundle. */
+    val artPack: ManifestArtPackV1? = null
 )
 
 /**
@@ -182,7 +207,10 @@ object ThemeManifestEngine {
             popupBgColor = parseHexColor(k.popupBg, 0xFF1B1B1F.toInt()),
             popupTextColor = parseHexColor(k.popupText, 0xFFFFFFFF.toInt()),
             gestureTrailColor = parseHexColor(k.gestureTrail, enterBg),
-            fontStyle = k.fontStyle
+            fontStyle = k.fontStyle,
+            scrimAlpha = k.scrimAlpha.coerceIn(0f, 1f),
+            glassRimGlow = k.glassRimGlow,
+            artPack = manifest.artPack
         )
     }
 
@@ -193,31 +221,56 @@ object ThemeManifestEngine {
         keymap: Map<String, String>,
         groupFallbacks: Map<String, String>,
         key: Key
+    ): String? = resolveArtAssetKey(
+        keymap = keymap,
+        groupFallbacks = groupFallbacks,
+        code = key.code,
+        label = key.label,
+        x = key.x,
+        y = key.y,
+        width = key.width,
+        height = key.height
+    )
+
+    /**
+     * Primitive overload kept JVM-unit-testable (no Android [Key] construction needed).
+     * Resolution order: exact `k_<label>`/code key, then Bangla `slot_r<row>_c<col>`,
+     * then `group_fallbacks`.
+     */
+    fun resolveArtAssetKey(
+        keymap: Map<String, String>,
+        groupFallbacks: Map<String, String>,
+        code: Int,
+        label: String?,
+        x: Int,
+        y: Int,
+        width: Int,
+        height: Int
     ): String? {
-        val label = key.label?.lowercase()
-        val exactId = when (key.code) {
+        val lowerLabel = label?.lowercase()
+        val exactId = when (code) {
             Constants.CODE_SPACE -> "k_space"
             Constants.CODE_ENTER -> "k_enter"
             Constants.CODE_SHIFT -> "k_shift"
             Constants.CODE_DELETE -> "k_delete"
             Constants.CODE_SWITCH_ALPHA_SYMBOL -> "k_sym"
             Constants.CODE_EMOJI, Constants.CODE_SHORTCUT -> "k_emoji"
-            else -> if (!label.isNullOrBlank()) "k_$label" else null
+            else -> if (!lowerLabel.isNullOrBlank()) "k_$lowerLabel" else null
         }
         if (exactId != null && keymap.containsKey(exactId)) {
             return keymap[exactId]
         }
 
-        if (key.height > 0 && key.width > 0) {
-            val row = (key.y / key.height).coerceAtLeast(0)
-            val col = (key.x / key.width).coerceAtLeast(0)
+        if (height > 0 && width > 0) {
+            val row = (y / height).coerceAtLeast(0)
+            val col = (x / width).coerceAtLeast(0)
             val slotKey = "slot_r${row}_c${col}"
             if (keymap.containsKey(slotKey)) {
                 return keymap[slotKey]
             }
         }
 
-        val group = when (key.code) {
+        val group = when (code) {
             Constants.CODE_ENTER -> "accent"
             Constants.CODE_SHIFT, Constants.CODE_DELETE,
             Constants.CODE_SWITCH_ALPHA_SYMBOL, Constants.CODE_EMOJI,
@@ -229,12 +282,84 @@ object ThemeManifestEngine {
     }
 }
 
+/** User-facing customization sliders blended on top of Store Themes when not locked. */
+data class KeyStyleOverrides(
+    val keyBorders: Boolean = true,
+    val keyOpacity: Float = 1f,
+    val keyShape: String = "classic"
+)
+
+/**
+ * Reads an art-pack asset's raw bytes for a theme. Implementations must be safe against
+ * missing/encrypted-bundle failures (return null to fall back to code-drawn rendering).
+ */
+interface ArtAssetReader {
+    fun readAsset(themeId: String, isPaid: Boolean, assetPath: String): ByteArray?
+}
+
+/**
+ * Reads device-bound encrypted `.iplustheme` bundles from [ThemeStoreDbHelper], decrypting
+ * once per theme into a small ZIP cache before extracting individual assets.
+ */
+class DbArtAssetReader(private val context: Context) : ArtAssetReader {
+    private val zipCache = object : LruCache<String, ByteArray>(4 * 1024) {
+        override fun sizeOf(key: String, value: ByteArray): Int = (value.size / 1024).coerceAtLeast(1)
+    }
+
+    override fun readAsset(themeId: String, isPaid: Boolean, assetPath: String): ByteArray? {
+        if (!context.isDirectBootUnlocked) return null
+        val deviceHash = ThemeLicenseGuard.computeDeviceHash(context)
+        val zip = zipCache.get(themeId) ?: run {
+            val bytes = ThemeStoreDbHelper.getInstance(context).readArtBundle(themeId, isPaid, deviceHash)
+            if (bytes != null) zipCache.put(themeId, bytes)
+            bytes
+        } ?: return null
+        return ArtBundleCodec.extractAsset(zip, assetPath)
+    }
+}
+
+/** Applies [opacity] (0..1) to an existing color's alpha channel. */
+private fun blendAlpha(@ColorInt color: Int, opacity: Float): Int {
+    val o = if (opacity.isFinite()) opacity.coerceIn(0f, 1f) else 1f
+    return ColorUtils.setAlphaComponent(color, (AndroidColor.alpha(color) * o).roundToInt())
+}
+
 class StoreKeyVisualDelegate(
     private val context: Context,
-    val profile: StoreThemeRenderProfile
+    val profile: StoreThemeRenderProfile,
+    private val style: KeyStyleOverrides = KeyStyleOverrides(),
+    artAssetReader: ArtAssetReader? = null
 ) {
+    private val artAssetReader: ArtAssetReader = artAssetReader ?: DbArtAssetReader(context)
+
+    /** Whether the theme's art bundle is stored encrypted (paid) or plaintext-dir (free). */
+    private val isPaid: Boolean = runCatching {
+        ThemeStoreDbHelper.getInstance(context).getInstalledTheme(profile.themeId)?.isPaid
+    }.getOrNull() ?: false
+
     private val strokePx = dp(profile.keyStrokeWidthDp).roundToInt().coerceAtLeast(0)
-    private val cornerPx = dp(profile.keyCornerRadiusDp)
+
+    /** User's key-shape slider blended on top of the manifest's own corner radius. */
+    private fun effectiveRadiusDp(): Float = when (style.keyShape) {
+        "sharp" -> 2f
+        "rounded" -> 14f
+        else -> profile.keyCornerRadiusDp
+    }
+
+    private val cornerPx = dp(effectiveRadiusDp())
+
+    /** Decoded art bitmaps (keyed by bundle asset path), sized in KB. */
+    private val bitmapCache = object : LruCache<String, Bitmap>(8 * 1024) {
+        override fun sizeOf(key: String, value: Bitmap): Int = (value.byteCount / 1024).coerceAtLeast(1)
+    }
+
+    private fun loadBitmap(assetPath: String): Bitmap? {
+        bitmapCache.get(assetPath)?.let { return it }
+        val bytes = artAssetReader.readAsset(profile.themeId, isPaid, assetPath) ?: return null
+        val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
+        bitmapCache.put(assetPath, bmp)
+        return bmp
+    }
 
     private fun dp(v: Float): Float =
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, context.resources.displayMetrics)
@@ -264,6 +389,13 @@ class StoreKeyVisualDelegate(
     }
 
     fun createKeyboardBackground(): Drawable {
+        // Phase 2: art-pack full backdrop renders as the keyboard background when available.
+        profile.artPack?.bgFullAsset?.let { path ->
+            val bmp = loadBitmap(path)
+            if (bmp != null) {
+                return BitmapDrawable(context.resources, bmp).apply { gravity = Gravity.FILL }
+            }
+        }
         return if (profile.bgGradientColors.size >= 2) {
             GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, profile.bgGradientColors)
         } else {
@@ -274,9 +406,11 @@ class StoreKeyVisualDelegate(
         }
     }
 
-    fun createKeyBackgroundStateList(keyBorders: Boolean): StateListDrawable {
-        val alphaFill = { color: Int -> if (keyBorders) color else AndroidColor.TRANSPARENT }
-        val strokeW = if (keyBorders) strokePx else 0
+    fun createKeyBackgroundStateList(): StateListDrawable {
+        val alphaFill = { color: Int ->
+            if (style.keyBorders) blendAlpha(color, style.keyOpacity) else AndroidColor.TRANSPARENT
+        }
+        val strokeW = if (style.keyBorders) strokePx else 0
         val normal = roundedRect(alphaFill(profile.keyBgColor), cornerPx, profile.keyStrokeColor, strokeW)
         val pressed = roundedRect(profile.keyPressedBgColor, cornerPx, profile.spacebarStrokeColor, strokeW)
         val functional = roundedRect(alphaFill(profile.functionalKeyBgColor), cornerPx, profile.keyStrokeColor, strokeW)
@@ -294,8 +428,41 @@ class StoreKeyVisualDelegate(
     }
 
     fun createSpaceBarBackground(): StateListDrawable {
+        // Phase 2: art-pack spacebar banner composes into a capsule with rim + scrim.
+        profile.artPack?.spacebarAsset?.let { path ->
+            val bmp = loadBitmap(path)
+            if (bmp != null) {
+                val normal = ArtPackKeyBackgroundDrawable(
+                    bitmap = bmp,
+                    radiusPx = cornerPx,
+                    rimColor = profile.spacebarStrokeColor,
+                    rimWidthPx = if (style.keyBorders) dp(profile.keyStrokeWidthDp).coerceAtLeast(dp(1.2f)) else 0f,
+                    scrimAlpha = profile.scrimAlpha,
+                    glow = profile.glassRimGlow,
+                    pressed = false,
+                    pressedOverlay = profile.keyPressedBgColor,
+                    opacity = style.keyOpacity
+                )
+                val pressed = ArtPackKeyBackgroundDrawable(
+                    bitmap = bmp,
+                    radiusPx = cornerPx,
+                    rimColor = profile.spacebarStrokeColor,
+                    rimWidthPx = if (style.keyBorders) dp(profile.keyStrokeWidthDp).coerceAtLeast(dp(1.5f)) else 0f,
+                    scrimAlpha = profile.scrimAlpha,
+                    glow = profile.glassRimGlow,
+                    pressed = true,
+                    pressedOverlay = profile.keyPressedBgColor,
+                    opacity = style.keyOpacity
+                )
+                return StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_pressed), pressed)
+                    addState(intArrayOf(), normal)
+                }
+            }
+        }
+
         val normal = roundedRect(
-            fill = profile.spacebarBgColor,
+            fill = blendAlpha(profile.spacebarBgColor, style.keyOpacity),
             radiusPx = cornerPx,
             strokeColor = profile.spacebarStrokeColor,
             strokeWidth = strokePx.coerceAtLeast(dp(1.2f).roundToInt())
@@ -310,6 +477,31 @@ class StoreKeyVisualDelegate(
             addState(intArrayOf(android.R.attr.state_pressed), pressed)
             addState(intArrayOf(), normal)
         }
+    }
+
+    /**
+     * Phase 2: resolves the key's art asset (`k_a`..`k_m`, `k_shift`, `slot_r*_c*`, group
+     * fallbacks) and composes it inside a rounded capsule with the code-drawn frosted rim,
+     * outer glow, bottom readability scrim, and pressed highlight. Returns null when the
+     * theme has no art-pack or the asset is unavailable (falls back to code-drawn colors).
+     */
+    fun getArtPackKeyBackground(key: Key, isPressed: Boolean): Drawable? {
+        val art = profile.artPack ?: return null
+        // Spacebar is rendered separately via createSpaceBarBackground() (banner + its own rim).
+        if (key.code == Constants.CODE_SPACE) return null
+        val assetPath = ThemeManifestEngine.resolveArtAssetKey(art.keymap, art.groupFallbacks, key) ?: return null
+        val bmp = loadBitmap(assetPath) ?: return null
+        return ArtPackKeyBackgroundDrawable(
+            bitmap = bmp,
+            radiusPx = cornerPx,
+            rimColor = profile.keyStrokeColor,
+            rimWidthPx = if (style.keyBorders) dp(profile.keyStrokeWidthDp).coerceAtLeast(1f) else 0f,
+            scrimAlpha = profile.scrimAlpha,
+            glow = profile.glassRimGlow,
+            pressed = isPressed,
+            pressedOverlay = profile.keyPressedBgColor,
+            opacity = style.keyOpacity
+        )
     }
 
     fun createKeyFeedback(widthPx: Int, heightPx: Int, bottomPaddingPx: Int): Drawable =
@@ -339,4 +531,115 @@ class StoreKeyVisualDelegate(
         if (key.code == Constants.CODE_ENTER) profile.enterKeyFgColor else profile.keyTextColor
 
     fun getKeyHintColor(): Int = profile.keyHintColor
+
+    /**
+     * Code-drawn art key: center-crop bitmap clipped to a rounded capsule, plus top
+     * specular sheen, vertical dark bottom readability scrim, thin outer rim (and a
+     * soft concentric glow when [glass_rim_glow] is set), and a translucent pressed overlay.
+     */
+    private class ArtPackKeyBackgroundDrawable(
+        private val bitmap: Bitmap,
+        private val radiusPx: Float,
+        private val rimColor: Int,
+        private val rimWidthPx: Float,
+        private val scrimAlpha: Float,
+        private val glow: Boolean,
+        private val pressed: Boolean,
+        @ColorInt private val pressedOverlay: Int,
+        private val opacity: Float
+    ) : Drawable() {
+        private val opacityClamped = if (opacity.isFinite()) opacity.coerceIn(0f, 1f) else 1f
+        private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+            alpha = (opacityClamped * 255).roundToInt()
+        }
+        private val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = rimWidthPx
+            color = rimColor
+            alpha = (opacityClamped * 255).roundToInt()
+        }
+
+        override fun draw(canvas: Canvas) {
+            val b = bounds
+            if (b.isEmpty) return
+            val w = b.width().toFloat()
+            val h = b.height().toFloat()
+            val r = radiusPx.coerceAtMost(min(w, h) / 2f)
+            val rect = RectF(b)
+
+            if (glow && rimWidthPx > 0f) {
+                for (i in 1..3) {
+                    rimPaint.color = blendAlpha(rimColor, (0.12f / i) * opacityClamped)
+                    rimPaint.strokeWidth = rimWidthPx + i * rimWidthPx
+                    canvas.drawRoundRect(rect, r, r, rimPaint)
+                }
+            }
+
+            val path = Path().apply { addRoundRect(rect, r, r, Path.Direction.CW) }
+            val save = canvas.save()
+            canvas.clipPath(path)
+
+            val scale = max(w / bitmap.width, h / bitmap.height)
+            val dw = bitmap.width * scale
+            val dh = bitmap.height * scale
+            val left = b.left + (w - dw) / 2f
+            val top = b.top + (h - dh) / 2f
+            canvas.drawBitmap(bitmap, null, RectF(left, top, left + dw, top + dh), bitmapPaint)
+
+            // Vertical dark bottom readability scrim so key text stays readable over art.
+            if (scrimAlpha > 0f) {
+                val scrim = Paint().apply {
+                    shader = LinearGradient(
+                        0f, b.top.toFloat() + h * 0.55f, 0f, b.bottom.toFloat(),
+                        blendAlpha(AndroidColor.BLACK, 0f),
+                        blendAlpha(AndroidColor.BLACK, scrimAlpha * opacityClamped),
+                        Shader.TileMode.CLAMP
+                    )
+                }
+                canvas.drawRect(rect, scrim)
+            }
+
+            // Top specular highlight sheen.
+            val sheen = Paint().apply {
+                shader = LinearGradient(
+                    0f, b.top.toFloat(), 0f, b.top.toFloat() + h * 0.18f,
+                    blendAlpha(AndroidColor.WHITE, 0.10f * opacityClamped),
+                    blendAlpha(AndroidColor.WHITE, 0f),
+                    Shader.TileMode.CLAMP
+                )
+            }
+            canvas.drawRect(rect, sheen)
+
+            // Pressed-state highlight (capped so art stays visible).
+            if (pressed) {
+                val overlayAlpha = min(AndroidColor.alpha(pressedOverlay), 0x59)
+                val pressedPaint = Paint().apply {
+                    color = ColorUtils.setAlphaComponent(pressedOverlay, overlayAlpha)
+                }
+                canvas.drawRect(rect, pressedPaint)
+            }
+
+            canvas.restoreToCount(save)
+
+            // Thin outer rim stroke on top of the capsule.
+            if (rimWidthPx > 0f) {
+                rimPaint.color = rimColor
+                rimPaint.strokeWidth = rimWidthPx
+                canvas.drawRoundRect(rect, r, r, rimPaint)
+            }
+        }
+
+        override fun setAlpha(alpha: Int) {
+            bitmapPaint.alpha = alpha
+            rimPaint.alpha = alpha
+        }
+
+        override fun setColorFilter(colorFilter: ColorFilter?) {
+            bitmapPaint.colorFilter = colorFilter
+            rimPaint.colorFilter = colorFilter
+        }
+
+        @Deprecated("Deprecated in Java")
+        override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+    }
 }

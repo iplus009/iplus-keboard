@@ -83,6 +83,9 @@ data class CatalogThemeItem(
     @SerialName("theme_type") val themeType: String = "color",
     @SerialName("is_paid") val isPaid: Int = 0,
     @SerialName("price_bdt_paisa") val priceBdtPaisa: Int = 0,
+    @SerialName("original_price_bdt_paisa") val originalPriceBdtPaisa: Int = 0,
+    @SerialName("discount_percent") val discountPercent: Int = 0,
+    @SerialName("discount_label") val discountLabel: String = "",
     @SerialName("current_version") val currentVersion: Int = 1,
     @SerialName("preview_url") val previewUrl: String = "",
     @SerialName("accent_hex") val accentHex: String = "#00E676",
@@ -177,7 +180,8 @@ data class RedeemKeyResponse(
     val ok: Boolean = false,
     val receipt: SignedEntitlementReceipt? = null,
     @SerialName("recovery_token") val recoveryToken: String = "",
-    @SerialName("granted_theme_ids") val grantedThemeIds: List<String> = emptyList()
+    @SerialName("granted_theme_ids") val grantedThemeIds: List<String> = emptyList(),
+    @SerialName("account_linked") val accountLinked: Boolean = false
 )
 
 @Serializable
@@ -208,7 +212,22 @@ data class RecoverResponse(
     val ok: Boolean = false,
     val receipt: SignedEntitlementReceipt? = null,
     @SerialName("recovery_token") val recoveryToken: String = "",
-    @SerialName("recovered_theme_ids") val recoveredThemeIds: List<String> = emptyList()
+    @SerialName("recovered_theme_ids") val recoveredThemeIds: List<String> = emptyList(),
+    @SerialName("account_linked") val accountLinked: Boolean = false
+)
+
+@Serializable
+data class AccountUserDto(
+    val id: String = "",
+    val email: String = ""
+)
+
+@Serializable
+data class AccountEntitlementsResponse(
+    val ok: Boolean = false,
+    val user: AccountUserDto? = null,
+    @SerialName("owned_theme_ids") val ownedThemeIds: List<String> = emptyList(),
+    val receipts: List<SignedEntitlementReceipt> = emptyList()
 )
 
 @Serializable
@@ -271,15 +290,22 @@ data class StoreCatalogEntry(
     val themeType: String,
     val isPaid: Boolean,
     val priceBdtPaisa: Int,
+    val originalPriceBdtPaisa: Int = 0,
+    val discountPercent: Int = 0,
+    val discountLabel: String = "",
     val remoteVersion: Int,
     val installedVersion: Int?,
     val accentHex: String,
     val previewUrl: String,
+    val bundleSha256: String? = null,
     val isOwned: Boolean,
     val isDownloaded: Boolean,
     val hasUpdate: Boolean,
     val state: StoreThemeState
-)
+) {
+    val hasDiscount: Boolean
+        get() = isPaid && discountPercent > 0 && originalPriceBdtPaisa > priceBdtPaisa
+}
 
 data class OrderHistoryEntry(
     val orderId: String,

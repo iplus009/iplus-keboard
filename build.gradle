@@ -51,8 +51,8 @@ android {
     defaultConfig {
         minSdk 24
         targetSdk 35
-        versionName "2.1.0"
-        versionCode 20100
+        versionName "2.2.1"
+        versionCode 20201
         setProperty("archivesBaseName", "keybird-v${versionName}")
 
         applicationId 'com.iplus.keyboard'

@@ -10,6 +10,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -35,6 +36,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.futo.inputmethod.latin.BuildConfig
+import org.futo.inputmethod.latin.themestore.domain.ThemeStoreRepository
+import org.futo.inputmethod.latin.themestore.network.SupabaseAuthClient
 import org.futo.inputmethod.latin.uix.BasicThemeProvider
 import org.futo.inputmethod.latin.uix.DynamicThemeProvider
 import org.futo.inputmethod.latin.uix.DynamicThemeProviderOwner
@@ -246,6 +249,7 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
 
         val intent = intent
         if(intent != null) {
+            handleAuthCallbackIntent(intent)
             val destination = intent.getStringExtra("navDest")
             if(destination != null) {
                 lifecycleScope.launch {
@@ -266,6 +270,36 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
                     }
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleAuthCallbackIntent(intent)
+    }
+
+    private fun handleAuthCallbackIntent(intent: Intent?) {
+        if (!SupabaseAuthClient.isAuthCallbackIntent(intent)) return
+        val uriString = intent?.data?.toString() ?: return
+        lifecycleScope.launch {
+            SupabaseAuthClient.handleOAuthCallbackUri(this@SettingsActivity, uriString)
+                .onSuccess { session ->
+                    val repo = ThemeStoreRepository(this@SettingsActivity)
+                    val synced = repo.syncAccountEntitlements().getOrDefault(emptyList())
+                    Toast.makeText(
+                        this@SettingsActivity,
+                        "Signed in as ${session.email} • ${synced.size} owned theme(s) synced",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                .onFailure { err ->
+                    Toast.makeText(
+                        this@SettingsActivity,
+                        err.message ?: "Google sign-in failed",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
         }
     }
 
