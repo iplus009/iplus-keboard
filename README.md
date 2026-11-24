@@ -15,7 +15,7 @@
 
 **Keybird** (formerly *iPlus Keyboard*) is an Android keyboard project focused on Bangla and English input, a customizable typing experience, and a clean app-facing interface built on top of the open-source keyboard engine while preserving upstream licensing and attribution.
 
-> **Download:** Get the latest universal Android APK (`Keybird-v2.2.1.apk` via CI release) from **[Releases (Latest APK)](https://github.com/iplus009/iplus-keboard/releases/latest)** or browse all builds on the **[Releases page](https://github.com/iplus009/iplus-keboard/releases)**.
+> **Download:** Get the latest universal Android APK (`Keybird-v4.1.2.apk` via CI release) from **[Releases (Latest APK)](https://github.com/iplus009/iplus-keboard/releases/latest)** or browse all builds on the **[Releases page](https://github.com/iplus009/iplus-keboard/releases)**.
 >
 > **Development status:** Universal APK builds are generated via GitHub Actions. Physical-device regression testing is ongoing.
 
@@ -25,12 +25,43 @@
 |---|---|
 | Platform | Android (API 24–35) |
 | App name | Keybird |
-| Version | `v2.2.1` (`versionCode 20201`) |
+| Version | `v4.1.2` (`versionCode 40102`) |
 | Main input focus | Bangla and English |
 | Source branch | `main` |
 | Application ID | `com.iplus.keyboard` (retained for compatibility) |
 | Build channel | GitHub Actions — stable debug universal APK |
 | Official Telegram | [@ismailq01appsstore](https://t.me/ismailq01appsstore) |
+
+## v4.1.2 Demo Showcase
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/v412-home-bento.png" alt="Keybird v4.1.2 Settings Home Bento UI with Theme Store, Themes, My Stickers, and Bengali Layout cards" width="210" />
+      <br />
+      <b>Keybird v4.1.2 Studio</b><br />
+      <sub>Bento quick grid, My Stickers &amp; Bangla toggles</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/v412-aurora-glass-ime.png" alt="Keybird v4.1.2 Aurora Glass live theme with frosted keycaps and crisp key hints" width="210" />
+      <br />
+      <b>Aurora Glass Live IME</b><br />
+      <sub>Frosted glass capsules, motion &amp; crisp hints</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/v412-theme-store.png" alt="Keybird Theme Store with 660+ themes, fonts, and sticker packs" width="210" />
+      <br />
+      <b>Theme, Font &amp; Sticker Store</b><br />
+      <sub>660+ live items, #5-digit search &amp; cloud sync</sub>
+    </td>
+    <td align="center" width="25%">
+      <img src="docs/assets/showcase/v412-themes-picker.png" alt="Installed and built-in Theme Picker with mini keycap previews and My Stickers shortcut" width="210" />
+      <br />
+      <b>Installed Themes &amp; Stickers</b><br />
+      <sub>Mini keycap previews, custom photos &amp; presets</sub>
+    </td>
+  </tr>
+</table>
 
 ## What makes Keybird different
 

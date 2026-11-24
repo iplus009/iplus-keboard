@@ -13,6 +13,7 @@ import org.futo.inputmethod.latin.themestore.model.DeactivateRequest
 import org.futo.inputmethod.latin.themestore.model.KeybirdThemeManifestV1
 import org.futo.inputmethod.latin.themestore.model.OrderHistoryEntry
 import org.futo.inputmethod.latin.themestore.model.PaymentAccountsDto
+import org.futo.inputmethod.latin.themestore.model.ProductTabFilter
 import org.futo.inputmethod.latin.themestore.model.RecoverRequest
 import org.futo.inputmethod.latin.themestore.model.RedeemKeyRequest
 import org.futo.inputmethod.latin.themestore.model.SignedEntitlementReceipt
@@ -54,6 +55,7 @@ object StoreCatalogFilter {
         }
         StoreCatalogEntry(
             themeId = item.themeId,
+            shortCode = item.shortCode,
             title = item.title,
             description = item.description,
             category = item.category,
@@ -67,6 +69,7 @@ object StoreCatalogFilter {
             installedVersion = rec?.installedVersion,
             accentHex = item.accentHex,
             previewUrl = item.previewUrl,
+            previewUrls = item.previewUrls,
             bundleSha256 = item.bundleSha256,
             isOwned = isOwned,
             isDownloaded = isDownloaded,
@@ -79,11 +82,18 @@ object StoreCatalogFilter {
         entries: List<StoreCatalogEntry>,
         filter: ThemeFilter,
         query: String,
-        categoryFilter: String = "all"
+        categoryFilter: String = "all",
+        productTab: ProductTabFilter = ProductTabFilter.ALL
     ): List<StoreCatalogEntry> {
-        val q = query.trim().lowercase()
+        val q = query.trim().lowercase().removePrefix("#")
         val cat = categoryFilter.trim().lowercase()
         return entries.filter { entry ->
+            val matchesProductTab = when (productTab) {
+                ProductTabFilter.ALL -> true
+                ProductTabFilter.THEMES -> entry.themeType == "color" || entry.themeType == "art_pack"
+                ProductTabFilter.FONTS -> entry.themeType == "font"
+                ProductTabFilter.STICKERS -> entry.themeType == "sticker"
+            }
             val matchesFilter = when (filter) {
                 ThemeFilter.ALL -> true
                 ThemeFilter.FREE -> !entry.isPaid
@@ -92,10 +102,11 @@ object StoreCatalogFilter {
             }
             val matchesCategory = cat == "all" || cat.isEmpty() || entry.category.equals(cat, ignoreCase = true)
             val matchesQuery = q.isEmpty() ||
+                entry.shortCode.lowercase().contains(q) ||
                 entry.title.lowercase().contains(q) ||
                 entry.category.lowercase().contains(q) ||
                 entry.themeId.lowercase().contains(q)
-            matchesFilter && matchesCategory && matchesQuery
+            matchesProductTab && matchesFilter && matchesCategory && matchesQuery
         }
     }
 }
@@ -117,6 +128,16 @@ class ThemeStoreRepository(
 
     var lastPaymentAccounts: PaymentAccountsDto = PaymentAccountsDto()
         private set
+
+    var supportTelegramHandle: String = "@boname3"
+        private set
+
+    fun getActiveFontId(): String? = db.getActiveFontId()
+
+    fun setActiveFontId(fontId: String?) {
+        db.setActiveFontId(fontId)
+        ThemeRegistry.notifyChanged()
+    }
 
     fun getCachedEntries(): List<StoreCatalogEntry> {
         val catalog = db.getCatalog()
@@ -177,6 +198,9 @@ class ThemeStoreRepository(
         val catRes = api.fetchCatalog()
         return catRes.map { resp ->
             lastPaymentAccounts = resp.paymentAccounts
+            if (resp.supportTelegram.isNotBlank()) {
+                supportTelegramHandle = resp.supportTelegram
+            }
             db.replaceCatalog(resp.themes)
             getCachedEntries()
         }
@@ -188,7 +212,7 @@ class ThemeStoreRepository(
                 api.downloadFreeBundle(entry.themeId).getOrThrow()
             } else {
                 val receipt = findReceiptForTheme(entry.themeId)
-                    ?: error("No valid license found for ${entry.title}. Redeem a 1-time API key first.")
+                    ?: error("No valid license found for ${entry.title}. Redeem an API key first.")
                 api.downloadPaidBundle(entry.themeId, deviceHash, receipt).getOrThrow()
             }
 
@@ -203,8 +227,30 @@ class ThemeStoreRepository(
                 isPaid = entry.isPaid,
                 bundleSha256 = bundleSha
             )
-            applyInstalledTheme(entry.themeId)
+            when (entry.themeType) {
+                "font" -> setActiveFontId(entry.themeId)
+                "sticker" -> {
+                    extractStickerPackToShareDir(manifest, entry.isPaid, bundle.zipBytes)
+                    ThemeRegistry.notifyChanged()
+                }
+                else -> applyInstalledTheme(entry.themeId)
+            }
             entry.themeId
+        }
+    }
+
+    private fun extractStickerPackToShareDir(
+        manifest: KeybirdThemeManifestV1,
+        isPaid: Boolean,
+        rawZipBytes: ByteArray?
+    ) {
+        val pack = manifest.stickerPack ?: return
+        val zip = rawZipBytes ?: db.readArtBundle(manifest.themeId, isPaid, deviceHash) ?: return
+        val dir = db.stickerShareDir(manifest.themeId)
+        for (stk in pack.stickers) {
+            val bytes = ArtBundleCodec.extractAsset(zip, stk.asset) ?: continue
+            val ext = if (stk.asset.endsWith(".png", ignoreCase = true)) "png" else "webp"
+            java.io.File(dir, "${stk.id}.$ext").writeBytes(bytes)
         }
     }
 
@@ -310,7 +356,10 @@ class ThemeStoreRepository(
             ThemeRegistry.notifyChanged()
             RedeemResult(
                 grantedThemeIds = targets,
-                recoveryToken = body.recoveryToken
+                recoveryToken = body.recoveryToken,
+                keyKind = body.keyKind,
+                claimNumber = body.claimNumber,
+                maxClaims = body.maxClaims
             )
         }
     }
@@ -462,5 +511,8 @@ class ThemeStoreRepository(
 
 data class RedeemResult(
     val grantedThemeIds: List<String>,
-    val recoveryToken: String
+    val recoveryToken: String,
+    val keyKind: String = "standard",
+    val claimNumber: Int? = null,
+    val maxClaims: Int? = null
 )

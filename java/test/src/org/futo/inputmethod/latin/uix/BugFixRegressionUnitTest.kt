@@ -14,6 +14,7 @@ import org.futo.inputmethod.latin.uix.actions.EmojiItemItem
 import org.futo.inputmethod.latin.uix.actions.EmojiViewItem
 import org.futo.inputmethod.latin.uix.actions.OneHandedAction
 import org.futo.inputmethod.latin.uix.actions.OneHandedModeHelper
+import org.futo.inputmethod.latin.uix.actions.StickerAction
 import org.futo.inputmethod.latin.uix.actions.buildVoiceSpeechLanguageOptions
 import org.futo.inputmethod.latin.uix.actions.emoji.EmojiItem
 import org.futo.inputmethod.latin.uix.actions.resolveCategoryForScrollPosition
@@ -243,9 +244,12 @@ class BugFixRegressionUnitTest {
             "more"
         )
         assertEquals(expectedLegacyPrefix, keys.take(expectedLegacyPrefix.size))
-        assertEquals("one_handed", keys.last())
-        assertEquals(18, keys.size)
+        // New actions are appended, so legacy indexes above stay byte-for-byte stable.
+        assertEquals("one_handed", keys[expectedLegacyPrefix.size])
+        assertEquals("stickers", keys.last())
+        assertEquals(19, keys.size)
         assertTrue(DefaultActionSettings[ActionCategory.Favorites].orEmpty().contains(OneHandedAction))
+        assertTrue(DefaultActionSettings[ActionCategory.Favorites].orEmpty().contains(StickerAction))
     }
 
     @Test

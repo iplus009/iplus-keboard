@@ -1,0 +1,48 @@
+{
+  "domain": "color",
+  "query": "minimal monochrome",
+  "file": "colors.csv",
+  "count": 2,
+  "results": [
+    {
+      "Product Type": "Portfolio/Personal",
+      "Primary": "#18181B",
+      "On Primary": "#FFFFFF",
+      "Secondary": "#3F3F46",
+      "On Secondary": "#FFFFFF",
+      "Accent": "#2563EB",
+      "On Accent": "#FFFFFF",
+      "Background": "#FAFAFA",
+      "Foreground": "#09090B",
+      "Card": "#FFFFFF",
+      "Card Foreground": "#09090B",
+      "Muted": "#E8ECF0",
+      "Muted Foreground": "#475569",
+      "Border": "#E4E4E7",
+      "Destructive": "#DC2626",
+      "On Destructive": "#FFFFFF",
+      "Ring": "#18181B",
+      "Notes": "Monochrome + blue accent"
+    },
+    {
+      "Product Type": "Architecture / Interior",
+      "Primary": "#171717",
+      "On Primary": "#FFFFFF",
+      "Secondary": "#404040",
+      "On Secondary": "#FFFFFF",
+      "Accent": "#A16207",
+      "On Accent": "#FFFFFF",
+      "Background": "#FFFFFF",
+      "Foreground": "#171717",
+      "Card": "#FFFFFF",
+      "Card Foreground": "#171717",
+      "Muted": "#E8ECF0",
+      "Muted Foreground": "#475569",
+      "Border": "#E5E5E5",
+      "Destructive": "#DC2626",
+      "On Destructive": "#FFFFFF",
+      "Ring": "#171717",
+      "Notes": "Minimal black + accent gold [Accent adjusted from #D4AF37]"
+    }
+  ]
+}

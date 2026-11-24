@@ -1,0 +1,1532 @@
+[
+ {
+  "id": "kb_pilot_matte_bauhaus_01",
+  "family": "matte_bauhaus",
+  "title": "Chalk and slate classroom 1",
+  "idx": 0,
+  "is_light": true,
+  "bg_stops": [
+   "#C6C0B3",
+   "#C6C0B3"
+  ],
+  "radius": 4,
+  "stroke": 0,
+  "font": "clean",
+  "effect": "glass",
+  "multi": true,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Chalk and slate classroom",
+  "focal": "Matte key pattern",
+  "pressed_pos": [
+   2,
+   1
+  ],
+  "key_color_map": {
+   "palette": [
+    "#FAF7F2",
+    "#B6880C",
+    "#2A5288",
+    "#C23636",
+    "#1C1D20"
+   ],
+   "patternMode": "bauhaus_cycle",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "glass",
+   "pressColor": "#2A5288",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "71c27662cdd195869fb1d1724cddbbcf1b67c563e40cd79404ee070729371494",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_matte_bauhaus_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_matte_bauhaus_02",
+  "family": "matte_bauhaus",
+  "title": "Chalk and slate classroom 2",
+  "idx": 1,
+  "is_light": true,
+  "bg_stops": [
+   "#B3ACBF",
+   "#B3ACBF"
+  ],
+  "radius": 6,
+  "stroke": 0,
+  "font": "doto",
+  "effect": "glass",
+  "multi": true,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Chalk and slate classroom",
+  "focal": "Matte key pattern",
+  "pressed_pos": [
+   1,
+   2
+  ],
+  "key_color_map": {
+   "palette": [
+    "#FBF9F4",
+    "#B47312",
+    "#335C67",
+    "#9E2A2B",
+    "#1B1F24"
+   ],
+   "patternMode": "bauhaus_cycle",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "glass",
+   "pressColor": "#335C67",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "07c6525d6d4ee22704a0cbb40b3e737ffe6d440198d1cff203a68cadf0a94fb0",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_matte_bauhaus_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_paper_ink_01",
+  "family": "paper_ink",
+  "title": "Warm newsprint 1",
+  "idx": 0,
+  "is_light": true,
+  "bg_stops": [
+   "#E7DBEB",
+   "#E7DBEB"
+  ],
+  "radius": 6,
+  "stroke": 1.0,
+  "font": "elegant",
+  "effect": "touch",
+  "multi": false,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Warm newsprint",
+  "focal": "Ink hairline",
+  "pressed_pos": [
+   1,
+   7
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "touch",
+   "pressColor": "#8839EF",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "ae5c9e9949ca62b87e0e06b275afeca925574682ef0d576b8be894a8ee3ef6e4",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_paper_ink_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_paper_ink_02",
+  "family": "paper_ink",
+  "title": "Warm newsprint 2",
+  "idx": 1,
+  "is_light": true,
+  "bg_stops": [
+   "#F4DBE6",
+   "#F4DBE6"
+  ],
+  "radius": 8,
+  "stroke": 1.0,
+  "font": "clean",
+  "effect": "touch",
+  "multi": false,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Warm newsprint",
+  "focal": "Ink hairline",
+  "pressed_pos": [
+   2,
+   8
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "touch",
+   "pressColor": "#B4637A",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "e21140fa5bff17d4fff58b3f048b19f6af5f5febe09382e57b17ad2e612cfecb",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_paper_ink_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_pastel_soft_01",
+  "family": "pastel_soft",
+  "title": "Sylhet tea mist 1",
+  "idx": 0,
+  "is_light": true,
+  "bg_stops": [
+   "#F2D9D9",
+   "#F2D9D9"
+  ],
+  "radius": 12,
+  "stroke": 0,
+  "font": "clean",
+  "effect": "ripple",
+  "multi": false,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Sylhet tea mist",
+  "focal": "Soft tonal key",
+  "pressed_pos": [
+   2,
+   0
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "ripple",
+   "pressColor": "#8839EF",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "9862a11f1afacc656e285e378361641a4c95954361960363454d6477de9dbb06",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_pastel_soft_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_pastel_soft_02",
+  "family": "pastel_soft",
+  "title": "Sylhet tea mist 2",
+  "idx": 1,
+  "is_light": true,
+  "bg_stops": [
+   "#F2D9E8",
+   "#F2D9E8"
+  ],
+  "radius": 16,
+  "stroke": 0,
+  "font": "clean",
+  "effect": "ripple",
+  "multi": false,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Sylhet tea mist",
+  "focal": "Soft tonal key",
+  "pressed_pos": [
+   1,
+   1
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "ripple",
+   "pressColor": "#B4637A",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "4bbc1bebe1a758f6ffe047e2487e34e1b60edd2d098e81154b8ce685076e7ef3",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_pastel_soft_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_earth_clay_01",
+  "family": "earth_clay",
+  "title": "Clay pot and sand 1",
+  "idx": 0,
+  "is_light": true,
+  "bg_stops": [
+   "#E8D6C1",
+   "#E8D6C1"
+  ],
+  "radius": 6,
+  "stroke": 0,
+  "font": "clean",
+  "effect": "3d_live_motion",
+  "multi": false,
+  "key_style": "ceramic_3d",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Clay pot and sand",
+  "focal": "Opaque earth key",
+  "pressed_pos": [
+   2,
+   0
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "3d_live_motion",
+   "pressColor": "#8839EF",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "b9d288ea5728976aad9ad083553f63bdeb435f08331a747d7a1fe5ae68bde835",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_earth_clay_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_earth_clay_02",
+  "family": "earth_clay",
+  "title": "Clay pot and sand 2",
+  "idx": 1,
+  "is_light": true,
+  "bg_stops": [
+   "#D6CCD6",
+   "#D6CCD6"
+  ],
+  "radius": 12,
+  "stroke": 1.0,
+  "font": "elegant",
+  "effect": "3d_live_motion",
+  "multi": false,
+  "key_style": "ceramic_3d",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Clay pot and sand",
+  "focal": "Opaque earth key",
+  "pressed_pos": [
+   1,
+   1
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "3d_live_motion",
+   "pressColor": "#B4637A",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "9fa21abbe6d187bbbe025142387c4f44462d512db5a08a2d1d14742e988049a9",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_earth_clay_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_amoled_minimal_01",
+  "family": "amoled_minimal",
+  "title": "Night window 1",
+  "idx": 0,
+  "is_light": false,
+  "bg_stops": [
+   "#000000",
+   "#000000"
+  ],
+  "radius": 8,
+  "stroke": 0,
+  "font": "inter",
+  "effect": "glass",
+  "multi": false,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Night window",
+  "focal": "Enter accent only",
+  "pressed_pos": [
+   2,
+   8
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "glass",
+   "pressColor": "#E58832",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "9f9a7d3b49410905bfac83720d8e9e9c0520a3d02c9238346f7a73d316125788",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_amoled_minimal_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_amoled_minimal_02",
+  "family": "amoled_minimal",
+  "title": "Night window 2",
+  "idx": 1,
+  "is_light": false,
+  "bg_stops": [
+   "#000000",
+   "#000000"
+  ],
+  "radius": 12,
+  "stroke": 0,
+  "font": "inter",
+  "effect": "glass",
+  "multi": false,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Night window",
+  "focal": "Enter accent only",
+  "pressed_pos": [
+   1,
+   0
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "glass",
+   "pressColor": "#A4E532",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "ec4147fbcd8e618121bdb18f6c544731179af928df35756aa57582b5054110fd",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_amoled_minimal_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_graphite_pro_01",
+  "family": "graphite_pro",
+  "title": "Graphite workshop 1",
+  "idx": 0,
+  "is_light": false,
+  "bg_stops": [
+   "#251E2F",
+   "#251E2F"
+  ],
+  "radius": 6,
+  "stroke": 0,
+  "font": "inter",
+  "effect": "3d_live_motion",
+  "multi": false,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Graphite workshop",
+  "focal": "Surface step",
+  "pressed_pos": [
+   1,
+   5
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "3d_live_motion",
+   "pressColor": "#CBA6F7",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "e2c86be897ca975c84e8589976b3a4efb6fdd027f8a09a2080b5f5af7a7a727b",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_graphite_pro_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_graphite_pro_02",
+  "family": "graphite_pro",
+  "title": "Graphite workshop 2",
+  "idx": 1,
+  "is_light": false,
+  "bg_stops": [
+   "#202024",
+   "#202024"
+  ],
+  "radius": 8,
+  "stroke": 1.0,
+  "font": "inter",
+  "effect": "3d_live_motion",
+  "multi": false,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Graphite workshop",
+  "focal": "Surface step",
+  "pressed_pos": [
+   2,
+   6
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "3d_live_motion",
+   "pressColor": "#F38BA8",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "b2fd26078dc203cc2ed8422edcb5118499171a7cc3c4f7556c963b54ce02bde6",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_graphite_pro_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_bangla_heritage_01",
+  "family": "bangla_heritage",
+  "title": "Nakshi Kantha stitch 1",
+  "idx": 0,
+  "is_light": true,
+  "bg_stops": [
+   "#0A1B14",
+   "#0A1B14"
+  ],
+  "radius": 6,
+  "stroke": 1.0,
+  "font": "clean",
+  "effect": "touch",
+  "multi": false,
+  "key_style": "borderless",
+  "key_alpha": 0.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Nakshi Kantha stitch",
+  "focal": "Patterned key",
+  "pressed_pos": [
+   2,
+   8
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "touch",
+   "pressColor": "#E53922",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "87aea6888f399a107ed3a8650adce4d742fe6db09325b152f04629eb408652a3",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_bangla_heritage_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_bangla_heritage_02",
+  "family": "bangla_heritage",
+  "title": "Nakshi Kantha stitch 2",
+  "idx": 1,
+  "is_light": true,
+  "bg_stops": [
+   "#0A1634",
+   "#0A1634"
+  ],
+  "radius": 12,
+  "stroke": 1.0,
+  "font": "clean",
+  "effect": "touch",
+  "multi": false,
+  "key_style": "borderless",
+  "key_alpha": 0.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Nakshi Kantha stitch",
+  "focal": "Patterned key",
+  "pressed_pos": [
+   1,
+   0
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "touch",
+   "pressColor": "#9BE522",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "4035155c13eb4f528261075c683ac3a96b5db5a89ccd3fdf95b6182f4f65ffa1",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_bangla_heritage_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_seasonal_01",
+  "family": "seasonal",
+  "title": "Monsoon and mustard field 1",
+  "idx": 0,
+  "is_light": true,
+  "bg_stops": [
+   "#D3E6E8",
+   "#D3E6E8"
+  ],
+  "radius": 8,
+  "stroke": 0,
+  "font": "clean",
+  "effect": "aurora",
+  "multi": false,
+  "key_style": "borderless",
+  "key_alpha": 0.0,
+  "rainbow_text": false,
+  "is_live": true,
+  "world": "Monsoon and mustard field",
+  "focal": "Season key tint",
+  "pressed_pos": [
+   1,
+   8
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "assets/bg/live.webp",
+   "pressEffect": "aurora",
+   "pressColor": "#751522",
+   "parallaxDp": 6,
+   "particles": true,
+   "particleDensity": 4,
+   "particleColor": "#751522"
+  },
+  "sha256": "5be3a764a2dec34f0e46acd16de1e6c2b3190b5358d244a144d5f9ac0751bf6b",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_seasonal_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_seasonal_02",
+  "family": "seasonal",
+  "title": "Monsoon and mustard field 2",
+  "idx": 1,
+  "is_light": true,
+  "bg_stops": [
+   "#D6D7E8",
+   "#D6D7E8"
+  ],
+  "radius": 12,
+  "stroke": 1.0,
+  "font": "clean",
+  "effect": "aurora",
+  "multi": false,
+  "key_style": "glass",
+  "key_alpha": 0.54,
+  "rainbow_text": false,
+  "is_live": true,
+  "world": "Monsoon and mustard field",
+  "focal": "Season key tint",
+  "pressed_pos": [
+   2,
+   0
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "assets/bg/live.webp",
+   "pressEffect": "aurora",
+   "pressColor": "#123C75",
+   "parallaxDp": 6,
+   "particles": true,
+   "particleDensity": 4,
+   "particleColor": "#123C75"
+  },
+  "sha256": "54707f4808a7eb32116e95778d7b3a1f9ccf617b8164f7010ddfaecc90780041",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_seasonal_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_gradient_calm_01",
+  "family": "gradient_calm",
+  "title": "One-hue dawn 1",
+  "idx": 0,
+  "is_light": true,
+  "bg_stops": [
+   "#F0E6F2",
+   "#CC9999"
+  ],
+  "radius": 8,
+  "stroke": 0,
+  "font": "clean",
+  "effect": "glass",
+  "multi": false,
+  "key_style": "glass",
+  "key_alpha": 0.62,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "One-hue dawn",
+  "focal": "Single-hue tone shift",
+  "pressed_pos": [
+   2,
+   8
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "glass",
+   "pressColor": "#8839EF",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "40dbc4c86e04da86a17c32212f80ace2202dbcb55011370aeba698152d87da30",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_gradient_calm_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_gradient_calm_02",
+  "family": "gradient_calm",
+  "title": "One-hue dawn 2",
+  "idx": 1,
+  "is_light": true,
+  "bg_stops": [
+   "#F6ECEB",
+   "#99CCC4"
+  ],
+  "radius": 16,
+  "stroke": 0,
+  "font": "inter",
+  "effect": "glass",
+  "multi": false,
+  "key_style": "borderless",
+  "key_alpha": 0.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "One-hue dawn",
+  "focal": "Single-hue tone shift",
+  "pressed_pos": [
+   1,
+   0
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "glass",
+   "pressColor": "#B4637A",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "166571c1ec58dbb1d47a6446a20500e17c51004b2bea7b0e772905ba5aa02e19",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_gradient_calm_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_retro_terminal_01",
+  "family": "retro_terminal",
+  "title": "Phosphor terminal 1",
+  "idx": 0,
+  "is_light": false,
+  "bg_stops": [
+   "#070D0A",
+   "#070D0A"
+  ],
+  "radius": 0,
+  "stroke": 1.0,
+  "font": "tech_mono",
+  "effect": "live",
+  "multi": false,
+  "key_style": "outline",
+  "key_alpha": 0.2,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Phosphor terminal",
+  "focal": "Mono glow text",
+  "pressed_pos": [
+   2,
+   1
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "live",
+   "pressColor": "#2BE477",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "e38607f8e84fa8ca171a817631d5f5a8102a960e6c37b3df0a0f30c8f86474d4",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_retro_terminal_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_retro_terminal_02",
+  "family": "retro_terminal",
+  "title": "Phosphor terminal 2",
+  "idx": 1,
+  "is_light": false,
+  "bg_stops": [
+   "#070D0A",
+   "#070D0A"
+  ],
+  "radius": 2,
+  "stroke": 1.0,
+  "font": "tech_mono",
+  "effect": "live",
+  "multi": false,
+  "key_style": "outline",
+  "key_alpha": 0.2,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Phosphor terminal",
+  "focal": "Mono glow text",
+  "pressed_pos": [
+   1,
+   2
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "live",
+   "pressColor": "#FF9420",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "128525db69360d5b4133efaecdf27da650a600bd93fb7c2f11e4077978f2d875",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_retro_terminal_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_pixel_8bit_01",
+  "family": "pixel_8bit",
+  "title": "Handheld console 1",
+  "idx": 0,
+  "is_light": true,
+  "bg_stops": [
+   "#CFE2DB",
+   "#CFE2DB"
+  ],
+  "radius": 0,
+  "stroke": 2.0,
+  "font": "doto",
+  "effect": "3d_live_motion",
+  "multi": false,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Handheld console",
+  "focal": "Square pixel key",
+  "pressed_pos": [
+   1,
+   0
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "3d_live_motion",
+   "pressColor": "#755211",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "b5c60d83dc6fb67a8a2a79e97d28d1ab95a1e822ebf0ee750a62f2205824e1c0",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_pixel_8bit_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_pixel_8bit_02",
+  "family": "pixel_8bit",
+  "title": "Handheld console 2",
+  "idx": 1,
+  "is_light": true,
+  "bg_stops": [
+   "#E4CEDD",
+   "#E4CEDD"
+  ],
+  "radius": 0,
+  "stroke": 2.0,
+  "font": "doto",
+  "effect": "3d_live_motion",
+  "multi": false,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Handheld console",
+  "focal": "Square pixel key",
+  "pressed_pos": [
+   2,
+   1
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "3d_live_motion",
+   "pressColor": "#361375",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "58237688729aee957a50b1a1f4fb1457075f21ee7e98c6f2734c9cff94127dcb",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_pixel_8bit_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_neon_night_01",
+  "family": "neon_night",
+  "title": "Neon signage 1",
+  "idx": 0,
+  "is_light": false,
+  "bg_stops": [
+   "#04050A",
+   "#04050A"
+  ],
+  "radius": 8,
+  "stroke": 1.5,
+  "font": "inter",
+  "effect": "neon",
+  "multi": false,
+  "key_style": "outline",
+  "key_alpha": 0.14,
+  "rainbow_text": false,
+  "is_live": true,
+  "world": "Neon signage",
+  "focal": "One neon rim",
+  "pressed_pos": [
+   1,
+   6
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "assets/bg/live.webp",
+   "pressEffect": "neon",
+   "pressColor": "#13D9F4",
+   "parallaxDp": 6,
+   "particles": true,
+   "particleDensity": 4,
+   "particleColor": "#F41867"
+  },
+  "sha256": "7f0e9aca20ff4c6068103e8d3a7ba39d57d441e71dc4ed82ee9cb286187f0871",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_neon_night_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_neon_night_02",
+  "family": "neon_night",
+  "title": "Neon signage 2",
+  "idx": 1,
+  "is_light": false,
+  "bg_stops": [
+   "#04050A",
+   "#04050A"
+  ],
+  "radius": 12,
+  "stroke": 1.5,
+  "font": "inter",
+  "effect": "neon",
+  "multi": false,
+  "key_style": "borderless",
+  "key_alpha": 0.0,
+  "rainbow_text": true,
+  "is_live": false,
+  "world": "Neon signage",
+  "focal": "One neon rim",
+  "pressed_pos": [
+   2,
+   7
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "neon",
+   "pressColor": "#1320F4",
+   "parallaxDp": 0,
+   "particles": true,
+   "particleDensity": 3,
+   "particleColor": "#F47E18"
+  },
+  "sha256": "aa6c169dfd1402c9fec7efda40b4920a4de0561be6ad0c4b184feaf279adff10",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_neon_night_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_kawaii_cute_01",
+  "family": "kawaii_cute",
+  "title": "Paper sticker album 1",
+  "idx": 0,
+  "is_light": true,
+  "bg_stops": [
+   "#FBDAE0",
+   "#FBDAE0"
+  ],
+  "radius": 16,
+  "stroke": 0,
+  "font": "clean",
+  "effect": "aurora",
+  "multi": false,
+  "key_style": "pill",
+  "key_alpha": 0.85,
+  "rainbow_text": false,
+  "is_live": true,
+  "world": "Paper sticker album",
+  "focal": "Soft dot pattern",
+  "pressed_pos": [
+   2,
+   1
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "assets/bg/live.webp",
+   "pressEffect": "aurora",
+   "pressColor": "#756F0D",
+   "parallaxDp": 6,
+   "particles": true,
+   "particleDensity": 4,
+   "particleColor": "#756F0D"
+  },
+  "sha256": "936738abc466d32367626b0f571ef7757441bad4c95a31a143a774dc8e5c0672",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_kawaii_cute_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_kawaii_cute_02",
+  "family": "kawaii_cute",
+  "title": "Paper sticker album 2",
+  "idx": 1,
+  "is_light": true,
+  "bg_stops": [
+   "#E4F1E5",
+   "#E4F1E5"
+  ],
+  "radius": 24,
+  "stroke": 0,
+  "font": "clean",
+  "effect": "aurora",
+  "multi": false,
+  "key_style": "glass",
+  "key_alpha": 0.58,
+  "rainbow_text": false,
+  "is_live": true,
+  "world": "Paper sticker album",
+  "focal": "Soft dot pattern",
+  "pressed_pos": [
+   1,
+   2
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "assets/bg/live.webp",
+   "pressEffect": "aurora",
+   "pressColor": "#5A2875",
+   "parallaxDp": 6,
+   "particles": true,
+   "particleDensity": 4,
+   "particleColor": "#5A2875"
+  },
+  "sha256": "3fa285ad8bb2a1a426c20d898ca004ed80685c4aee050f6c4b2d6b8b0f16fc8f",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_kawaii_cute_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_high_contrast_a11y_01",
+  "family": "high_contrast_a11y",
+  "title": "Signal black and white 1",
+  "idx": 0,
+  "is_light": true,
+  "bg_stops": [
+   "#FFE8F3",
+   "#FFE8F3"
+  ],
+  "radius": 6,
+  "stroke": 2.0,
+  "font": "clean",
+  "effect": "glass",
+  "multi": false,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Signal black and white",
+  "focal": "Bold hairline",
+  "pressed_pos": [
+   2,
+   7
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "glass",
+   "pressColor": "#000000",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "f7f4b76456738316add69b419f39ed0960dbed150dbffd2559a5babc70525014",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_high_contrast_a11y_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_high_contrast_a11y_02",
+  "family": "high_contrast_a11y",
+  "title": "Signal black and white 2",
+  "idx": 1,
+  "is_light": false,
+  "bg_stops": [
+   "#000000",
+   "#000000"
+  ],
+  "radius": 6,
+  "stroke": 2.0,
+  "font": "clean",
+  "effect": "glass",
+  "multi": false,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Signal black and white",
+  "focal": "Bold hairline",
+  "pressed_pos": [
+   1,
+   8
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "glass",
+   "pressColor": "#FFFFFF",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "fb2694211bbfa7f756d35a972220e4673e8431fa3a0b090de7e7fae7400b8fce",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_high_contrast_a11y_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_gaming_rgb_01",
+  "family": "gaming_rgb",
+  "title": "Matte obsidian desk 1",
+  "idx": 0,
+  "is_light": false,
+  "bg_stops": [
+   "#04050A",
+   "#04050A"
+  ],
+  "radius": 4,
+  "stroke": 1.5,
+  "font": "tech_mono",
+  "effect": "neon",
+  "multi": false,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Matte obsidian desk",
+  "focal": "WASD accent",
+  "pressed_pos": [
+   1,
+   5
+  ],
+  "key_color_map": {
+   "palette": [
+    "#2A2E3A",
+    "#18F413"
+   ],
+   "patternMode": "wasd_accent",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "neon",
+   "pressColor": "#18F413",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "91180e759ff0e5f13e90ab07bd2ca5467286a0eeced9eb6a1437e8e488addeae",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_gaming_rgb_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_gaming_rgb_02",
+  "family": "gaming_rgb",
+  "title": "Matte obsidian desk 2",
+  "idx": 1,
+  "is_light": false,
+  "bg_stops": [
+   "#04050A",
+   "#04050A"
+  ],
+  "radius": 8,
+  "stroke": 1.5,
+  "font": "tech_mono",
+  "effect": "neon",
+  "multi": false,
+  "key_style": "classic",
+  "key_alpha": 1.0,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Matte obsidian desk",
+  "focal": "WASD accent",
+  "pressed_pos": [
+   2,
+   6
+  ],
+  "key_color_map": {
+   "palette": [
+    "#2A2E3A",
+    "#13F4C8"
+   ],
+   "patternMode": "wasd_accent",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "neon",
+   "pressColor": "#13F4C8",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "6d125ba745f675ec7c1cc460feff3a5247acb631d4c8fa648d72bda248310260",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_gaming_rgb_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_luxury_gold_01",
+  "family": "luxury_gold",
+  "title": "Old dhaka jeweller 1",
+  "idx": 0,
+  "is_light": false,
+  "bg_stops": [
+   "#100E14",
+   "#100E14"
+  ],
+  "radius": 6,
+  "stroke": 1.0,
+  "font": "elegant",
+  "effect": "glass",
+  "multi": false,
+  "key_style": "ceramic_3d",
+  "key_alpha": 0.96,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Old dhaka jeweller",
+  "focal": "Gold hairline",
+  "pressed_pos": [
+   2,
+   0
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "glass",
+   "pressColor": "#8C2515",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "4faa45e8e7e901445e211c66ec33065c9fbc5abab3606449d43bb81daa0413a2",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_luxury_gold_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_luxury_gold_02",
+  "family": "luxury_gold",
+  "title": "Old dhaka jeweller 2",
+  "idx": 1,
+  "is_light": false,
+  "bg_stops": [
+   "#100E14",
+   "#100E14"
+  ],
+  "radius": 8,
+  "stroke": 1.0,
+  "font": "elegant",
+  "effect": "glass",
+  "multi": false,
+  "key_style": "outline",
+  "key_alpha": 0.18,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Old dhaka jeweller",
+  "focal": "Gold hairline",
+  "pressed_pos": [
+   1,
+   1
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "glass",
+   "pressColor": "#14278C",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "7ea901833e50c53e4dda67bb2bf24ea8d8faa8c5b4f6e391100c4d171dd997f3",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_luxury_gold_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_live_animated_01",
+  "family": "live_animated",
+  "title": "Breathing aurora and drifting light 1",
+  "idx": 0,
+  "is_light": true,
+  "bg_stops": [
+   "#B4C8E1",
+   "#B7A763"
+  ],
+  "radius": 8,
+  "stroke": 0,
+  "font": "inter",
+  "effect": "motion",
+  "multi": false,
+  "key_style": "glass",
+  "key_alpha": 0.46,
+  "rainbow_text": false,
+  "is_live": true,
+  "world": "Breathing aurora and drifting light",
+  "focal": "Animated wall",
+  "pressed_pos": [
+   2,
+   5
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "assets/bg/live.webp",
+   "pressEffect": "motion",
+   "pressColor": "#0D0F75",
+   "parallaxDp": 6,
+   "particles": true,
+   "particleDensity": 4,
+   "particleColor": "#0D0F75"
+  },
+  "sha256": "475bd0aee2ccd03ad8d5dd2702ce8cc4314628d5e914fc208b61af788f191a7b",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_live_animated_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_live_animated_02",
+  "family": "live_animated",
+  "title": "Breathing aurora and drifting light 2",
+  "idx": 1,
+  "is_light": true,
+  "bg_stops": [
+   "#B9D2D6",
+   "#63B7A9"
+  ],
+  "radius": 12,
+  "stroke": 0,
+  "font": "inter",
+  "effect": "motion",
+  "multi": false,
+  "key_style": "glass",
+  "key_alpha": 0.46,
+  "rainbow_text": false,
+  "is_live": true,
+  "world": "Breathing aurora and drifting light",
+  "focal": "Animated wall",
+  "pressed_pos": [
+   1,
+   6
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "assets/bg/live.webp",
+   "pressEffect": "motion",
+   "pressColor": "#2C750B",
+   "parallaxDp": 6,
+   "particles": true,
+   "particleDensity": 4,
+   "particleColor": "#2C750B"
+  },
+  "sha256": "650f05acf5d807a3628f5e83192a7b246fa8f8400c79cf49bd6bbb2162b85d1a",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_live_animated_02_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_liquid_glass_01",
+  "family": "liquid_glass",
+  "title": "Frosted pane over soft light 1",
+  "idx": 0,
+  "is_light": true,
+  "bg_stops": [
+   "#97BCD5",
+   "#63B76E"
+  ],
+  "radius": 12,
+  "stroke": 0,
+  "font": "clean",
+  "effect": "glass",
+  "multi": false,
+  "key_style": "glass",
+  "key_alpha": 0.44,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Frosted pane over soft light",
+  "focal": "Glass rim glow",
+  "pressed_pos": [
+   1,
+   2
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "glass",
+   "pressColor": "#8839EF",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "8eb5201834bdfae9b52ac4371bae4d02d828daeb780eebe61f3d00a3c809a5a2",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_liquid_glass_01_v1.iplustheme"
+ },
+ {
+  "id": "kb_pilot_liquid_glass_02",
+  "family": "liquid_glass",
+  "title": "Frosted pane over soft light 2",
+  "idx": 1,
+  "is_light": true,
+  "bg_stops": [
+   "#9CBBD7",
+   "#63B7A3"
+  ],
+  "radius": 16,
+  "stroke": 0,
+  "font": "clean",
+  "effect": "glass",
+  "multi": false,
+  "key_style": "glass",
+  "key_alpha": 0.44,
+  "rainbow_text": false,
+  "is_live": false,
+  "world": "Frosted pane over soft light",
+  "focal": "Glass rim glow",
+  "pressed_pos": [
+   2,
+   3
+  ],
+  "key_color_map": {
+   "palette": [],
+   "patternMode": "none",
+   "keys": {}
+  },
+  "motion": {
+   "bgAnimatedAsset": "",
+   "pressEffect": "glass",
+   "pressColor": "#B4637A",
+   "parallaxDp": 0,
+   "particles": false,
+   "particleDensity": 0,
+   "particleColor": ""
+  },
+  "sha256": "bfc308277556e2918b0ff396ec7402d16d086289d7a888afc3ef88356a66c307",
+  "bundle": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\themes\\kb_pilot_liquid_glass_02_v1.iplustheme"
+ }
+]

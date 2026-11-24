@@ -22,7 +22,8 @@ fun ThemeScreen(navController: NavHostController = rememberNavController()) {
     Column(modifier = Modifier.fillMaxSize()) {
         ScreenTitle("Theme", showBack = true, navController)
         ThemePicker(
-            onOpenStore = { navController.navigate("themestore") }
+            onOpenStore = { navController.navigate("themestore") },
+            onOpenCustomStickers = { navController.navigate("mystickers") }
         ) {
             setTheme(it.key)
         }

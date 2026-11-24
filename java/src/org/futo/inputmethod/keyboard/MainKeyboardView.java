@@ -493,6 +493,12 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     public void onKeyPressed(@Nonnull final Key key, final boolean withPreview) {
         key.onPressed();
         invalidateKey(key);
+        if (mDrawableProvider != null) {
+            final float cx = key.getDrawX() + getPaddingLeft() + key.getDrawWidth() * 0.5f;
+            final float cy = key.getY() + getPaddingTop() + key.getHeight() * 0.5f;
+            mDrawableProvider.onKeyPressedVisualEffect(key, cx, cy);
+            postInvalidateOnAnimation();
+        }
         if (withPreview && !key.noKeyPreview()) {
             showKeyPreview(key);
         }

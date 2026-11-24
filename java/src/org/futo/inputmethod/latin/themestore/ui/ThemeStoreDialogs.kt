@@ -53,6 +53,8 @@ import org.futo.inputmethod.latin.themestore.model.CreateOrderResponse
 import org.futo.inputmethod.latin.themestore.model.OrderHistoryEntry
 import org.futo.inputmethod.latin.themestore.model.PaymentAccountsDto
 import org.futo.inputmethod.latin.themestore.model.StoreCatalogEntry
+import org.futo.inputmethod.latin.themestore.network.GoogleOneTapHelper
+import org.futo.inputmethod.latin.themestore.network.GoogleOneTapOutcome
 import org.futo.inputmethod.latin.themestore.network.SignUpOutcome
 import org.futo.inputmethod.latin.themestore.network.SupabaseAuthClient
 
@@ -74,6 +76,7 @@ internal fun formatBdtFromPaisa(paisa: Int): String {
 fun PurchaseRequestDialog(
     selectedThemes: List<StoreCatalogEntry>,
     paymentAccounts: PaymentAccountsDto,
+    supportTelegram: String = "@boname3",
     onDismiss: () -> Unit,
     onCreateOrder: suspend (buyerName: String, buyerContact: String, paymentMethod: String) -> Result<CreateOrderResponse>,
     onSubmitTrx: suspend (order: CreateOrderResponse, trxId: String) -> Result<String>
@@ -110,7 +113,7 @@ fun PurchaseRequestDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Buy ${selectedThemes.size} Theme${if (selectedThemes.size > 1) "s" else ""}",
+                    text = "Buy ${selectedThemes.size} Item${if (selectedThemes.size > 1) "s" else ""}",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -128,8 +131,9 @@ fun PurchaseRequestDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
+                            val codePrefix = if (theme.shortCode.isNotBlank()) "#${theme.shortCode} " else ""
                             Text(
-                                text = theme.title,
+                                text = "$codePrefix${theme.title}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.weight(1f)
                             )
@@ -217,6 +221,13 @@ fun PurchaseRequestDialog(
 
                     errorMsg?.let {
                         Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+
+                    OutlinedButton(
+                        onClick = { openTelegramSupport(context, supportTelegram) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Need help? Chat with Admin ($supportTelegram)")
                     }
 
                     Row(
@@ -328,6 +339,13 @@ fun PurchaseRequestDialog(
                         Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                     }
 
+                    OutlinedButton(
+                        onClick = { openTelegramSupport(context, supportTelegram) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Need help? Chat with Admin ($supportTelegram)")
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
@@ -381,9 +399,15 @@ fun PurchaseRequestDialog(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Order ID: ${order.orderId}\nAmount: ৳${order.expectedAmountBdt}\n\nAdmin has been notified on Telegram. Once verified, you will receive your 1-Time API Key to activate all ${selectedThemes.size} selected theme(s).",
+                            text = "Order ID: ${order.orderId}\nAmount: ৳${order.expectedAmountBdt}\n\nAdmin has been notified on Telegram. Once verified, you will receive your 1-Time API Key to activate all ${selectedThemes.size} selected item(s).",
                             style = MaterialTheme.typography.bodySmall
                         )
+                        OutlinedButton(
+                            onClick = { openTelegramSupport(context, supportTelegram) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Message Admin on Telegram ($supportTelegram)")
+                        }
                     }
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                         Button(onClick = onDismiss) {
@@ -423,7 +447,7 @@ fun RedeemKeyDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Redeem 1-Time API Key",
+                    text = "Redeem API / Giveaway Key",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -431,15 +455,15 @@ fun RedeemKeyDialog(
                 val redeemed = result
                 if (redeemed == null) {
                     Text(
-                        text = "Enter the 1-time license key from Admin. Your unlocked themes will download cleanly and remain bound offline to this device.",
+                        text = "Enter your 1-Time Paid API Key or a Giveaway Key (IPL1-...) to unlock Themes, Fonts, or Sticker Packs on this device.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     OutlinedTextField(
                         value = apiKeyInput,
                         onValueChange = { apiKeyInput = it; errorMsg = null },
-                        label = { Text("API Key") },
-                        placeholder = { Text("OP1-...") },
+                        label = { Text("API / Giveaway Key") },
+                        placeholder = { Text("IPL1-...") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -485,14 +509,24 @@ fun RedeemKeyDialog(
                         }
                     }
                 } else {
+                    val isGiveaway = redeemed.keyKind.equals("giveaway", ignoreCase = true)
+                    val headline = if (isGiveaway) {
+                        val claimTag = redeemed.claimNumber?.let { num ->
+                            val cap = redeemed.maxClaims?.toString() ?: "∞"
+                            " (#$num/$cap)"
+                        }.orEmpty()
+                        "Giveaway Claimed$claimTag • ${redeemed.grantedThemeIds.size} unique item(s) unlocked!"
+                    } else {
+                        "Unlocked ${redeemed.grantedThemeIds.size} paid item(s)!"
+                    }
                     Text(
-                        text = "Unlocked ${redeemed.grantedThemeIds.size} paid theme(s)!",
+                        text = headline,
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Themes: ${redeemed.grantedThemeIds.joinToString(", ")}",
+                        text = "Items: ${redeemed.grantedThemeIds.joinToString(", ")}",
                         style = MaterialTheme.typography.bodySmall
                     )
                     if (redeemed.recoveryToken.isNotBlank()) {
@@ -772,7 +806,7 @@ fun RecoveryAndDeviceDialog(
 @Composable
 fun AccountAuthDialog(
     onDismiss: () -> Unit,
-    onSignedIn: suspend () -> Unit
+    onSignedIn: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -833,12 +867,56 @@ fun AccountAuthDialog(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
                         errorMsg = null
-                        val authUrl = SupabaseAuthClient.startGoogleOAuthUrl(context)
-                        runCatching {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(authUrl)))
-                            infoMsg = "Finish signing in with Google in your browser to return automatically."
-                        }.onFailure {
-                            errorMsg = "Unable to open browser for Google sign-in"
+                        infoMsg = null
+                        isBusy = true
+                        scope.launch {
+                            if (GoogleOneTapHelper.isConfigured()) {
+                                when (val oneTap = GoogleOneTapHelper.requestGoogleIdToken(context)) {
+                                    is GoogleOneTapOutcome.IdTokenReady -> {
+                                        SupabaseAuthClient.signInWithGoogleIdToken(
+                                            context = context,
+                                            idToken = oneTap.idToken,
+                                            rawNonce = oneTap.rawNonce
+                                        ).onSuccess {
+                                            isBusy = false
+                                            onSignedIn()
+                                            return@launch
+                                        }.onFailure { err ->
+                                            errorMsg = err.message ?: "Google sign-in failed"
+                                            isBusy = false
+                                            return@launch
+                                        }
+                                    }
+                                    is GoogleOneTapOutcome.Cancelled -> {
+                                        errorMsg = oneTap.message
+                                        isBusy = false
+                                        return@launch
+                                    }
+                                    is GoogleOneTapOutcome.Failed -> {
+                                        errorMsg = oneTap.error
+                                        isBusy = false
+                                        return@launch
+                                    }
+                                    is GoogleOneTapOutcome.Unavailable -> {
+                                        // Fall through to preflighted browser OAuth when native 1-Tap is unavailable.
+                                    }
+                                }
+                            }
+
+                            val providerEnabled = SupabaseAuthClient.checkGoogleProviderEnabled().getOrDefault(true)
+                            if (!providerEnabled) {
+                                errorMsg = "Google Sign-In is not enabled on Keybird auth yet. Sign in with Email & Password below."
+                                isBusy = false
+                                return@launch
+                            }
+                            val authUrl = SupabaseAuthClient.startGoogleOAuthUrl(context)
+                            runCatching {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(authUrl)))
+                                infoMsg = "Finish signing in with Google in your browser to return automatically."
+                            }.onFailure {
+                                errorMsg = "Unable to open browser for Google sign-in"
+                            }
+                            isBusy = false
                         }
                     }
                 ) {
@@ -931,7 +1009,7 @@ fun AccountAuthDialog(
                                                     onSignedIn()
                                                 }
                                                 is SignUpOutcome.ConfirmationRequired -> {
-                                                    infoMsg = "Verification email sent to ${outcome.email}. Confirm your inbox link, then Sign In."
+                                                    infoMsg = "Verification email sent to ${outcome.email}. Open that link on this phone to confirm and return to Keybird."
                                                     isSignUp = false
                                                 }
                                             }
@@ -961,6 +1039,122 @@ fun AccountAuthDialog(
                             )
                         } else {
                             Text(if (isSignUp) "Create Account" else "Sign In")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SetNewPasswordDialog(
+    email: String?,
+    onDismiss: () -> Unit,
+    onPasswordUpdated: () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var isBusy by remember { mutableStateOf(false) }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
+
+    Dialog(onDismissRequest = { if (!isBusy) onDismiss() }) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 520.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Set New Password",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = if (!email.isNullOrBlank()) {
+                        "Choose a new password for $email."
+                    } else {
+                        "Choose a new password for your Keybird account."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = { newPassword = it; errorMsg = null },
+                    label = { Text("New Password (min 6 chars)") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it; errorMsg = null },
+                    label = { Text("Confirm New Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                errorMsg?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss, enabled = !isBusy) {
+                        Text("Later")
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        enabled = !isBusy,
+                        onClick = {
+                            if (newPassword.length < 6) {
+                                errorMsg = "Password must be at least 6 characters"
+                                return@Button
+                            }
+                            if (newPassword != confirmPassword) {
+                                errorMsg = "Passwords do not match"
+                                return@Button
+                            }
+                            isBusy = true
+                            errorMsg = null
+                            scope.launch {
+                                SupabaseAuthClient.updatePassword(context, newPassword)
+                                    .onSuccess {
+                                        isBusy = false
+                                        onPasswordUpdated()
+                                    }
+                                    .onFailure { err ->
+                                        errorMsg = err.message ?: "Unable to update password"
+                                        isBusy = false
+                                    }
+                            }
+                        }
+                    ) {
+                        if (isBusy) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .height(16.dp)
+                                    .width(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Save Password")
                         }
                     }
                 }

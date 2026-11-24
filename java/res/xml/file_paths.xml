@@ -3,4 +3,10 @@
     <files-path
         name="clipboard_media"
         path="clipboard_media/" />
+    <files-path
+        name="store_stickers"
+        path="store_stickers/" />
+    <files-path
+        name="custom_stickers"
+        path="custom_stickers/" />
 </paths>

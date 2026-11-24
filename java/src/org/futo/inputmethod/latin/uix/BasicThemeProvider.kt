@@ -19,7 +19,10 @@ import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.StateListDrawable
 import android.graphics.drawable.shapes.RoundRectShape
 import android.util.Log
+import android.util.LruCache
 import android.util.TypedValue
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import androidx.annotation.ColorInt
 import org.futo.inputmethod.keyboard.Key
 import org.futo.inputmethod.latin.uix.theme.presets.IPlusMatteTheme
@@ -151,74 +154,110 @@ fun<T> Preferences.get(key: SettingsKey<T>): T {
     return this[key.key] ?: key.default
 }
 
+private const val MAX_CUSTOM_PHOTO_BYTES = 24 * 1024 * 1024
+
+private val customPhotoBitmapCache = object : LruCache<String, Bitmap>(2) {}
+
+private fun readBoundedStreamBytes(context: Context, uri: Uri): ByteArray? {
+    return context.contentResolver.openInputStream(uri)?.use { input ->
+        val out = ByteArrayOutputStream()
+        val buf = ByteArray(16 * 1024)
+        var total = 0
+        while (true) {
+            val n = input.read(buf)
+            if (n < 0) break
+            total += n
+            if (total > MAX_CUSTOM_PHOTO_BYTES) return null
+            out.write(buf, 0, n)
+        }
+        out.toByteArray()
+    }
+}
+
 private fun loadCustomPhotoBackground(context: Context, uriValue: String, dimAmount: Float, blurAmount: Float, zoom: Float, offsetX: Float, offsetY: Float): Drawable? {
     if (uriValue.isBlank()) return null
 
     return runCatching {
-        val uri = Uri.parse(uriValue)
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        val boundsStream = context.contentResolver.openInputStream(uri) ?: return null
-        boundsStream.use { stream ->
-            BitmapFactory.decodeStream(stream, null, bounds)
-        }
-        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
-
         val targetWidth = context.resources.displayMetrics.widthPixels.coerceAtLeast(720)
         val targetHeight = (targetWidth * 0.7f).toInt()
-        var sampleSize = 1
-        while (bounds.outWidth / sampleSize > targetWidth * 2 ||
-            bounds.outHeight / sampleSize > targetHeight * 2
-        ) {
-            sampleSize *= 2
-        }
-
-        val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
-        val decoded = context.contentResolver.openInputStream(uri)?.use { stream ->
-            BitmapFactory.decodeStream(stream, null, options)
-        } ?: return null
-
-        val orientation = context.contentResolver.openInputStream(uri)?.use { stream ->
-            ExifInterface(stream).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
-        } ?: ExifInterface.ORIENTATION_NORMAL
-        val rotationDegrees = when (orientation) {
-            ExifInterface.ORIENTATION_ROTATE_90 -> 90f
-            ExifInterface.ORIENTATION_ROTATE_180 -> 180f
-            ExifInterface.ORIENTATION_ROTATE_270 -> 270f
-            else -> 0f
-        }
-        val bitmap = if (rotationDegrees != 0f) {
-            val matrix = Matrix().apply { postRotate(rotationDegrees) }
-            Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true).also {
-                if (it !== decoded) decoded.recycle()
-            }
-        } else {
-            decoded
-        }
-
-        val scale = maxOf(targetWidth / bitmap.width.toFloat(), targetHeight / bitmap.height.toFloat()) * zoom.coerceFiniteIn(1.0f, 1.0f, 2.5f)
-        val drawnWidth = bitmap.width * scale
-        val drawnHeight = bitmap.height * scale
-        val left = (targetWidth - drawnWidth) / 2f + offsetX.coerceFiniteIn(0.0f, -1f, 1f) * (drawnWidth - targetWidth) / 2f
-        val top = (targetHeight - drawnHeight) / 2f + offsetY.coerceFiniteIn(0.0f, -1f, 1f) * (drawnHeight - targetHeight) / 2f
-        val cropped = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
-        Canvas(cropped).drawBitmap(bitmap, null, RectF(left, top, left + drawnWidth, top + drawnHeight), Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
-        bitmap.recycle()
+        val safeZoom = zoom.coerceFiniteIn(1.0f, 1.0f, 2.5f)
+        val safeX = offsetX.coerceFiniteIn(0.0f, -1f, 1f)
+        val safeY = offsetY.coerceFiniteIn(0.0f, -1f, 1f)
         val safeBlur = blurAmount.coerceFiniteIn(0.0f, 0.0f, 20.0f)
-        val displayBitmap = if (safeBlur > 0.1f) {
-            val reduction = (1.0f + safeBlur * 0.35f).coerceFiniteIn(1.0f, 1.0f, 8.0f)
-            val small = Bitmap.createScaledBitmap(
-                cropped,
-                (targetWidth / reduction).toInt().coerceAtLeast(1),
-                (targetHeight / reduction).toInt().coerceAtLeast(1),
-                true
-            )
-            val blurred = Bitmap.createScaledBitmap(small, targetWidth, targetHeight, true)
-            small.recycle()
-            cropped.recycle()
-            blurred
-        } else {
-            cropped
+        val safeDim = dimAmount.coerceFiniteIn(0.35f, 0f, 0.85f)
+
+        val cacheKey = "$uriValue|$targetWidth|$safeZoom|$safeX|$safeY|$safeBlur"
+        val cachedBitmap = synchronized(customPhotoBitmapCache) {
+            customPhotoBitmapCache.get(cacheKey)?.takeUnless { it.isRecycled }
         }
+
+        val displayBitmap = cachedBitmap ?: run {
+            val uri = Uri.parse(uriValue)
+            // Single stream read replaces 3 repeated ContentResolver IPC opens on the UI thread.
+            val rawBytes = readBoundedStreamBytes(context, uri) ?: return null
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(rawBytes, 0, rawBytes.size, bounds)
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+
+            var sampleSize = 1
+            while (bounds.outWidth / sampleSize > targetWidth * 2 ||
+                bounds.outHeight / sampleSize > targetHeight * 2
+            ) {
+                sampleSize *= 2
+            }
+
+            val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+            val decoded = BitmapFactory.decodeByteArray(rawBytes, 0, rawBytes.size, options) ?: return null
+
+            val orientation = runCatching {
+                ExifInterface(ByteArrayInputStream(rawBytes))
+                    .getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+            }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
+            val rotationDegrees = when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                else -> 0f
+            }
+            val bitmap = if (rotationDegrees != 0f) {
+                val matrix = Matrix().apply { postRotate(rotationDegrees) }
+                Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true).also {
+                    if (it !== decoded) decoded.recycle()
+                }
+            } else {
+                decoded
+            }
+
+            val scale = maxOf(targetWidth / bitmap.width.toFloat(), targetHeight / bitmap.height.toFloat()) * safeZoom
+            val drawnWidth = bitmap.width * scale
+            val drawnHeight = bitmap.height * scale
+            val left = (targetWidth - drawnWidth) / 2f + safeX * (drawnWidth - targetWidth) / 2f
+            val top = (targetHeight - drawnHeight) / 2f + safeY * (drawnHeight - targetHeight) / 2f
+            val cropped = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
+            Canvas(cropped).drawBitmap(bitmap, null, RectF(left, top, left + drawnWidth, top + drawnHeight), Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
+            bitmap.recycle()
+
+            val result = if (safeBlur > 0.1f) {
+                val reduction = (1.0f + safeBlur * 0.35f).coerceFiniteIn(1.0f, 1.0f, 8.0f)
+                val small = Bitmap.createScaledBitmap(
+                    cropped,
+                    (targetWidth / reduction).toInt().coerceAtLeast(1),
+                    (targetHeight / reduction).toInt().coerceAtLeast(1),
+                    true
+                )
+                val blurred = Bitmap.createScaledBitmap(small, targetWidth, targetHeight, true)
+                small.recycle()
+                cropped.recycle()
+                blurred
+            } else {
+                cropped
+            }
+            synchronized(customPhotoBitmapCache) {
+                customPhotoBitmapCache.put(cacheKey, result)
+            }
+            result
+        }
+
         val photo = BitmapDrawable(context.resources, displayBitmap).apply {
             gravity = Gravity.FILL
         }
@@ -226,7 +265,7 @@ private fun loadCustomPhotoBackground(context: Context, uriValue: String, dimAmo
             arrayOf(
                 photo,
                 android.graphics.drawable.GradientDrawable().apply {
-                    setColor(android.graphics.Color.argb((dimAmount.coerceFiniteIn(0.35f, 0f, 0.85f) * 255).roundToInt(), 0, 0, 0))
+                    setColor(android.graphics.Color.argb((safeDim * 255).roundToInt(), 0, 0, 0))
                 }
             )
         )
@@ -436,7 +475,8 @@ class BasicThemeProvider(
             else -> null
         }
         IPlusMatteThemeHelper.customSpacebarColor = customSpaceColor
-        keyboardTypeface = storeDelegate?.resolveTypefaceOrNull() ?: when (keyboardFont) {
+        val activeStoreFont = org.futo.inputmethod.latin.themestore.engine.StoreFontEngine.refreshFromActivePreference(context)
+        keyboardTypeface = activeStoreFont?.latin ?: storeDelegate?.resolveTypefaceOrNull() ?: when (keyboardFont) {
             "normal", "clean" -> Typeface.create("sans-serif", Typeface.NORMAL)
             "doto", "pixel" -> ResourcesCompat.getFont(context, R.font.doto) ?: Typeface.DEFAULT
             "inter", "rounded" -> if (keyboardFont == "rounded") Typeface.create("sans-serif-rounded", Typeface.NORMAL) else ResourcesCompat.getFont(context, R.font.inter) ?: Typeface.DEFAULT
@@ -523,7 +563,7 @@ class BasicThemeProvider(
             colors[R.styleable.Keyboard_Key_keyTextColor] = storeProfile.keyTextColor
             colors[R.styleable.Keyboard_Key_keyTextInactivatedColor] =
                 ColorUtils.setAlphaComponent(storeProfile.keyTextColor, 128)
-            colors[R.styleable.Keyboard_Key_keyPressedTextColor] = storeProfile.enterKeyFgColor
+            colors[R.styleable.Keyboard_Key_keyPressedTextColor] = storeProfile.keyPressedTextColor
             colors[R.styleable.Keyboard_Key_actionKeyTextColor] = storeProfile.enterKeyFgColor
             colors[R.styleable.Keyboard_Key_functionalTextColor] = storeProfile.keyTextColor
             colors[R.styleable.Keyboard_Key_keyHintLetterColor] = storeProfile.keyHintColor
@@ -531,36 +571,41 @@ class BasicThemeProvider(
             colors[R.styleable.Keyboard_Key_keyShiftedLetterHintInactivatedColor] = storeProfile.keyHintColor
             colors[R.styleable.Keyboard_Key_keyShiftedLetterHintActivatedColor] = storeProfile.keyHintColor
             colors[R.styleable.Keyboard_Key_keyPreviewTextColor] = storeProfile.popupTextColor
-            colors[R.styleable.MainKeyboardView_languageOnSpacebarTextColor] = storeProfile.spacebarStrokeColor
+            colors[R.styleable.MainKeyboardView_languageOnSpacebarTextColor] =
+                org.futo.inputmethod.latin.themestore.engine.ThemeManifestEngine.resolveSpacebarLabelColor(storeProfile)
         }
 
-        addIcon(KeyboardIconsSet.NAME_SHIFT_KEY, R.drawable.nth_shift, onBackground)
-        addIcon(KeyboardIconsSet.NAME_SHIFT_KEY_SHIFTED, R.drawable.nth_shifted, onBackground)
-        addIcon(KeyboardIconsSet.NAME_DELETE_KEY, R.drawable.nth_delete, onBackground)
-        addIcon(KeyboardIconsSet.NAME_SETTINGS_KEY, R.drawable.settings, onBackground)
-        addIcon(KeyboardIconsSet.NAME_SPACE_KEY, null, onBackground)
-        addIcon(KeyboardIconsSet.NAME_ENTER_KEY, R.drawable.nth_enter, enterKeyForeground)
-        addIcon(KeyboardIconsSet.NAME_GO_KEY, R.drawable.sym_keyboard_go_lxx_light, enterKeyForeground)
-        addIcon(KeyboardIconsSet.NAME_SEARCH_KEY, R.drawable.nth_search, enterKeyForeground)
-        addIcon(KeyboardIconsSet.NAME_SEND_KEY, R.drawable.sym_keyboard_send_lxx_light, enterKeyForeground)
-        addIcon(KeyboardIconsSet.NAME_NEXT_KEY, R.drawable.sym_keyboard_next_lxx_light, enterKeyForeground)
-        addIcon(KeyboardIconsSet.NAME_DONE_KEY, R.drawable.sym_keyboard_done_lxx_light, enterKeyForeground)
-        addIcon(KeyboardIconsSet.NAME_PREVIOUS_KEY, R.drawable.sym_keyboard_previous_lxx_light, enterKeyForeground)
-        addIcon(KeyboardIconsSet.NAME_TAB_KEY, R.drawable.sym_keyboard_tab_holo_dark, onBackground) // TODO: Correct tint
-        addIcon(KeyboardIconsSet.NAME_ZWNJ_KEY, R.drawable.sym_keyboard_zwnj_lxx_dark, onBackground)
-        addIcon(KeyboardIconsSet.NAME_ZWJ_KEY, R.drawable.sym_keyboard_zwj_lxx_dark, onPrimary)
+        val keyIconTint = storeProfile?.keyTextColor ?: onBackground
+        val actionIconTint = if (expertMode) onBackgroundThird else (storeProfile?.enterKeyFgColor ?: enterKeyForeground)
+        val primaryKeyIconTint = storeProfile?.keyTextColor ?: onPrimary
 
-        addIcon(KeyboardIconsSet.NAME_EMOJI_ACTION_KEY, R.drawable.nth_smile, onPrimary)
-        addIcon(KeyboardIconsSet.NAME_EMOJI_NORMAL_KEY, R.drawable.nth_smile, onBackground)
+        addIcon(KeyboardIconsSet.NAME_SHIFT_KEY, R.drawable.nth_shift, keyIconTint)
+        addIcon(KeyboardIconsSet.NAME_SHIFT_KEY_SHIFTED, R.drawable.nth_shifted, keyIconTint)
+        addIcon(KeyboardIconsSet.NAME_DELETE_KEY, R.drawable.nth_delete, keyIconTint)
+        addIcon(KeyboardIconsSet.NAME_SETTINGS_KEY, R.drawable.settings, keyIconTint)
+        addIcon(KeyboardIconsSet.NAME_SPACE_KEY, null, keyIconTint)
+        addIcon(KeyboardIconsSet.NAME_ENTER_KEY, R.drawable.nth_enter, actionIconTint)
+        addIcon(KeyboardIconsSet.NAME_GO_KEY, R.drawable.sym_keyboard_go_lxx_light, actionIconTint)
+        addIcon(KeyboardIconsSet.NAME_SEARCH_KEY, R.drawable.nth_search, actionIconTint)
+        addIcon(KeyboardIconsSet.NAME_SEND_KEY, R.drawable.sym_keyboard_send_lxx_light, actionIconTint)
+        addIcon(KeyboardIconsSet.NAME_NEXT_KEY, R.drawable.sym_keyboard_next_lxx_light, actionIconTint)
+        addIcon(KeyboardIconsSet.NAME_DONE_KEY, R.drawable.sym_keyboard_done_lxx_light, actionIconTint)
+        addIcon(KeyboardIconsSet.NAME_PREVIOUS_KEY, R.drawable.sym_keyboard_previous_lxx_light, actionIconTint)
+        addIcon(KeyboardIconsSet.NAME_TAB_KEY, R.drawable.sym_keyboard_tab_holo_dark, keyIconTint) // TODO: Correct tint
+        addIcon(KeyboardIconsSet.NAME_ZWNJ_KEY, R.drawable.sym_keyboard_zwnj_lxx_dark, keyIconTint)
+        addIcon(KeyboardIconsSet.NAME_ZWJ_KEY, R.drawable.sym_keyboard_zwj_lxx_dark, primaryKeyIconTint)
+
+        addIcon(KeyboardIconsSet.NAME_EMOJI_ACTION_KEY, R.drawable.nth_smile, primaryKeyIconTint)
+        addIcon(KeyboardIconsSet.NAME_EMOJI_NORMAL_KEY, R.drawable.nth_smile, keyIconTint)
 
         // Add by name (action_emoji)
         AllActionsMap.forEach { (i, it) ->
-            addIcon("action_${i}", it.icon, onBackground)
+            addIcon("action_${i}", it.icon, keyIconTint)
         }
 
         // Add by id (action_0)
         AllActions.forEachIndexed { i, it ->
-            addIcon("action_${i}", it.icon, onBackground)
+            addIcon("action_${i}", it.icon, keyIconTint)
         }
 
         if(!showKeyHints) {
@@ -744,10 +789,7 @@ class BasicThemeProvider(
 
     override fun getKeyBackground(key: Key, isPressed: Boolean): Drawable? {
         if (storeDelegate != null) {
-            // Phase 2: character-art keys compose the resolved asset inside a code-drawn
-            // rounded capsule with frosted rim, bottom scrim, and pressed highlight.
-            // Returns null (=> default StateListDrawable) when the key has no art asset.
-            storeDelegate.getArtPackKeyBackground(key, isPressed)?.let { return it }
+            storeDelegate.getKeyBackground(key, isPressed)?.let { return it }
             return null
         }
         if (!isIPlusMatteTheme) return null
@@ -762,10 +804,17 @@ class BasicThemeProvider(
     }
 
     override fun getKeyHintColor(key: Key): Int? {
-        if (storeDelegate != null && showKeyHints && !expertMode) return storeDelegate.getKeyHintColor()
+        if (storeDelegate != null && showKeyHints && !expertMode) return storeDelegate.getKeyHintColor(key)
         if (!isIPlusMatteTheme) return null
         return IPlusMatteThemeHelper.getKeyHintColor(key)
     }
+
+    override fun onKeyPressedVisualEffect(key: Key, centerX: Float, centerY: Float) {
+        storeDelegate?.onKeyPressedVisualEffect(key, centerX, centerY)
+    }
+
+    override fun drawOverlayVisualEffects(canvas: android.graphics.Canvas, view: android.view.View): Boolean =
+        storeDelegate?.drawOverlayVisualEffects(canvas, view) ?: false
 
     override fun getKeyPreviewBackground(key: Key): Drawable? {
         if (!isIPlusMatteTheme) return null

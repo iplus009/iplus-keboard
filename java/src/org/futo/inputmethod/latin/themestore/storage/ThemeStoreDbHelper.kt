@@ -8,6 +8,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.futo.inputmethod.latin.themestore.model.CatalogThemeItem
 import org.futo.inputmethod.latin.themestore.model.OrderHistoryEntry
+import org.futo.inputmethod.latin.themestore.model.PreviewUrlsDto
 import org.futo.inputmethod.latin.themestore.model.RevocationEntry
 import org.futo.inputmethod.latin.themestore.model.SignedEntitlementReceipt
 import org.futo.inputmethod.latin.uix.isDirectBootUnlocked
@@ -52,6 +53,7 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
             CREATE TABLE IF NOT EXISTS catalog_cache (
                 theme_id TEXT PRIMARY KEY,
                 app_id TEXT NOT NULL,
+                short_code TEXT NOT NULL DEFAULT '',
                 title TEXT NOT NULL,
                 description TEXT NOT NULL,
                 category TEXT NOT NULL,
@@ -63,6 +65,7 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
                 discount_label TEXT NOT NULL DEFAULT '',
                 remote_version INTEGER NOT NULL,
                 preview_url TEXT NOT NULL,
+                preview_urls_json TEXT NOT NULL DEFAULT '{}',
                 accent_hex TEXT NOT NULL,
                 bundle_sha256 TEXT NOT NULL,
                 size_bytes INTEGER NOT NULL,
@@ -129,6 +132,10 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
             runCatching { db.execSQL("ALTER TABLE catalog_cache ADD COLUMN discount_percent INTEGER NOT NULL DEFAULT 0") }
             runCatching { db.execSQL("ALTER TABLE catalog_cache ADD COLUMN discount_label TEXT NOT NULL DEFAULT ''") }
         }
+        if (oldVersion < 3) {
+            runCatching { db.execSQL("ALTER TABLE catalog_cache ADD COLUMN short_code TEXT NOT NULL DEFAULT ''") }
+            runCatching { db.execSQL("ALTER TABLE catalog_cache ADD COLUMN preview_urls_json TEXT NOT NULL DEFAULT '{}'") }
+        }
     }
 
     fun replaceCatalog(items: List<CatalogThemeItem>) {
@@ -142,6 +149,7 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
                 val cv = ContentValues().apply {
                     put("theme_id", item.themeId)
                     put("app_id", item.appId)
+                    put("short_code", item.shortCode)
                     put("title", item.title)
                     put("description", item.description)
                     put("category", item.category)
@@ -153,6 +161,7 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
                     put("discount_label", item.discountLabel)
                     put("remote_version", item.currentVersion)
                     put("preview_url", item.previewUrl)
+                    put("preview_urls_json", json.encodeToString(item.previewUrls))
                     put("accent_hex", item.accentHex)
                     put("bundle_sha256", item.bundleSha256 ?: "")
                     put("size_bytes", item.sizeBytes ?: 0)
@@ -178,10 +187,19 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
                 val origIdx = c.getColumnIndex("original_price_bdt_paisa")
                 val pctIdx = c.getColumnIndex("discount_percent")
                 val labelIdx = c.getColumnIndex("discount_label")
+                val codeIdx = c.getColumnIndex("short_code")
+                val prevJsonIdx = c.getColumnIndex("preview_urls_json")
+                val previewUrls = if (prevJsonIdx >= 0) {
+                    runCatching { json.decodeFromString<PreviewUrlsDto>(c.getString(prevJsonIdx).orEmpty()) }
+                        .getOrDefault(PreviewUrlsDto())
+                } else {
+                    PreviewUrlsDto()
+                }
                 list.add(
                     CatalogThemeItem(
                         themeId = c.getString(c.getColumnIndexOrThrow("theme_id")),
                         appId = c.getString(c.getColumnIndexOrThrow("app_id")),
+                        shortCode = if (codeIdx >= 0) c.getString(codeIdx).orEmpty() else "",
                         title = c.getString(c.getColumnIndexOrThrow("title")),
                         description = c.getString(c.getColumnIndexOrThrow("description")),
                         category = c.getString(c.getColumnIndexOrThrow("category")),
@@ -193,6 +211,7 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
                         discountLabel = if (labelIdx >= 0) c.getString(labelIdx).orEmpty() else "",
                         currentVersion = c.getInt(c.getColumnIndexOrThrow("remote_version")),
                         previewUrl = c.getString(c.getColumnIndexOrThrow("preview_url")),
+                        previewUrls = previewUrls,
                         accentHex = c.getString(c.getColumnIndexOrThrow("accent_hex")),
                         bundleSha256 = c.getString(c.getColumnIndexOrThrow("bundle_sha256")),
                         sizeBytes = c.getInt(c.getColumnIndexOrThrow("size_bytes"))
@@ -379,7 +398,28 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
             db.endTransaction()
         }
         vaultDir(appContext).deleteRecursively()
+        File(appContext.filesDir, "store_stickers").deleteRecursively()
+        setActiveFontId(null)
     }
+
+    fun getActiveFontId(): String? {
+        if (!appContext.isDirectBootUnlocked) return null
+        return appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_ACTIVE_FONT_ID, null)
+            ?.takeIf { it.isNotBlank() }
+    }
+
+    fun setActiveFontId(fontId: String?) {
+        if (!appContext.isDirectBootUnlocked) return
+        appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_ACTIVE_FONT_ID, fontId.orEmpty())
+            .apply()
+        org.futo.inputmethod.latin.themestore.engine.StoreFontEngine.invalidate()
+    }
+
+    fun stickerShareDir(packId: String): File =
+        File(appContext.filesDir, "store_stickers/$packId").apply { mkdirs() }
 
     fun writeFreeThemeManifest(themeId: String, manifestJson: String): File {
         val dir = File(appContext.filesDir, "theme_store/free").apply { mkdirs() }
@@ -435,7 +475,9 @@ class ThemeStoreDbHelper(context: Context) : SQLiteOpenHelper(
 
     companion object {
         private const val DB_NAME = "keybird_themestore.db"
-        private const val DB_VERSION = 2
+        private const val DB_VERSION = 3
+        private const val PREFS_NAME = "keybird_themestore_prefs"
+        private const val KEY_ACTIVE_FONT_ID = "active_store_font_id"
 
         private fun vaultDir(context: Context): File =
             File(context.filesDir, "theme_store/vault")

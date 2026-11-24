@@ -11,3 +11,19 @@ key.jks
 stable/
 
 *.apk
+
+# Local Python caches & heavy generated theme/sticker bundle outputs
+__pycache__/
+*.pyc
+.pytest_cache/
+.wrangler/
+_avrotest/
+sticker_factory/art/
+sticker_factory/mega_gen_log.txt
+sticker_factory_v2/out/
+sticker_factory_v2/v/
+theme_factory/out/
+theme_factory/v/
+SESSION_REPORT.md
+TEST_REPORT.md
+docs/opencode/

@@ -275,11 +275,35 @@ fun ThemePreview(
                 if (theme.key == IPlusMatteTheme.key) {
                     IPlusMattePreviewKeyboard()
                 } else {
+                    val miniKeyColor = colors.onBackground.copy(alpha = 0.14f)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 22.dp, bottom = 22.dp, start = 2.dp, end = 2.dp),
+                        verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        listOf(10 to 1f, 9 to 0.92f, 9 to 1f).forEach { (count, widthFraction) ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(widthFraction),
+                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                repeat(count) {
+                                    Surface(
+                                        modifier = Modifier.weight(1f).height(11.dp),
+                                        color = miniKeyColor,
+                                        shape = RoundedCornerShape(3.dp)
+                                    ) { }
+                                }
+                            }
+                        }
+                    }
+
                     // Spacebar
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth(0.5f)
-                            .height(18.dp)
+                            .height(16.dp)
                             .align(Alignment.BottomCenter),
                         color = spacebarColor,
                         shape = RoundedCornerShape(12.dp)
@@ -289,7 +313,7 @@ fun ThemePreview(
                     Surface(
                         modifier = Modifier
                             .width(24.dp)
-                            .height(18.dp)
+                            .height(16.dp)
                             .align(Alignment.BottomEnd)
                             .padding(0.dp, 1.dp),
                         color = actionColor,
@@ -398,6 +422,7 @@ private fun rememberOptionalPhotoPickerLauncher(
 fun ThemePicker(
     isInInputMethod: Boolean = false,
     onOpenStore: (() -> Unit)? = null,
+    onOpenCustomStickers: (() -> Unit)? = null,
     onSelected: (ThemeOption) -> Unit
 ) {
     val context = LocalContext.current
@@ -476,14 +501,33 @@ fun ThemePicker(
     val originalDirection = LocalLayoutDirection.current
 
     Column {
-        if (isInInputMethod || onOpenStore != null) {
-            androidx.compose.material3.OutlinedButton(
-                onClick = { onOpenStore?.invoke() ?: openThemeSettings(context, "themestore") },
+        val showStoreBtn = isInInputMethod || onOpenStore != null
+        val showStickerBtn = onOpenCustomStickers != null
+        if (showStoreBtn || showStickerBtn) {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Browse Keybird Theme Store")
+                if (showStoreBtn) {
+                    androidx.compose.material3.Button(
+                        onClick = { onOpenStore?.invoke() ?: openThemeSettings(context, "themestore") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(if (showStickerBtn) "Theme Store" else "Browse Keybird Theme Store", maxLines = 1)
+                    }
+                }
+                if (showStickerBtn) {
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = { onOpenCustomStickers?.invoke() },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("My Stickers", maxLines = 1)
+                    }
+                }
             }
         }
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {

@@ -56,5 +56,10 @@
 -keep class org.futo.pocketfft.** { *; }
 -keep class org.futo.inputmethod.latin.themestore.** { *; }
 
+-if class androidx.credentials.CredentialManager
+-keep class androidx.credentials.playservices.** {
+  *;
+}
+
 -dontobfuscate
 -optimizations !code/allocation/variable

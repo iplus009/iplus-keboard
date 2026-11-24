@@ -98,15 +98,15 @@ fun ScreenTitle(title: String, showBack: Boolean = false, navController: NavHost
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .clip(androidx.compose.foundation.shape.CircleShape)
-                    .background(Color(0xFF1B1B1F))
-                    .border(1.dp, Color(0xFF26262B), androidx.compose.foundation.shape.CircleShape),
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                    .background(KeybirdUiTokens.raisedSurface())
+                    .border(1.dp, KeybirdUiTokens.hairlineBorder(), androidx.compose.foundation.shape.RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.Default.ArrowBack,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = KeybirdUiTokens.textPrimary(),
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -115,7 +115,7 @@ fun ScreenTitle(title: String, showBack: Boolean = false, navController: NavHost
         Text(
             title,
             style = Typography.titleLarge,
-            color = Color.White,
+            color = KeybirdUiTokens.textPrimary(),
             modifier = Modifier.padding(vertical = 16.dp)
         )
     }
@@ -535,6 +535,12 @@ enum class NavigationItemStyle {
 
 @Composable
 fun NavigationItem(title: String, style: NavigationItemStyle, navigate: () -> Unit, icon: Painter? = null, subtitle: String? = null) {
+    val accent = KeybirdUiTokens.accent()
+    val raised = KeybirdUiTokens.raisedSurface()
+    val hairline = KeybirdUiTokens.hairlineBorder()
+    val textPrimary = KeybirdUiTokens.textPrimary()
+    val textMuted = KeybirdUiTokens.textMuted()
+
     SettingItem(
         title = title,
         subtitle = subtitle,
@@ -542,9 +548,9 @@ fun NavigationItem(title: String, style: NavigationItemStyle, navigate: () -> Un
         icon = {
             icon?.let {
                 val circleColor = when(style) {
-                    NavigationItemStyle.HomePrimary -> Color(0xFFE5252A).copy(alpha = 0.15f)
-                    NavigationItemStyle.HomeSecondary -> Color(0xFF1B1B1F)
-                    NavigationItemStyle.HomeTertiary -> Color(0xFF1B1B1F)
+                    NavigationItemStyle.HomePrimary -> accent.copy(alpha = 0.14f)
+                    NavigationItemStyle.HomeSecondary -> raised
+                    NavigationItemStyle.HomeTertiary -> raised
 
                     NavigationItemStyle.MiscNoArrow,
                     NavigationItemStyle.Misc,
@@ -552,13 +558,13 @@ fun NavigationItem(title: String, style: NavigationItemStyle, navigate: () -> Un
                 }
 
                 val iconColor = when(style) {
-                    NavigationItemStyle.HomePrimary -> Color(0xFFE5252A)
-                    NavigationItemStyle.HomeSecondary -> Color(0xFFFFFFFF)
-                    NavigationItemStyle.HomeTertiary -> Color(0xFFFFFFFF)
+                    NavigationItemStyle.HomePrimary -> accent
+                    NavigationItemStyle.HomeSecondary -> textPrimary
+                    NavigationItemStyle.HomeTertiary -> textPrimary
 
                     NavigationItemStyle.MiscNoArrow,
                     NavigationItemStyle.Mail,
-                    NavigationItemStyle.Misc -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
+                    NavigationItemStyle.Misc -> textPrimary.copy(alpha = 0.78f)
                 }
 
                 Box(
@@ -566,7 +572,7 @@ fun NavigationItem(title: String, style: NavigationItemStyle, navigate: () -> Un
                         .size(38.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(circleColor)
-                        .border(1.dp, Color(0xFF26262B), RoundedCornerShape(10.dp)),
+                        .border(1.dp, hairline, RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -580,9 +586,9 @@ fun NavigationItem(title: String, style: NavigationItemStyle, navigate: () -> Un
         }
     ) {
         when(style) {
-            NavigationItemStyle.Misc -> Icon(Icons.Default.ArrowForward, contentDescription = null, tint = Color(0xFF8E8E93))
-            NavigationItemStyle.Mail -> Icon(Icons.Default.Send, contentDescription = null, tint = Color(0xFF8E8E93))
-            else -> Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF8E8E93))
+            NavigationItemStyle.Misc -> Icon(Icons.Default.ArrowForward, contentDescription = null, tint = textMuted)
+            NavigationItemStyle.Mail -> Icon(Icons.Default.Send, contentDescription = null, tint = textMuted)
+            else -> Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = textMuted)
         }
     }
 }

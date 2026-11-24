@@ -13,6 +13,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -48,6 +49,7 @@ data class OAuthCallbackParams(
     val accessToken: String? = null,
     val refreshToken: String? = null,
     val expiresInSec: Long = 3600L,
+    val type: String? = null,
     val errorDescription: String? = null
 )
 
@@ -55,6 +57,7 @@ object SupabaseAuthClient {
     const val SUPABASE_URL = "https://yufwtqrhsmcrydumfrpp.supabase.co"
     const val SUPABASE_PUBLISHABLE_KEY = "sb_publishable_OTd885uJL8kAa49uy_3lWg_7sRg-qTv"
     const val REDIRECT_URI = "keybird://auth-callback"
+    const val AUTH_CALLBACK_HTTPS_URL = "https://iplus-theme-hub.diagnostic-fanatic.workers.dev/auth/callback"
 
     private const val PREFS_NAME = "keybird_supabase_auth"
     private const val KEY_SESSION_JSON = "session_json"
@@ -70,6 +73,13 @@ object SupabaseAuthClient {
 
     private val _sessionFlow = MutableStateFlow<SupabaseSession?>(null)
     val sessionFlow: StateFlow<SupabaseSession?> = _sessionFlow.asStateFlow()
+
+    private val _pendingPasswordReset = MutableStateFlow(false)
+    val pendingPasswordReset: StateFlow<Boolean> = _pendingPasswordReset.asStateFlow()
+
+    fun clearPendingPasswordReset() {
+        _pendingPasswordReset.value = false
+    }
 
     @Volatile
     private var initialized = false
@@ -96,6 +106,7 @@ object SupabaseAuthClient {
             ?.remove(KEY_PKCE_VERIFIER)
             ?.apply()
         _sessionFlow.value = null
+        _pendingPasswordReset.value = false
         initialized = true
     }
 
@@ -126,7 +137,7 @@ object SupabaseAuthClient {
             require(cleanEmail.contains("@") && cleanEmail.contains(".")) { "Enter a valid email address" }
             require(password.length >= 6) { "Password must be at least 6 characters" }
             val body = json.encodeToString(mapOf("email" to cleanEmail, "password" to password))
-            val obj = postAuth("/auth/v1/signup", body)
+            val obj = postAuth(buildAuthRedirectPath("/auth/v1/signup"), body)
             val session = parseSessionFromJson(obj)
             if (session != null) {
                 persistSession(context, session)
@@ -142,9 +153,76 @@ object SupabaseAuthClient {
             val cleanEmail = email.trim().lowercase()
             require(cleanEmail.contains("@") && cleanEmail.contains(".")) { "Enter a valid email address" }
             val body = json.encodeToString(mapOf("email" to cleanEmail))
-            postAuth("/auth/v1/recover", body)
+            postAuth(buildAuthRedirectPath("/auth/v1/recover"), body)
             Unit
         }
+    }
+
+    /** Updates the currently signed-in (or recovery-authenticated) user's password via Supabase Auth. */
+    suspend fun updatePassword(
+        context: Context,
+        newPassword: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            validateNewPassword(newPassword)
+            val token = getValidAccessToken(context)
+                ?: error("Session expired. Request a new password reset email.")
+            putUser(token, buildUpdatePasswordPayload(newPassword))
+            Unit
+        }
+    }
+
+    internal fun validateNewPassword(newPassword: String) {
+        require(newPassword.length >= 6) { "Password must be at least 6 characters" }
+    }
+
+    internal fun buildUpdatePasswordPayload(newPassword: String): String =
+        json.encodeToString(mapOf("password" to newPassword))
+
+    /** Exchanges a Google ID token from Android Credential Manager 1-Tap for a Supabase session. */
+    suspend fun signInWithGoogleIdToken(
+        context: Context,
+        idToken: String,
+        rawNonce: String? = null
+    ): Result<SupabaseSession> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(idToken.isNotBlank()) { "Missing Google ID token" }
+            val payload = buildGoogleIdTokenPayload(idToken, rawNonce)
+            val obj = postAuth("/auth/v1/token?grant_type=id_token", payload)
+            val session = parseSessionFromJson(obj) ?: error("Google sign-in did not return a session")
+            persistSession(context, session)
+            session
+        }
+    }
+
+    /** Checks public Supabase Auth settings so the UI avoids opening Chrome on a 400 error if Google OAuth is disabled. */
+    suspend fun checkGoogleProviderEnabled(): Result<Boolean> = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = Request.Builder()
+                .url("$SUPABASE_URL/auth/v1/settings")
+                .header("apikey", SUPABASE_PUBLISHABLE_KEY)
+                .get()
+                .build()
+            client.newCall(request).execute().use { res ->
+                val raw = res.body?.string().orEmpty()
+                if (!res.isSuccessful) throw IOException("Unable to inspect auth settings (${res.code})")
+                val obj = json.parseToJsonElement(raw).jsonObject
+                obj["external"]?.jsonObject?.get("google")?.jsonPrimitive?.booleanOrNull == true
+            }
+        }
+    }
+
+    internal fun buildAuthRedirectPath(
+        basePath: String,
+        redirectUrl: String = AUTH_CALLBACK_HTTPS_URL
+    ): String = "$basePath?redirect_to=${URLEncoder.encode(redirectUrl, "UTF-8")}"
+
+    internal fun buildGoogleIdTokenPayload(idToken: String, rawNonce: String? = null): String {
+        val bodyMap = linkedMapOf("provider" to "google", "id_token" to idToken)
+        if (!rawNonce.isNullOrBlank()) {
+            bodyMap["nonce"] = rawNonce
+        }
+        return json.encodeToString(bodyMap)
     }
 
     fun startGoogleOAuthUrl(context: Context): String {
@@ -183,8 +261,11 @@ object SupabaseAuthClient {
                 val payload = json.encodeToString(mapOf("auth_code" to code, "code_verifier" to verifier))
                 val obj = postAuth("/auth/v1/token?grant_type=pkce", payload)
                 prefs(context)?.edit()?.remove(KEY_PKCE_VERIFIER)?.apply()
-                val session = parseSessionFromJson(obj) ?: error("Google login did not return a session")
+                val session = parseSessionFromJson(obj) ?: error("Sign-in callback did not return a session")
                 persistSession(context, session)
+                if (parsed.type.equals("recovery", ignoreCase = true)) {
+                    _pendingPasswordReset.value = true
+                }
                 return@runCatching session
             }
             val implicitAccess = parsed.accessToken
@@ -192,7 +273,7 @@ object SupabaseAuthClient {
                 val userObj = fetchUser(implicitAccess)
                 val uid = userObj["id"]?.jsonPrimitive?.contentOrNull.orEmpty()
                 val mail = userObj["email"]?.jsonPrimitive?.contentOrNull.orEmpty()
-                require(uid.isNotBlank()) { "Google login failed to resolve user ID" }
+                require(uid.isNotBlank()) { "Unable to resolve account ID from sign-in link" }
                 val session = SupabaseSession(
                     userId = uid,
                     email = mail,
@@ -201,9 +282,12 @@ object SupabaseAuthClient {
                     expiresAtEpochSec = (System.currentTimeMillis() / 1000L) + parsed.expiresInSec
                 )
                 persistSession(context, session)
+                if (parsed.type.equals("recovery", ignoreCase = true)) {
+                    _pendingPasswordReset.value = true
+                }
                 return@runCatching session
             }
-            error("Invalid Google login callback response")
+            error("Invalid sign-in callback response")
         }
     }
 
@@ -267,6 +351,29 @@ object SupabaseAuthClient {
         }
     }
 
+    private fun putUser(accessToken: String, jsonBody: String): JsonObject {
+        val request = Request.Builder()
+            .url("$SUPABASE_URL/auth/v1/user")
+            .header("apikey", SUPABASE_PUBLISHABLE_KEY)
+            .header("Authorization", "Bearer $accessToken")
+            .header("Content-Type", "application/json")
+            .put(jsonBody.toRequestBody(JSON_MEDIA))
+            .build()
+        client.newCall(request).execute().use { res ->
+            val raw = res.body?.string().orEmpty()
+            val obj = runCatching { json.parseToJsonElement(raw).jsonObject }.getOrNull()
+            if (!res.isSuccessful) {
+                val msg = obj?.get("msg")?.jsonPrimitive?.contentOrNull
+                    ?: obj?.get("error_description")?.jsonPrimitive?.contentOrNull
+                    ?: obj?.get("message")?.jsonPrimitive?.contentOrNull
+                    ?: obj?.get("error")?.jsonPrimitive?.contentOrNull
+                    ?: "Password update failed (${res.code})"
+                throw IOException("$msg (${res.code})")
+            }
+            return obj ?: JsonObject(emptyMap())
+        }
+    }
+
     private fun parseSessionFromJson(obj: JsonObject): SupabaseSession? {
         val access = obj["access_token"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() } ?: return null
         val refresh = obj["refresh_token"]?.jsonPrimitive?.contentOrNull.orEmpty()
@@ -309,6 +416,12 @@ object SupabaseAuthClient {
         return base64UrlNoPad(digest)
     }
 
+    /** Returns lowercase SHA-256 hex digest for Google Credential Manager nonce binding. */
+    internal fun sha256Hex(raw: String): String {
+        val digest = MessageDigest.getInstance("SHA-256").digest(raw.toByteArray(Charsets.UTF_8))
+        return digest.joinToString("") { "%02x".format(it) }
+    }
+
     internal fun parseOAuthCallbackParams(uriString: String): OAuthCallbackParams {
         val uri = URI(uriString)
         val map = mutableMapOf<String, String>()
@@ -328,6 +441,7 @@ object SupabaseAuthClient {
             accessToken = map["access_token"],
             refreshToken = map["refresh_token"],
             expiresInSec = map["expires_in"]?.toLongOrNull() ?: 3600L,
+            type = map["type"],
             errorDescription = map["error_description"] ?: map["error"]
         )
     }

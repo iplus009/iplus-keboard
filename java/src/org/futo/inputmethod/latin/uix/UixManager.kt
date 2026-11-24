@@ -226,9 +226,15 @@ class UixActionKeyboardManager(val uixManager: UixManager, val latinIME: LatinIM
             return false
         }
 
-        val description = ClipDescription("Pasted image", mimeTypes.toTypedArray())
-
         val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
+            val accepted = latinIME.currentInputEditorInfo?.contentMimeTypes
+            if (!accepted.isNullOrEmpty()) {
+                val supported = mimeTypes.any { mime ->
+                    accepted.any { pattern -> ClipDescription.compareMimeTypes(mime, pattern) }
+                }
+                if (!supported) return false
+            }
+            val description = ClipDescription("Pasted image", mimeTypes.toTypedArray())
             InputContentInfo(uri, description, null)
         } else {
             return false

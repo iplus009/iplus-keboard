@@ -41,6 +41,7 @@ object ThemeRegistry {
         synchronized(lock) {
             cachedManifests.clear()
         }
+        StoreFontEngine.invalidate()
         _revision.value += 1
     }
 
@@ -62,6 +63,7 @@ object ThemeRegistry {
         val db = ThemeStoreDbHelper.getInstance(context)
         return db.getInstalledThemes().mapNotNull { record ->
             val manifest = loadVerifiedManifest(context, record.themeId) ?: return@mapNotNull null
+            if (manifest.themeType == "font" || manifest.themeType == "sticker") return@mapNotNull null
             manifestToThemeOption(manifest)
         }
     }

@@ -1019,15 +1019,26 @@ val EmojiAction = Action(
         object : ActionWindow {
             private val searchText = mutableStateOf("")
             private val searching = mutableStateOf(false)
+            private val showStickers = mutableStateOf(false)
 
             @Composable
             override fun windowName(): String {
-                return stringResource(R.string.emoji_action_title)
+                return if (showStickers.value) "Stickers" else stringResource(R.string.emoji_action_title)
             }
 
             @Composable
             override fun WindowContents(keyboardShown: Boolean) {
                 val view = LocalView.current
+                if (showStickers.value) {
+                    org.futo.inputmethod.latin.themestore.ui.StickerPickerPanel(
+                        manager = manager,
+                        onExit = {
+                            manager.closeActionWindow()
+                            manager.performHapticAndAudioFeedback(Constants.CODE_SWITCH_ALPHA_SYMBOL, view)
+                        }
+                    )
+                    return
+                }
                 val loadedEmojis = state.emojis.value
                 if (loadedEmojis == null) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -1078,38 +1089,73 @@ val EmojiAction = Action(
                         }
                     }
                 } else {
-                    super.WindowTitleBar(rowScope)
-                    Surface(color = MaterialTheme.colorScheme.surfaceBright, shape = RoundedCornerShape(24.dp), modifier = Modifier
-                        .minimumInteractiveComponentSize()
-                        .padding(2.dp)
-                        .width(128.dp)
-                        .clickable { searching.value = true }) {
-                        Box(modifier = Modifier.padding(8.dp), contentAlignment = Alignment.CenterStart) {
-                            Row {
-                                Icon(Icons.Default.Search, contentDescription = null)
-                                Text("Search", style = Typography.bodySmall, modifier = Modifier
-                                    .alpha(0.75f)
-                                    .align(Alignment.CenterVertically))
+                    Surface(
+                        color = if (!showStickers.value) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .padding(horizontal = 3.dp, vertical = 2.dp)
+                            .clickable { showStickers.value = false }
+                    ) {
+                        Text(
+                            text = "Emoji",
+                            style = Typography.labelMedium,
+                            color = if (!showStickers.value) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        )
+                    }
+                    Surface(
+                        color = if (showStickers.value) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .padding(horizontal = 3.dp, vertical = 2.dp)
+                            .clickable {
+                                searching.value = false
+                                showStickers.value = true
+                            }
+                    ) {
+                        Text(
+                            text = "Stickers",
+                            style = Typography.labelMedium,
+                            color = if (showStickers.value) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        )
+                    }
+                    with(rowScope) {
+                        Box(modifier = Modifier.weight(1.0f))
+                    }
+                    if (!showStickers.value) {
+                        Surface(color = MaterialTheme.colorScheme.surfaceBright, shape = RoundedCornerShape(24.dp), modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .padding(2.dp)
+                            .width(104.dp)
+                            .clickable { searching.value = true }) {
+                            Box(modifier = Modifier.padding(8.dp), contentAlignment = Alignment.CenterStart) {
+                                Row {
+                                    Icon(Icons.Default.Search, contentDescription = null)
+                                    Text("Search", style = Typography.bodySmall, modifier = Modifier
+                                        .alpha(0.75f)
+                                        .align(Alignment.CenterVertically))
+                                }
                             }
                         }
-                    }
 
-                    IconButton(onClick = {
-                        manager.requestDialog(
-                            "Clear recent emojis?",
-                            listOf(
-                                DialogRequestItem("Cancel") {},
-                                DialogRequestItem("Clear") {
-                                    manager.getLifecycleScope().launch {
-                                        manager.getContext().resetRecentEmojis()
-                                    }
-                                    manager.closeActionWindow()
-                                },
-                            ),
-                            {}
-                        )
-                    }) {
-                        Icon(painterResource(id = R.drawable.close), contentDescription = "Clear recent emojis")
+                        IconButton(onClick = {
+                            manager.requestDialog(
+                                "Clear recent emojis?",
+                                listOf(
+                                    DialogRequestItem("Cancel") {},
+                                    DialogRequestItem("Clear") {
+                                        manager.getLifecycleScope().launch {
+                                            manager.getContext().resetRecentEmojis()
+                                        }
+                                        manager.closeActionWindow()
+                                    },
+                                ),
+                                {}
+                            )
+                        }) {
+                            Icon(painterResource(id = R.drawable.close), contentDescription = "Clear recent emojis")
+                        }
                     }
 
                 }

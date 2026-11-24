@@ -54,6 +54,9 @@ fun SettingsNavigator(
 
         composable("themes") { ThemeScreen(navController) }
         composable("themestore") { org.futo.inputmethod.latin.themestore.ui.ThemeStoreScreen(navController) }
+        composable("mystickers") {
+            org.futo.inputmethod.latin.uix.settings.pages.CustomStickerCreatorScreen(navController)
+        }
         composable("voiceInput") { VoiceInputScreen(navController) }
         composable("credits") { CreditsScreen(navController) }
         composable("help") { HelpScreen(navController) }

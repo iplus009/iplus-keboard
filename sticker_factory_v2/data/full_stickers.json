@@ -1,0 +1,452 @@
+[
+ {
+  "pack_id": "kb_stk_hybrid_01",
+  "title": "Bangla Adda Memes",
+  "style": "bangla_meme",
+  "accent_hex": "#EA5F33",
+  "count": 20,
+  "size_bytes": 509311,
+  "sha256": "9d702c7556d58b3dd3a95d20e41081b0aa27e6be66b9da58005851c5776125e2"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_02",
+  "title": "Deshi Reactions Pro",
+  "style": "bangla_meme",
+  "accent_hex": "#B7EA33",
+  "count": 20,
+  "size_bytes": 510061,
+  "sha256": "a039afe6344c6b018cb399a77ae4418f4fdb5fe465b5ad574a6737b957e2033a"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_03",
+  "title": "Chai & Chill Bangla",
+  "style": "bangla_meme",
+  "accent_hex": "#33EA6D",
+  "count": 20,
+  "size_bytes": 510946,
+  "sha256": "51b11f406d3c8f6d22272aab3917f8e776a70fb90a9b38349ec2f3dcc87ae07d"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_04",
+  "title": "Dhaka Slang Pack",
+  "style": "bangla_meme",
+  "accent_hex": "#33A9EA",
+  "count": 20,
+  "size_bytes": 519017,
+  "sha256": "43f1d1001a6ed3652e2a91ad6fd45d212be7bb0561a67a35aa60f2b82a1ab369"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_05",
+  "title": "Eid & Utsav Greetings",
+  "style": "bangla_meme",
+  "accent_hex": "#7B33EA",
+  "count": 20,
+  "size_bytes": 508504,
+  "sha256": "7cd5f7e1c1e6f08ff866e67dea496d1f18d74c9d97736c220199f01d4136ab74"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_06",
+  "title": "Friendly Bangla Chat",
+  "style": "bangla_meme",
+  "accent_hex": "#EA339B",
+  "count": 20,
+  "size_bytes": 506511,
+  "sha256": "c63a3affec93af1d613664b85ae079bb274d7af394450c84ed8b144ef1af52f4"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_07",
+  "title": "Bangla Funny Pop",
+  "style": "bangla_meme",
+  "accent_hex": "#EA8933",
+  "count": 20,
+  "size_bytes": 511614,
+  "sha256": "5ed24138e66e4bc2c2681541aa23658c771bf1a063af5d546b34d2b31463f0a5"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_08",
+  "title": "Monsoon Bangla Vibes",
+  "style": "bangla_meme",
+  "accent_hex": "#8EEA33",
+  "count": 20,
+  "size_bytes": 503756,
+  "sha256": "cf9fbc0b5b3e9ab91cd73ba34dd3c9b9d9fdf71fe827c67bbabc2972bd648d69"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_09",
+  "title": "College Adda Stickers",
+  "style": "bangla_meme",
+  "accent_hex": "#33EA97",
+  "count": 20,
+  "size_bytes": 514779,
+  "sha256": "306ee53145600ba613d76db62af37cc76ecb34ea74965b930068761274d30334"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_10",
+  "title": "Deshi Boss Stamps",
+  "style": "bangla_meme",
+  "accent_hex": "#3380EA",
+  "count": 20,
+  "size_bytes": 507177,
+  "sha256": "2abaf7642c436b6de8e6c9ab714bd3f545054f2ab6841fc441ef581b63ff2d8d"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_11",
+  "title": "Sweet Bangla Wishes",
+  "style": "bangla_meme",
+  "accent_hex": "#A533EA",
+  "count": 20,
+  "size_bytes": 516363,
+  "sha256": "92f808fb8ce0971b343c2f50ad1dd4d85933a1f931f1adb0e801934190823742"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_12",
+  "title": "Daily Bangla Express",
+  "style": "bangla_meme",
+  "accent_hex": "#EA3372",
+  "count": 20,
+  "size_bytes": 510982,
+  "sha256": "2d8382a335b5b6357ffdce0b8633baaf7fa05618483009bb4e68cf4839aec8e6"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_13",
+  "title": "Mochi Peach Cats",
+  "style": "kawaii_mascot",
+  "accent_hex": "#EAB233",
+  "count": 20,
+  "size_bytes": 496849,
+  "sha256": "cffc3c6f33c8a8f6c5636f0a3a0944f37979cde16c42ba16a278889ae7ef77d7"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_14",
+  "title": "Boba Milk Bears",
+  "style": "kawaii_mascot",
+  "accent_hex": "#64EA33",
+  "count": 20,
+  "size_bytes": 495960,
+  "sha256": "d75f9ba4c9b5db56107165239155e528ea1da46b7e458bae8f8ef0b39fc637f7"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_15",
+  "title": "Matcha Frog Club",
+  "style": "kawaii_mascot",
+  "accent_hex": "#33EAC0",
+  "count": 20,
+  "size_bytes": 497676,
+  "sha256": "95b67830f17161b139d573394bff27ba0825bbe15123ab8cc0a78d92897236fe"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_16",
+  "title": "Sleepy Panda Pals",
+  "style": "kawaii_mascot",
+  "accent_hex": "#3356EA",
+  "count": 20,
+  "size_bytes": 494597,
+  "sha256": "84addf64190c4143004006c3da480bd59dedc8d6a6739cdba533dc28f1bf100b"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_17",
+  "title": "Bunny Blush Pack",
+  "style": "kawaii_mascot",
+  "accent_hex": "#CE33EA",
+  "count": 20,
+  "size_bytes": 497010,
+  "sha256": "5768383819993c4fa56c3af8fa570c75c4746fa8eba647bcf4dad4ff96f074d8"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_18",
+  "title": "Pastel Kitty Drops",
+  "style": "kawaii_mascot",
+  "accent_hex": "#EA3348",
+  "count": 20,
+  "size_bytes": 497263,
+  "sha256": "b85d21308d2a1a86c30f0e9e09d5c631de77a1203d24f3cbd781d598a6e9833a"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_19",
+  "title": "Office Cozy Pets",
+  "style": "kawaii_mascot",
+  "accent_hex": "#EADC33",
+  "count": 20,
+  "size_bytes": 497277,
+  "sha256": "1b632b5403635ad301c3deeec27f52f190f7241ae83c1b1a43bf891268c87995"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_20",
+  "title": "Kawaii Foodies",
+  "style": "kawaii_mascot",
+  "accent_hex": "#3AEA33",
+  "count": 20,
+  "size_bytes": 494741,
+  "sha256": "8e7d895821fe6fec63a0f9aa5555c7bb673999308e1ff7fa0e86039d88c40744"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_21",
+  "title": "Chibi Hugs & Love",
+  "style": "kawaii_mascot",
+  "accent_hex": "#33EAEA",
+  "count": 20,
+  "size_bytes": 497014,
+  "sha256": "c2544d4bdbe684ba89735379b74795601ccd95353c219c4ab35319dbd5ac336b"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_22",
+  "title": "Cute Sparkle Gang",
+  "style": "kawaii_mascot",
+  "accent_hex": "#3A33EA",
+  "count": 20,
+  "size_bytes": 495854,
+  "sha256": "ac434cc37b31acc5525592b92fdc15613f9dd06b269686421720934d80a7bedc"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_23",
+  "title": "Soft Cream Mascots",
+  "style": "kawaii_mascot",
+  "accent_hex": "#EA33DC",
+  "count": 20,
+  "size_bytes": 495887,
+  "sha256": "6fa08322cc8ff62cfa9083b911ce7836562f00ad4c3fe7576bbaa269e536e23a"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_24",
+  "title": "Strawberry Mochi",
+  "style": "kawaii_mascot",
+  "accent_hex": "#EA4833",
+  "count": 20,
+  "size_bytes": 496205,
+  "sha256": "34f5aab9d2145c9a829ae9c67cdd4a11792e2fcb3c424746dfe1154147d8d12a"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_25",
+  "title": "3D Glossy Smiles",
+  "style": "fluent_3d",
+  "accent_hex": "#CEEA33",
+  "count": 20,
+  "size_bytes": 448055,
+  "sha256": "ddca5f66b43af4b858ed6907d09b1e09655ca441106823939946b5c6af4b6c4b"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_26",
+  "title": "Studio Clay Hearts",
+  "style": "fluent_3d",
+  "accent_hex": "#33EA56",
+  "count": 20,
+  "size_bytes": 448041,
+  "sha256": "4f475e5415dfb2c4e84062703af20cc33cbe09ec0a57004a46eae380c28acae8"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_27",
+  "title": "Sunny 3D Emotes",
+  "style": "fluent_3d",
+  "accent_hex": "#33C0EA",
+  "count": 20,
+  "size_bytes": 447697,
+  "sha256": "17a738cf64c850e327b6f3cb8fd7b941fd2332b22f755771429539da6875ced4"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_28",
+  "title": "3D Party Reactions",
+  "style": "fluent_3d",
+  "accent_hex": "#6433EA",
+  "count": 20,
+  "size_bytes": 448304,
+  "sha256": "1dda8bb08d1b9e7a486968687ab03c66f9441cd6fe226876fea500ef780c9b5b"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_29",
+  "title": "Vibrant 3D Moods",
+  "style": "fluent_3d",
+  "accent_hex": "#EA33B2",
+  "count": 20,
+  "size_bytes": 447981,
+  "sha256": "f61f7d8e38f4cbc4f42a8708edf992d62451f9a1835d18604c5d278b5ce87be0"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_30",
+  "title": "Fluent Coral Pop",
+  "style": "fluent_3d",
+  "accent_hex": "#EA7233",
+  "count": 20,
+  "size_bytes": 447578,
+  "sha256": "5ff305a24937aaf939dc58cbce5626ad5a400679e8d5a9c855cf8612a86d7ba6"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_31",
+  "title": "Cobalt 3D Club",
+  "style": "fluent_3d",
+  "accent_hex": "#A5EA33",
+  "count": 20,
+  "size_bytes": 448517,
+  "sha256": "4610adda90fa064e0ce4da4bb0904a6e91cd9fbb03e30b22ccf780bbfb808857"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_32",
+  "title": "Emerald 3D Faces",
+  "style": "fluent_3d",
+  "accent_hex": "#33EA80",
+  "count": 20,
+  "size_bytes": 447851,
+  "sha256": "e6b47e69223e01875ab2623bc83d84b51b26cc9b44ce2a86a1e9d6f2c24e0a27"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_33",
+  "title": "Amber Glow 3D",
+  "style": "fluent_3d",
+  "accent_hex": "#3397EA",
+  "count": 20,
+  "size_bytes": 448542,
+  "sha256": "37e0d1b3a4d8182b119667f2dd2eb97987175b198d0fcc1992df87dc9c927601"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_34",
+  "title": "Crystal Luxe 3D",
+  "style": "fluent_3d",
+  "accent_hex": "#8E33EA",
+  "count": 20,
+  "size_bytes": 447766,
+  "sha256": "c6cc16c46b3fbc35e48e22b7975d155603969f20fa97822efc4f0e9a4c79c4c0"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_35",
+  "title": "Live Heart Beats",
+  "style": "live_animated_webp",
+  "accent_hex": "#EA3389",
+  "count": 20,
+  "size_bytes": 1562533,
+  "sha256": "3399907bdb2824cc62b901d3e089c30f89808e68377d7a22706c6431bf2726cf"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_36",
+  "title": "Live Party Confetti",
+  "style": "live_animated_webp",
+  "accent_hex": "#EA9B33",
+  "count": 20,
+  "size_bytes": 1561044,
+  "sha256": "e09d644793cb993f8f9b0f1a85ca0658cd5de47b8dbe67d2303b21eb3b620705"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_37",
+  "title": "Live Hot Chai Steam",
+  "style": "live_animated_webp",
+  "accent_hex": "#7BEA33",
+  "count": 20,
+  "size_bytes": 1575257,
+  "sha256": "fe6864226c606ed94f31954272f993c7845ef5fc90c67ffd49686c92144f5d23"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_38",
+  "title": "Live Star Twinkle",
+  "style": "live_animated_webp",
+  "accent_hex": "#33EAA9",
+  "count": 20,
+  "size_bytes": 1562743,
+  "sha256": "6edf7a14ebe2097c2ad45074a0df7408e30e33d87179c42b0ac2db375e0497aa"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_39",
+  "title": "Live Kawaii Bounce",
+  "style": "live_animated_webp",
+  "accent_hex": "#336DEA",
+  "count": 20,
+  "size_bytes": 1562092,
+  "sha256": "d2a05500c180ca6c04af4e2ed83afa579434a71bf0e83788bb91fcd687ccb664"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_40",
+  "title": "Live Sparkle Pop",
+  "style": "live_animated_webp",
+  "accent_hex": "#B733EA",
+  "count": 20,
+  "size_bytes": 1575687,
+  "sha256": "4b6f88087715124ccff6ccdc11ebd897df1df4e28cea183dba4be80fdf6d6e25"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_41",
+  "title": "Live Morning Cup",
+  "style": "live_animated_webp",
+  "accent_hex": "#EA335F",
+  "count": 20,
+  "size_bytes": 1561682,
+  "sha256": "bfa13d1fc16db8093ff7733e9dbfaa4d3704c92d83f679a19476a038f643d2bd"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_42",
+  "title": "Live Celebration",
+  "style": "live_animated_webp",
+  "accent_hex": "#EAC533",
+  "count": 20,
+  "size_bytes": 1566717,
+  "sha256": "7fb8d338c8ab30d7b0cd91b541d69fa5c27c1cad559e09510b4989da6c6a1c39"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_43",
+  "title": "Live Vibe Wave",
+  "style": "live_animated_webp",
+  "accent_hex": "#51EA33",
+  "count": 20,
+  "size_bytes": 1574786,
+  "sha256": "c1b91daf306588bf62dc5effbef9271162e47c017a94edd04e506b8eb69a0659"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_44",
+  "title": "Live Bubble Joy",
+  "style": "live_animated_webp",
+  "accent_hex": "#33EAD3",
+  "count": 20,
+  "size_bytes": 1558133,
+  "sha256": "2c9b5d2e1671c2f8e592faf2a1d0b25696c588ac5b911e64f2da7ce18497df3a"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_45",
+  "title": "Neon Vinyl Arcade",
+  "style": "neon_vinyl",
+  "accent_hex": "#3343EA",
+  "count": 20,
+  "size_bytes": 417039,
+  "sha256": "a39340f6fcc2063b346c8d43d88f0654590a6c33010fa7fa7e245abf37e87088"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_46",
+  "title": "Cyber Boom Stamps",
+  "style": "neon_vinyl",
+  "accent_hex": "#E133EA",
+  "count": 20,
+  "size_bytes": 409790,
+  "sha256": "ac5340586cba13f37ff26c6a2cd5908d2eb2ab3f95d59135014898ff9d1f2d73"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_47",
+  "title": "Patswerk Pop Club",
+  "style": "neon_vinyl",
+  "accent_hex": "#EA3335",
+  "count": 20,
+  "size_bytes": 431833,
+  "sha256": "02a28e60f812d4ba0a1a9ffbdefdd531fa0f4e9aa782e044366c23ab81180116"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_48",
+  "title": "Gamer GG Badges",
+  "style": "neon_vinyl",
+  "accent_hex": "#E5EA33",
+  "count": 20,
+  "size_bytes": 403260,
+  "sha256": "9f89f067fc6f310bf8e36aa88f15f29fd6afa81f51af254ae2ceed324a85911b"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_49",
+  "title": "Midnight Hype Neon",
+  "style": "neon_vinyl",
+  "accent_hex": "#33EA3F",
+  "count": 20,
+  "size_bytes": 413091,
+  "sha256": "464392b35f765bf4d92109a3ee4726125f4bea60cf12a4c9c75fe2f90dc3c707"
+ },
+ {
+  "pack_id": "kb_stk_hybrid_50",
+  "title": "Keybird Legend 50",
+  "style": "neon_vinyl",
+  "accent_hex": "#33D7EA",
+  "count": 20,
+  "size_bytes": 412860,
+  "sha256": "2cabb0016d00255e566d9b185fdf2fc623caf1cfee4ae196ef469c760ad16570"
+ }
+]

@@ -1,8 +1,10 @@
 package org.futo.inputmethod.latin.uix
 
 import android.content.res.TypedArray
+import android.graphics.Canvas
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
+import android.view.View
 import androidx.annotation.ColorInt
 import org.futo.inputmethod.keyboard.Key
 
@@ -40,6 +42,10 @@ interface DynamicThemeProvider {
     fun getKeyHintColor(key: Key): Int? = null
 
     fun getKeyPreviewBackground(key: Key): Drawable? = null
+
+    fun onKeyPressedVisualEffect(key: Key, centerX: Float, centerY: Float) {}
+
+    fun drawOverlayVisualEffects(canvas: Canvas, view: View): Boolean = false
 
     companion object {
         @ColorInt

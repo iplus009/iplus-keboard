@@ -158,14 +158,15 @@ class ThemeStoreApiClient(
     private suspend fun fetchBundle(
         path: String,
         method: String,
-        payload: Any? = null
+        payload: PaidDownloadRequest? = null
     ): Result<DownloadedBundle> = withContext(Dispatchers.IO) {
         runCatching {
             val builder = Request.Builder().url("${baseUrl.trimEnd('/')}$path")
             val request = if (method == "GET") {
                 builder.get().build()
             } else {
-                builder.post(json.encodeToString(payload).toRequestBody(JSON_MEDIA)).build()
+                val reqPayload = payload ?: error("Missing download request payload")
+                builder.post(json.encodeToString(reqPayload).toRequestBody(JSON_MEDIA)).build()
             }
             client.newCall(request).execute().use { res ->
                 val bytes = res.body?.bytes() ?: throw IOException("Empty bundle response")

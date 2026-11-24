@@ -280,6 +280,9 @@ public class KeyboardView extends View {
         super.onDraw(canvas);
         if (canvas.isHardwareAccelerated()) {
             onDrawKeyboard(canvas);
+            if (mDrawableProvider != null && mDrawableProvider.drawOverlayVisualEffects(canvas, this)) {
+                postInvalidateOnAnimation();
+            }
             return;
         }
 
@@ -293,6 +296,9 @@ public class KeyboardView extends View {
             onDrawKeyboard(mOffscreenCanvas);
         }
         canvas.drawBitmap(mOffscreenBuffer, 0.0f, 0.0f, null);
+        if (mDrawableProvider != null && mDrawableProvider.drawOverlayVisualEffects(canvas, this)) {
+            postInvalidateOnAnimation();
+        }
     }
 
     private boolean maybeAllocateOffscreenBuffer() {
@@ -522,7 +528,7 @@ public class KeyboardView extends View {
                 // The hint label is placed at top-right corner of the key. Used mainly on tablet.
                 hintX = keyWidth - mKeyShiftedLetterHintPadding - labelCharWidth / 2.0f;
                 paint.getFontMetrics(mFontMetrics);
-                hintBaseline = -mFontMetrics.top;
+                hintBaseline = -mFontMetrics.top + mKeyShiftedLetterHintPadding * 0.65f;
                 paint.setTextAlign(Align.CENTER);
             } else { // key.hasHintLetter()
                 // The hint letter is placed at top-right corner of the key. Used mainly on phone.
@@ -530,7 +536,7 @@ public class KeyboardView extends View {
                 final float hintLabelWidth = TypefaceUtils.getStringWidth(hintLabel, paint);
                 hintX = keyWidth - mKeyHintLetterPadding
                         - Math.max(hintDigitWidth, hintLabelWidth) / 2.0f;
-                hintBaseline = -paint.ascent();
+                hintBaseline = -paint.ascent() + mKeyHintLetterPadding * 0.65f;
                 paint.setTextAlign(Align.CENTER);
             }
             final float adjustmentY = params.mHintLabelVerticalAdjustment * labelCharHeight;
@@ -658,13 +664,46 @@ public class KeyboardView extends View {
         invalidate(x, y, x + key.getWidth(), y + key.getHeight());
     }
 
+    private void updateBackgroundAnimation(final boolean visible) {
+        if (mKeyboardBackground instanceof android.graphics.drawable.Animatable) {
+            mKeyboardBackground.setVisible(visible, false);
+            final android.graphics.drawable.Animatable anim =
+                    (android.graphics.drawable.Animatable) mKeyboardBackground;
+            if (visible && isShown() && getWindowVisibility() == VISIBLE) {
+                anim.start();
+            } else {
+                anim.stop();
+            }
+        }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        updateBackgroundAnimation(true);
+    }
+
+    @Override
+    protected void onVisibilityChanged(@Nonnull final View changedView, final int visibility) {
+        super.onVisibilityChanged(changedView, visibility);
+        updateBackgroundAnimation(visibility == VISIBLE);
+    }
+
+    @Override
+    protected void onWindowVisibilityChanged(final int visibility) {
+        super.onWindowVisibilityChanged(visibility);
+        updateBackgroundAnimation(visibility == VISIBLE);
+    }
+
     @Override
     protected void onDetachedFromWindow() {
+        updateBackgroundAnimation(false);
         super.onDetachedFromWindow();
         freeOffscreenBuffer();
     }
 
     public void deallocateMemory() {
+        updateBackgroundAnimation(false);
         freeOffscreenBuffer();
     }
 }

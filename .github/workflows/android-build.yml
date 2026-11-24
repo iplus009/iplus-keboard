@@ -43,6 +43,8 @@ jobs:
           sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;25.2.9519653"
 
       - name: Build stable debug APK
+        env:
+          KEYBIRD_GOOGLE_WEB_CLIENT_ID: ${{ secrets.KEYBIRD_GOOGLE_WEB_CLIENT_ID }}
         run: |
           chmod +x ./gradlew
           ./gradlew --no-daemon assembleStableDebug
@@ -88,10 +90,10 @@ jobs:
           body: |
             Keybird v${{ steps.pkg.outputs.version }} release.
 
-            - Added built-in Keybird Theme Store (`Settings → Theme Store`, Theme settings & keyboard Theme Switcher)
-            - Added 4-state catalog (`All | Free | Paid | My Themes`), multi-theme cart checkout with Unique Paisa Offset bKash/Nagad & TrxID submission
-            - Added 1-Time API Key activation, offline Ed25519 receipt & revocation verification, Android Keystore AES-256-GCM vault, and C++ JNI guard
-            - Added self-serve Device Deactivation, Recovery Token / TrxID restore, Direct Boot theme reload, and Keybird Matte / emoji / translator / voice refinements
+            - Expanded Keybird Store (`660+` live Themes, Fonts & Sticker Packs) with `#5-digit` code search, category filters, and preview tabs (`English`, `বাংলা`, `123`)
+            - Added `My Stickers` custom local sticker pack creator (PNG/WebP/JPG) + animated WebP sticker picker & editor MIME validation
+            - Upgraded Store Theme rendering engine (`glass`, `motion`, `live`, `ceramic_3d`, `pill`, `bauhaus_cycle`) with high-contrast Enter/Search icons, auto-healed spacebar palettes, and inset rounded key hints
+            - Added Google One-Tap + Supabase account entitlement sync, offline Ed25519/AES-256-GCM vault, and Keybird v4.1.2 Studio UI refinements
           files: ${{ steps.pkg.outputs.apk }}
           prerelease: false
           make_latest: true

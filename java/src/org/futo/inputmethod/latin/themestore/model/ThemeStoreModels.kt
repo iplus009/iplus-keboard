@@ -14,7 +14,39 @@ data class KeybirdThemeManifestV1(
     @SerialName("is_light") val isLight: Boolean = false,
     val colors: ManifestColorsV1,
     val keyboard: ManifestKeyboardV1 = ManifestKeyboardV1(),
-    @SerialName("art_pack") val artPack: ManifestArtPackV1? = null
+    @SerialName("art_pack") val artPack: ManifestArtPackV1? = null,
+    @SerialName("font_pack") val fontPack: ManifestFontPackV1? = null,
+    @SerialName("sticker_pack") val stickerPack: ManifestStickerPackV1? = null
+)
+
+@Serializable
+data class ManifestFontPackV1(
+    @SerialName("latin_asset") val latinAsset: String = "assets/fonts/latin.ttf",
+    @SerialName("bangla_asset") val banglaAsset: String = "assets/fonts/bangla.ttf",
+    @SerialName("number_asset") val numberAsset: String = "assets/fonts/number.ttf",
+    @SerialName("latin_label") val latinLabel: String = "",
+    @SerialName("bangla_label") val banglaLabel: String = "",
+    @SerialName("number_label") val numberLabel: String = ""
+)
+
+@Serializable
+data class ManifestStickerItemV1(
+    val id: String,
+    val label: String = "",
+    val asset: String
+)
+
+@Serializable
+data class ManifestStickerPackV1(
+    @SerialName("pack_icon_asset") val packIconAsset: String = "",
+    val stickers: List<ManifestStickerItemV1> = emptyList()
+)
+
+@Serializable
+data class PreviewUrlsDto(
+    val en: String = "",
+    val bn: String = "",
+    val num: String = ""
 )
 
 @Serializable
@@ -37,6 +69,24 @@ data class ManifestColorsV1(
 )
 
 @Serializable
+data class ManifestKeyColorMapV1(
+    val palette: List<String> = emptyList(),
+    @SerialName("patternMode") val patternMode: String = "none",
+    val keys: Map<String, String> = emptyMap()
+)
+
+@Serializable
+data class ManifestMotionV1(
+    @SerialName("bgAnimatedAsset") val bgAnimatedAsset: String = "",
+    @SerialName("pressEffect") val pressEffect: String = "",
+    @SerialName("pressColor") val pressColor: String = "",
+    @SerialName("parallaxDp") val parallaxDp: Float = 0f,
+    val particles: Boolean = false,
+    @SerialName("particleDensity") val particleDensity: Int = 0,
+    @SerialName("particleColor") val particleColor: String = ""
+)
+
+@Serializable
 data class ManifestKeyboardV1(
     @SerialName("bg_type") val bgType: String = "solid",
     @SerialName("bg_colors") val bgColors: List<String> = listOf("#000000"),
@@ -44,20 +94,30 @@ data class ManifestKeyboardV1(
     @SerialName("key_pressed_bg") val keyPressedBg: String = "#2C2C34",
     @SerialName("functional_key_bg") val functionalKeyBg: String = "#141418",
     @SerialName("enter_key_bg") val enterKeyBg: String = "#00E676",
-    @SerialName("enter_key_fg") val enterKeyFg: String = "#000000",
-    @SerialName("spacebar_bg") val spacebarBg: String = "#1B1B1F",
-    @SerialName("spacebar_stroke") val spacebarStroke: String = "#00E676",
+    @SerialName("enter_key_fg") val enterKeyFg: String = "",
+    @SerialName("spacebar_bg") val spacebarBg: String = "",
+    @SerialName("spacebar_stroke") val spacebarStroke: String = "",
     @SerialName("key_stroke") val keyStroke: String = "#2B2D35",
     @SerialName("key_stroke_width_dp") val keyStrokeWidthDp: Float = 1.0f,
     @SerialName("key_corner_radius_dp") val keyCornerRadiusDp: Float = 8.0f,
     @SerialName("key_text") val keyText: String = "#FFFFFF",
+    @SerialName("keyPressedText") val keyPressedText: String = "",
     @SerialName("key_hint") val keyHint: String = "#9CA3AF",
     @SerialName("popup_bg") val popupBg: String = "#1B1B1F",
     @SerialName("popup_text") val popupText: String = "#FFFFFF",
-    @SerialName("gesture_trail") val gestureTrail: String = "#00E676",
+    @SerialName("gesture_trail") val gestureTrail: String = "",
     @SerialName("font_style") val fontStyle: String = "default",
     @SerialName("scrim_alpha") val scrimAlpha: Float = 0.0f,
-    @SerialName("glass_rim_glow") val glassRimGlow: Boolean = false
+    @SerialName("glass_rim_glow") val glassRimGlow: Boolean = false,
+    /** Phase 2 effect preset: glass / motion / live / 3d_live_motion / touch / neon / ... */
+    @SerialName("effect_mode") val effectMode: String = "glass",
+    /** Phase 4 key geometry/material mode: classic / borderless / outline / glass / ceramic_3d / pill */
+    @SerialName("key_style") val keyStyle: String = "classic",
+    @SerialName("key_alpha") val keyAlpha: Float = 1.0f,
+    @SerialName("rainbow_text") val rainbowText: Boolean = false,
+    @SerialName("bg_animated_asset") val bgAnimatedAsset: String = "",
+    @SerialName("key_color_map") val keyColorMap: ManifestKeyColorMapV1? = null,
+    val motion: ManifestMotionV1? = null
 )
 
 /**
@@ -77,6 +137,7 @@ data class ManifestArtPackV1(
 data class CatalogThemeItem(
     @SerialName("theme_id") val themeId: String,
     @SerialName("app_id") val appId: String = "keybird",
+    @SerialName("short_code") val shortCode: String = "",
     val title: String,
     val description: String = "",
     val category: String = "general",
@@ -88,6 +149,7 @@ data class CatalogThemeItem(
     @SerialName("discount_label") val discountLabel: String = "",
     @SerialName("current_version") val currentVersion: Int = 1,
     @SerialName("preview_url") val previewUrl: String = "",
+    @SerialName("preview_urls") val previewUrls: PreviewUrlsDto = PreviewUrlsDto(),
     @SerialName("accent_hex") val accentHex: String = "#00E676",
     @SerialName("bundle_sha256") val bundleSha256: String? = null,
     @SerialName("size_bytes") val sizeBytes: Int? = null
@@ -103,6 +165,7 @@ data class PaymentAccountsDto(
 data class CatalogResponse(
     val ok: Boolean = false,
     @SerialName("app_id") val appId: String = "keybird",
+    @SerialName("support_telegram") val supportTelegram: String = "@boname3",
     @SerialName("payment_accounts") val paymentAccounts: PaymentAccountsDto = PaymentAccountsDto(),
     val themes: List<CatalogThemeItem> = emptyList()
 )
@@ -178,9 +241,12 @@ data class RedeemKeyRequest(
 @Serializable
 data class RedeemKeyResponse(
     val ok: Boolean = false,
+    @SerialName("key_kind") val keyKind: String = "standard",
     val receipt: SignedEntitlementReceipt? = null,
     @SerialName("recovery_token") val recoveryToken: String = "",
     @SerialName("granted_theme_ids") val grantedThemeIds: List<String> = emptyList(),
+    @SerialName("claim_number") val claimNumber: Int? = null,
+    @SerialName("max_claims") val maxClaims: Int? = null,
     @SerialName("account_linked") val accountLinked: Boolean = false
 )
 
@@ -282,8 +348,16 @@ enum class ThemeFilter {
     MY_THEMES
 }
 
+enum class ProductTabFilter {
+    ALL,
+    THEMES,
+    FONTS,
+    STICKERS
+}
+
 data class StoreCatalogEntry(
     val themeId: String,
+    val shortCode: String = "",
     val title: String,
     val description: String,
     val category: String,
@@ -297,6 +371,7 @@ data class StoreCatalogEntry(
     val installedVersion: Int?,
     val accentHex: String,
     val previewUrl: String,
+    val previewUrls: PreviewUrlsDto = PreviewUrlsDto(),
     val bundleSha256: String? = null,
     val isOwned: Boolean,
     val isDownloaded: Boolean,

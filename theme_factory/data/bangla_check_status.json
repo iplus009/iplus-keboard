@@ -1,0 +1,8 @@
+{
+ "sheet": "D:\\Projects\\iplus-keboard\\theme_factory\\out\\proof\\bangla_text_check.png",
+ "pillow_raqm": false,
+ "pillow_freetype2": true,
+ "playwright_python": false,
+ "shaping_guarantee": "BLOCKED",
+ "reason": "raqm/HarfBuzz unavailable and Playwright not installed; sheet is for visual inspection only"
+}

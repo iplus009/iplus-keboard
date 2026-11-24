@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
@@ -38,6 +40,7 @@ import kotlinx.coroutines.runBlocking
 import org.futo.inputmethod.latin.BuildConfig
 import org.futo.inputmethod.latin.themestore.domain.ThemeStoreRepository
 import org.futo.inputmethod.latin.themestore.network.SupabaseAuthClient
+import org.futo.inputmethod.latin.themestore.ui.SetNewPasswordDialog
 import org.futo.inputmethod.latin.uix.BasicThemeProvider
 import org.futo.inputmethod.latin.uix.DynamicThemeProvider
 import org.futo.inputmethod.latin.uix.DynamicThemeProviderOwner
@@ -172,6 +175,9 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
                         color = MaterialTheme.colorScheme.background
                     ) {
                         Box(Modifier.safeDrawingPadding()) {
+                            val showPasswordReset by SupabaseAuthClient.pendingPasswordReset.collectAsState()
+                            val authSession by SupabaseAuthClient.sessionFlow.collectAsState()
+
                             SetupOrMain(
                                 inputMethodEnabled.value,
                                 inputMethodSelected.value,
@@ -179,6 +185,21 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
                                 doublePackage.value
                             ) {
                                 SettingsNavigator(navController = navController)
+                            }
+
+                            if (showPasswordReset) {
+                                SetNewPasswordDialog(
+                                    email = authSession?.email,
+                                    onDismiss = { SupabaseAuthClient.clearPendingPasswordReset() },
+                                    onPasswordUpdated = {
+                                        SupabaseAuthClient.clearPendingPasswordReset()
+                                        Toast.makeText(
+                                            this@SettingsActivity,
+                                            "Password updated successfully",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                )
                             }
                         }
                     }
@@ -250,26 +271,7 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
         val intent = intent
         if(intent != null) {
             handleAuthCallbackIntent(intent)
-            val destination = intent.getStringExtra("navDest")
-            if(destination != null) {
-                lifecycleScope.launch {
-                    // The navigation graph has to initialize, and this can take some time.
-                    // For now, just keep trying every 100ms until it doesn't throw an exception
-                    // for up to 10 seconds
-                    var navigated = false
-                    for(i in 0 until 100) {
-                        delay(100L)
-                        try {
-                            navController.navigate(destination)
-                            navigated = true
-                        } catch (ignored: Exception) {
-
-                        }
-
-                        if(navigated) break
-                    }
-                }
-            }
+            navigateFromIntent(intent)
         }
     }
 
@@ -277,6 +279,25 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
         super.onNewIntent(intent)
         setIntent(intent)
         handleAuthCallbackIntent(intent)
+        navigateFromIntent(intent)
+    }
+
+    private fun navigateFromIntent(intent: Intent?) {
+        val destination = intent?.getStringExtra("navDest")?.takeIf { it.isNotBlank() } ?: return
+        lifecycleScope.launch {
+            var navigated = false
+            for (i in 0 until 100) {
+                try {
+                    navController.navigate(destination) {
+                        launchSingleTop = true
+                    }
+                    navigated = true
+                } catch (ignored: Exception) {
+                }
+                if (navigated) break
+                delay(100L)
+            }
+        }
     }
 
     private fun handleAuthCallbackIntent(intent: Intent?) {
@@ -287,9 +308,14 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
                 .onSuccess { session ->
                     val repo = ThemeStoreRepository(this@SettingsActivity)
                     val synced = repo.syncAccountEntitlements().getOrDefault(emptyList())
+                    val msg = if (SupabaseAuthClient.pendingPasswordReset.value) {
+                        "Recovery link verified. Enter your new password."
+                    } else {
+                        "Signed in as ${session.email} • ${synced.size} owned theme(s) synced"
+                    }
                     Toast.makeText(
                         this@SettingsActivity,
-                        "Signed in as ${session.email} • ${synced.size} owned theme(s) synced",
+                        msg,
                         Toast.LENGTH_LONG
                     ).show()
                 }

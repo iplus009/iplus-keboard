@@ -1,0 +1,20 @@
+[
+ {
+  "pack_id": "kb_sticker_pilot_diecut",
+  "style": "diecut",
+  "count": 20,
+  "sha256": "58d21193c8921302ad5caa0be3220f97faa57856055b3cd2d7b939a64d06ee1b"
+ },
+ {
+  "pack_id": "kb_sticker_pilot_bubble",
+  "style": "speech_bubble",
+  "count": 20,
+  "sha256": "f57bd6eedd75420e7dac8958affccf71be540af1d2eea63087d8240d06602ecf"
+ },
+ {
+  "pack_id": "kb_sticker_pilot_tag",
+  "style": "handwritten_tag",
+  "count": 20,
+  "sha256": "b4fc4e5056f70eaef05e9015141e52a93c03292eeb9f3eaabba5731e8120aa93"
+ }
+]

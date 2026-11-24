@@ -24,6 +24,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
@@ -56,18 +57,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
 import org.futo.inputmethod.latin.themestore.domain.StoreCatalogFilter
 import org.futo.inputmethod.latin.themestore.domain.ThemeStoreRepository
 import org.futo.inputmethod.latin.themestore.engine.ThemeManifestEngine
 import org.futo.inputmethod.latin.themestore.engine.ThemeRegistry
+import org.futo.inputmethod.latin.themestore.model.ProductTabFilter
 import org.futo.inputmethod.latin.themestore.model.StoreCatalogEntry
 import org.futo.inputmethod.latin.themestore.model.StoreThemeState
 import org.futo.inputmethod.latin.themestore.model.ThemeFilter
@@ -89,6 +93,8 @@ fun ThemeStoreScreen(navController: NavHostController) {
     val activeThemeKey = normalizeThemeKey(rawThemeKey)
 
     var allEntries by remember { mutableStateOf(repo.getCachedEntries()) }
+    var activeFontId by remember { mutableStateOf(repo.getActiveFontId()) }
+    var activeProductTab by remember { mutableStateOf(ProductTabFilter.ALL) }
     var activeFilter by remember { mutableStateOf(ThemeFilter.ALL) }
     var selectedCategory by remember { mutableStateOf("all") }
     var searchQuery by remember { mutableStateOf("") }
@@ -96,15 +102,18 @@ fun ThemeStoreScreen(navController: NavHostController) {
     var busyThemeId by remember { mutableStateOf<String?>(null) }
     var isSyncing by remember { mutableStateOf(false) }
     var syncError by remember { mutableStateOf<String?>(null) }
+    var previewEntryId by remember { mutableStateOf<String?>(null) }
 
     var showAuthDialog by remember { mutableStateOf(false) }
     var pendingAuthAction by remember { mutableStateOf<String?>(null) }
+    var lastSyncedUserId by remember { mutableStateOf<String?>(SupabaseAuthClient.currentSession(context)?.userId) }
     var showRedeemDialog by remember { mutableStateOf(false) }
     var showRecoveryDialog by remember { mutableStateOf(false) }
     var showCheckoutDialog by remember { mutableStateOf(false) }
 
     fun refreshFromCache() {
         allEntries = repo.getCachedEntries()
+        activeFontId = repo.getActiveFontId()
         // Drop any selected themes that became owned or disappeared
         val buyableIds = allEntries.filter { it.state == StoreThemeState.PAID }.map { it.themeId }.toSet()
         selectedPaidIds = selectedPaidIds.intersect(buyableIds)
@@ -134,14 +143,34 @@ fun ThemeStoreScreen(navController: NavHostController) {
     }
 
     LaunchedEffect(accountSession?.userId) {
-        refreshFromCache()
-        if (accountSession != null && showAuthDialog) {
-            showAuthDialog = false
-            when (pendingAuthAction) {
-                "checkout" -> showCheckoutDialog = true
-                "redeem" -> showRedeemDialog = true
+        val session = accountSession
+        if (session != null) {
+            val wasDialogOpen = showAuthDialog
+            if (wasDialogOpen) {
+                showAuthDialog = false
+                when (pendingAuthAction) {
+                    "checkout" -> showCheckoutDialog = true
+                    "redeem" -> showRedeemDialog = true
+                }
+                pendingAuthAction = null
             }
-            pendingAuthAction = null
+            if (lastSyncedUserId != session.userId) {
+                lastSyncedUserId = session.userId
+                val synced = repo.syncAccountEntitlements().getOrDefault(emptyList())
+                refreshFromCache()
+                if (wasDialogOpen) {
+                    Toast.makeText(
+                        context,
+                        if (synced.isNotEmpty()) "Welcome back! ${synced.size} owned theme(s) ready" else "Signed in!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } else {
+                refreshFromCache()
+            }
+        } else {
+            lastSyncedUserId = null
+            refreshFromCache()
         }
     }
 
@@ -149,142 +178,255 @@ fun ThemeStoreScreen(navController: NavHostController) {
         refreshFromCache()
     }
 
-    val categoryCounts = remember(allEntries) {
-        allEntries.groupingBy { it.category.trim().lowercase().ifEmpty { "general" } }.eachCount()
+    val tabScopedEntries = remember(allEntries, activeProductTab) {
+        StoreCatalogFilter.applyFilter(allEntries, ThemeFilter.ALL, "", "all", activeProductTab)
+    }
+    val themesCount = remember(allEntries) { allEntries.count { it.themeType == "color" || it.themeType == "art_pack" } }
+    val fontsCount = remember(allEntries) { allEntries.count { it.themeType == "font" } }
+    val stickersCount = remember(allEntries) { allEntries.count { it.themeType == "sticker" } }
+
+    val categoryCounts = remember(tabScopedEntries) {
+        tabScopedEntries.groupingBy { it.category.trim().lowercase().ifEmpty { "general" } }.eachCount()
     }
     val availableCategories = remember(categoryCounts) {
         listOf("all") + categoryCounts.keys.sorted()
     }
 
-    val filteredEntries = remember(allEntries, activeFilter, selectedCategory, searchQuery) {
-        StoreCatalogFilter.applyFilter(allEntries, activeFilter, searchQuery, selectedCategory)
+    val filteredEntries = remember(allEntries, activeProductTab, activeFilter, selectedCategory, searchQuery) {
+        StoreCatalogFilter.applyFilter(allEntries, activeFilter, searchQuery, selectedCategory, activeProductTab)
     }
 
     val selectedCartEntries = remember(allEntries, selectedPaidIds) {
         allEntries.filter { selectedPaidIds.contains(it.themeId) && it.state == StoreThemeState.PAID }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            ScreenTitle("Theme Store", showBack = true, navController = navController)
+    fun isEntryActive(entry: StoreCatalogEntry): Boolean = when (entry.themeType) {
+        "font" -> activeFontId == entry.themeId
+        "sticker" -> false
+        else -> activeThemeKey == ThemeRegistry.storeKeyFor(entry.themeId)
+    }
 
-            // Account status bar: keeps paid purchases saved forever across reinstalls
-            val ownedPaidCount = remember(allEntries) { allEntries.count { it.isPaid && it.isOwned } }
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(
-                            Icons.Default.Person,
-                            contentDescription = null,
-                            tint = if (accountSession != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = accountSession?.email?.ifBlank { "Signed In" } ?: "Sign in to save purchases forever",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                text = if (accountSession != null) {
-                                    "$ownedPaidCount lifetime paid theme(s) • Synced"
-                                } else {
-                                    "Sign in before buying or unlocking themes"
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                    if (accountSession != null) {
-                        TextButton(
-                            onClick = {
-                                repo.signOutAccount()
-                                selectedPaidIds = emptySet()
-                                refreshFromCache()
-                                Toast.makeText(context, "Signed out. Log back in anytime to restore your themes.", Toast.LENGTH_SHORT).show()
+    fun handlePrimaryAction(entry: StoreCatalogEntry) {
+        val isInCart = selectedPaidIds.contains(entry.themeId)
+        when (entry.state) {
+            StoreThemeState.FREE, StoreThemeState.OWNED -> {
+                busyThemeId = entry.themeId
+                scope.launch {
+                    repo.downloadAndApplyTheme(entry)
+                        .onSuccess {
+                            refreshFromCache()
+                            val msg = when (entry.themeType) {
+                                "font" -> "${entry.title} font applied!"
+                                "sticker" -> "${entry.title} ready! Open Emoji ➔ Stickers tab."
+                                else -> "${entry.title} applied!"
                             }
-                        ) {
-                            Text("Logout")
+                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                         }
-                    } else {
-                        Button(
-                            onClick = {
-                                pendingAuthAction = null
-                                showAuthDialog = true
-                            },
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Text("Login")
+                        .onFailure {
+                            Toast.makeText(context, it.message ?: "Download failed", Toast.LENGTH_LONG).show()
+                        }
+                    busyThemeId = null
+                }
+            }
+            StoreThemeState.DOWNLOADED -> {
+                if (entry.hasUpdate) {
+                    busyThemeId = entry.themeId
+                    scope.launch {
+                        repo.downloadAndApplyTheme(entry)
+                            .onSuccess {
+                                refreshFromCache()
+                                Toast.makeText(context, "${entry.title} updated & applied", Toast.LENGTH_SHORT).show()
+                            }
+                            .onFailure {
+                                Toast.makeText(context, it.message ?: "Update failed", Toast.LENGTH_LONG).show()
+                            }
+                        busyThemeId = null
+                    }
+                } else {
+                    when (entry.themeType) {
+                        "font" -> {
+                            repo.setActiveFontId(entry.themeId)
+                            refreshFromCache()
+                            Toast.makeText(context, "${entry.title} font active", Toast.LENGTH_SHORT).show()
+                        }
+                        "sticker" -> {
+                            Toast.makeText(context, "Open Keybird Emoji ➔ Stickers tab to send stickers!", Toast.LENGTH_SHORT).show()
+                        }
+                        else -> {
+                            scope.launch {
+                                repo.applyInstalledTheme(entry.themeId)
+                                refreshFromCache()
+                                Toast.makeText(context, "${entry.title} selected", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
                 }
             }
+            StoreThemeState.PAID -> {
+                selectedPaidIds = if (isInCart) {
+                    selectedPaidIds - entry.themeId
+                } else {
+                    selectedPaidIds + entry.themeId
+                }
+            }
+        }
+    }
 
-            // Quick toolbar: Redeem Key | Restore & Device | Sync
-            Row(
+    fun handleInstantBuy(entry: StoreCatalogEntry) {
+        selectedPaidIds = selectedPaidIds + entry.themeId
+        if (accountSession == null) {
+            pendingAuthAction = "checkout"
+            showAuthDialog = true
+        } else {
+            showCheckoutDialog = true
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(org.futo.inputmethod.latin.uix.settings.KeybirdUiTokens.pageBackground())
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            ScreenTitle("Theme Store", showBack = true, navController = navController)
+
+            // Compact Account & Quick Actions Card (merges account status + Redeem/Restore/Support/Sync)
+            val ownedPaidCount = remember(allEntries) { allEntries.count { it.isPaid && it.isOwned } }
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = org.futo.inputmethod.latin.uix.settings.KeybirdUiTokens.cardSurface(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedButton(
-                    onClick = {
-                        if (accountSession == null) {
-                            pendingAuthAction = "redeem"
-                            showAuthDialog = true
-                        } else {
-                            showRedeemDialog = true
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Lock,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
+                    .padding(horizontal = 16.dp, vertical = 2.dp)
+                    .border(
+                        1.dp,
+                        org.futo.inputmethod.latin.uix.settings.KeybirdUiTokens.hairlineBorder(),
+                        RoundedCornerShape(14.dp)
                     )
-                    Spacer(Modifier.width(6.dp))
-                    Text("Redeem Key", maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                OutlinedButton(
-                    onClick = { showRecoveryDialog = true },
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text("Restore / Device", maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                IconButton(onClick = { triggerSync() }, enabled = !isSyncing) {
-                    if (isSyncing) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    } else {
-                        Icon(Icons.Default.Refresh, contentDescription = "Sync catalog")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = null,
+                                tint = if (accountSession != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = accountSession?.email?.ifBlank { "Signed In" } ?: "Sign in to save purchases forever",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = if (accountSession != null) {
+                                        "$ownedPaidCount lifetime paid item(s) • Synced"
+                                    } else {
+                                        "Account required before buying or unlocking items"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                        if (accountSession != null) {
+                            TextButton(
+                                onClick = {
+                                    repo.signOutAccount()
+                                    selectedPaidIds = emptySet()
+                                    refreshFromCache()
+                                    Toast.makeText(context, "Signed out. Log back in anytime to restore your items.", Toast.LENGTH_SHORT).show()
+                                },
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                            ) {
+                                Text("Logout", style = MaterialTheme.typography.labelMedium)
+                            }
+                        } else {
+                            Button(
+                                onClick = {
+                                    pendingAuthAction = null
+                                    showAuthDialog = true
+                                },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                            ) {
+                                Text("Login", style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                if (accountSession == null) {
+                                    pendingAuthAction = "redeem"
+                                    showAuthDialog = true
+                                } else {
+                                    showRedeemDialog = true
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Lock,
+                                contentDescription = null,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Redeem", maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall)
+                        }
+                        OutlinedButton(
+                            onClick = { showRecoveryDialog = true },
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                        ) {
+                            Text("Restore", maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall)
+                        }
+                        OutlinedButton(
+                            onClick = { openTelegramSupport(context, repo.supportTelegramHandle) },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Telegram Admin Support",
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(repo.supportTelegramHandle, maxLines = 1, style = MaterialTheme.typography.labelSmall)
+                        }
+                        IconButton(
+                            onClick = { triggerSync() },
+                            enabled = !isSyncing,
+                            modifier = Modifier.size(34.dp)
+                        ) {
+                            if (isSyncing) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            } else {
+                                Icon(Icons.Default.Refresh, contentDescription = "Sync catalog", modifier = Modifier.size(18.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -292,8 +434,8 @@ fun ThemeStoreScreen(navController: NavHostController) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search Keybird themes...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                placeholder = { Text("Search name or #5-digit code (e.g. 10089)", style = MaterialTheme.typography.bodySmall) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = "" }) {
@@ -302,18 +444,53 @@ fun ThemeStoreScreen(navController: NavHostController) {
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
             )
 
+            // Product type tabs: All | Themes | Fonts | Stickers
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                StoreFilterPill("All (${allEntries.size})", activeProductTab == ProductTabFilter.ALL) {
+                    activeProductTab = ProductTabFilter.ALL
+                    selectedCategory = "all"
+                }
+                StoreFilterPill("Themes ($themesCount)", activeProductTab == ProductTabFilter.THEMES) {
+                    activeProductTab = ProductTabFilter.THEMES
+                    selectedCategory = "all"
+                }
+                StoreFilterPill("Fonts ($fontsCount)", activeProductTab == ProductTabFilter.FONTS) {
+                    activeProductTab = ProductTabFilter.FONTS
+                    selectedCategory = "all"
+                }
+                StoreFilterPill("Stickers ($stickersCount)", activeProductTab == ProductTabFilter.STICKERS) {
+                    activeProductTab = ProductTabFilter.STICKERS
+                    selectedCategory = "all"
+                }
+                if (activeFontId != null) {
+                    StoreFilterPill("Reset Font ✕", false) {
+                        repo.setActiveFontId(null)
+                        refreshFromCache()
+                        Toast.makeText(context, "Restored default keyboard font", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+            // Combined single-row Filter + Categories strip to keep theme cards above the fold
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 StoreFilterPill("All", activeFilter == ThemeFilter.ALL) {
                     activeFilter = ThemeFilter.ALL
@@ -324,24 +501,23 @@ fun ThemeStoreScreen(navController: NavHostController) {
                 StoreFilterPill("Paid", activeFilter == ThemeFilter.PAID) {
                     activeFilter = ThemeFilter.PAID
                 }
-                StoreFilterPill("My Themes", activeFilter == ThemeFilter.MY_THEMES) {
+                StoreFilterPill("My Items", activeFilter == ThemeFilter.MY_THEMES) {
                     activeFilter = ThemeFilter.MY_THEMES
                 }
-            }
-
-            if (availableCategories.size > 2) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
+                if (availableCategories.size > 2) {
+                    Box(
+                        modifier = Modifier
+                            .width(1.dp)
+                            .height(18.dp)
+                            .background(org.futo.inputmethod.latin.uix.settings.KeybirdUiTokens.hairlineBorder())
+                    )
                     availableCategories.forEach { cat ->
                         val countLabel = if (cat == "all") {
-                            "All Categories (${allEntries.size})"
+                            "All Categories (${tabScopedEntries.size})"
                         } else {
-                            val titleCat = cat.replaceFirstChar { it.uppercase() }
+                            val titleCat = cat.split('_').joinToString(" ") { part ->
+                                part.replaceFirstChar { it.uppercase() }
+                            }
                             "$titleCat (${categoryCounts[cat] ?: 0})"
                         }
                         StoreFilterPill(countLabel, selectedCategory == cat) {
@@ -396,69 +572,16 @@ fun ThemeStoreScreen(navController: NavHostController) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(filteredEntries, key = { it.themeId }) { entry ->
-                        val isActive = activeThemeKey == ThemeRegistry.storeKeyFor(entry.themeId)
+                        val isActive = isEntryActive(entry)
                         val isInCart = selectedPaidIds.contains(entry.themeId)
                         StoreThemeCard(
                             entry = entry,
                             isActive = isActive,
                             isInCart = isInCart,
                             isBusy = busyThemeId == entry.themeId,
-                            onPrimaryAction = {
-                                when (entry.state) {
-                                    StoreThemeState.FREE, StoreThemeState.OWNED -> {
-                                        busyThemeId = entry.themeId
-                                        scope.launch {
-                                            repo.downloadAndApplyTheme(entry)
-                                                .onSuccess {
-                                                    refreshFromCache()
-                                                    Toast.makeText(context, "${entry.title} applied!", Toast.LENGTH_SHORT).show()
-                                                }
-                                                .onFailure {
-                                                    Toast.makeText(context, it.message ?: "Download failed", Toast.LENGTH_LONG).show()
-                                                }
-                                            busyThemeId = null
-                                        }
-                                    }
-                                    StoreThemeState.DOWNLOADED -> {
-                                        if (entry.hasUpdate) {
-                                            busyThemeId = entry.themeId
-                                            scope.launch {
-                                                repo.downloadAndApplyTheme(entry)
-                                                    .onSuccess {
-                                                        refreshFromCache()
-                                                        Toast.makeText(context, "${entry.title} updated & applied", Toast.LENGTH_SHORT).show()
-                                                    }
-                                                    .onFailure {
-                                                        Toast.makeText(context, it.message ?: "Update failed", Toast.LENGTH_LONG).show()
-                                                    }
-                                                busyThemeId = null
-                                            }
-                                        } else {
-                                            scope.launch {
-                                                repo.applyInstalledTheme(entry.themeId)
-                                                refreshFromCache()
-                                                Toast.makeText(context, "${entry.title} selected", Toast.LENGTH_SHORT).show()
-                                            }
-                                        }
-                                    }
-                                    StoreThemeState.PAID -> {
-                                        selectedPaidIds = if (isInCart) {
-                                            selectedPaidIds - entry.themeId
-                                        } else {
-                                            selectedPaidIds + entry.themeId
-                                        }
-                                    }
-                                }
-                            },
-                            onInstantBuy = {
-                                selectedPaidIds = selectedPaidIds + entry.themeId
-                                if (accountSession == null) {
-                                    pendingAuthAction = "checkout"
-                                    showAuthDialog = true
-                                } else {
-                                    showCheckoutDialog = true
-                                }
-                            }
+                            onPreview = { previewEntryId = entry.themeId },
+                            onPrimaryAction = { handlePrimaryAction(entry) },
+                            onInstantBuy = { handleInstantBuy(entry) }
                         )
                     }
                 }
@@ -523,22 +646,23 @@ fun ThemeStoreScreen(navController: NavHostController) {
             onDismiss = {
                 showAuthDialog = false
                 pendingAuthAction = null
-            },
-            onSignedIn = {
-                val synced = repo.syncAccountEntitlements().getOrDefault(emptyList())
-                refreshFromCache()
-                showAuthDialog = false
-                Toast.makeText(
-                    context,
-                    if (synced.isNotEmpty()) "Welcome back! ${synced.size} owned theme(s) ready" else "Signed in!",
-                    Toast.LENGTH_SHORT
-                ).show()
-                when (pendingAuthAction) {
-                    "checkout" -> showCheckoutDialog = true
-                    "redeem" -> showRedeemDialog = true
-                }
-                pendingAuthAction = null
             }
+        )
+    }
+
+    val activePreviewEntry = remember(allEntries, previewEntryId) {
+        previewEntryId?.let { id -> allEntries.firstOrNull { it.themeId == id } }
+    }
+    if (activePreviewEntry != null) {
+        ThemePreviewDialog(
+            entry = activePreviewEntry,
+            isActive = isEntryActive(activePreviewEntry),
+            isInCart = selectedPaidIds.contains(activePreviewEntry.themeId),
+            isBusy = busyThemeId == activePreviewEntry.themeId,
+            supportTelegram = repo.supportTelegramHandle,
+            onDismiss = { previewEntryId = null },
+            onPrimaryAction = { handlePrimaryAction(activePreviewEntry) },
+            onInstantBuy = { handleInstantBuy(activePreviewEntry) }
         )
     }
 
@@ -546,6 +670,7 @@ fun ThemeStoreScreen(navController: NavHostController) {
         PurchaseRequestDialog(
             selectedThemes = selectedCartEntries,
             paymentAccounts = repo.lastPaymentAccounts,
+            supportTelegram = repo.supportTelegramHandle,
             onDismiss = { showCheckoutDialog = false },
             onCreateOrder = { name, contact, method ->
                 repo.createOrder(
@@ -633,6 +758,7 @@ private fun StoreThemeCard(
     isActive: Boolean,
     isInCart: Boolean,
     isBusy: Boolean,
+    onPreview: () -> Unit,
     onPrimaryAction: () -> Unit,
     onInstantBuy: () -> Unit
 ) {
@@ -653,10 +779,10 @@ private fun StoreThemeCard(
         modifier = Modifier
             .fillMaxWidth()
             .border(borderWidth, borderColor, RoundedCornerShape(16.dp))
-            .clickable(enabled = !isBusy && entry.state == StoreThemeState.PAID, onClick = onPrimaryAction)
+            .clickable(enabled = !isBusy, onClick = onPreview)
     ) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            // Mini keyboard visual swatch preview
+            // Mini keyboard / real artwork / font specimen preview
             val isLightPreview = remember(entry.themeId, entry.description) {
                 entry.themeId.contains("light", ignoreCase = true) ||
                     entry.themeId.contains("paper", ignoreCase = true) ||
@@ -668,61 +794,97 @@ private fun StoreThemeCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(84.dp)
+                    .height(92.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(Brush.verticalGradient(listOf(boardTop, accentColor.copy(alpha = 0.25f))))
-                    .padding(8.dp)
             ) {
-                Column(
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                val thumbUrl = entry.previewUrl.ifBlank { entry.previewUrls.en }
+                StoreRemoteThumbnail(
+                    rawUrl = thumbUrl,
+                    contentDescription = entry.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        repeat(5) {
+                    if (entry.themeType == "font") {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 8.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.Bottom,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Aa • অ আ • ১২৩",
+                                color = if (isLightPreview) Color(0xFF111827) else Color(0xFFF9FAFB),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
+                            )
+                            Spacer(Modifier.height(4.dp))
                             Box(
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .height(14.dp)
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(keyColor)
+                                    .fillMaxWidth(0.75f)
+                                    .height(3.dp)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(accentColor)
                             )
                         }
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Box(
+                    } else {
+                        Column(
                             modifier = Modifier
-                                .weight(1f)
-                                .height(14.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(keyColor)
-                        )
-                        Box(
-                            modifier = Modifier
-                                .weight(2.6f)
-                                .height(14.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(keyColor)
-                                .border(1.dp, accentColor, RoundedCornerShape(4.dp))
-                        )
-                        Box(
-                            modifier = Modifier
-                                .weight(1.2f)
-                                .height(14.dp)
-                                .clip(RoundedCornerShape(50))
-                                .background(accentColor)
-                        )
+                                .align(Alignment.BottomCenter)
+                                .padding(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                repeat(5) {
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(14.dp)
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(keyColor)
+                                    )
+                                }
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(14.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(keyColor)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .weight(2.6f)
+                                        .height(14.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(keyColor)
+                                        .border(1.dp, accentColor, RoundedCornerShape(4.dp))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1.2f)
+                                        .height(14.dp)
+                                        .clip(RoundedCornerShape(50))
+                                        .background(accentColor)
+                                )
+                            }
+                        }
                     }
                 }
 
-                // State badge
+                // State badge (top-start)
                 val (badgeLabel, badgeBg) = when {
                     entry.hasUpdate -> "UPDATE v${entry.remoteVersion}" to MaterialTheme.colorScheme.error
+                    isActive && entry.themeType == "font" -> "ACTIVE FONT" to MaterialTheme.colorScheme.primary
                     isActive -> "ACTIVE" to MaterialTheme.colorScheme.primary
                     entry.state == StoreThemeState.DOWNLOADED -> "DOWNLOADED" to Color(0xFF2E7D32)
                     entry.state == StoreThemeState.OWNED -> "OWNED" to Color(0xFF0288D1)
@@ -733,6 +895,7 @@ private fun StoreThemeCard(
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopStart)
+                        .padding(6.dp)
                         .clip(RoundedCornerShape(6.dp))
                         .background(badgeBg)
                         .padding(horizontal = 6.dp, vertical = 2.dp)
@@ -746,10 +909,12 @@ private fun StoreThemeCard(
                     )
                 }
 
+                // 5-digit short code pill or In-Cart checkmark (top-end)
                 if (isInCart) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
+                            .padding(6.dp)
                             .size(22.dp)
                             .clip(CircleShape)
                             .background(accentColor),
@@ -760,6 +925,23 @@ private fun StoreThemeCard(
                             contentDescription = "In Cart",
                             tint = Color.Black,
                             modifier = Modifier.size(14.dp)
+                        )
+                    }
+                } else if (entry.shortCode.isNotBlank()) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(6.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xB8000000))
+                            .padding(horizontal = 5.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "#${entry.shortCode}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = FontFamily.Monospace,
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
@@ -774,8 +956,9 @@ private fun StoreThemeCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = entry.category.replaceFirstChar { it.uppercase() } +
-                        if (entry.description.isNotBlank()) " • ${entry.description}" else "",
+                    text = entry.category.split('_').joinToString(" ") { part ->
+                        part.replaceFirstChar { it.uppercase() }
+                    } + if (entry.description.isNotBlank()) " • ${entry.description}" else "",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = if (entry.state == StoreThemeState.PAID && entry.hasDiscount) 1 else 2,
@@ -834,6 +1017,11 @@ private fun StoreThemeCard(
                     val btnText = when {
                         isBusy -> "Working..."
                         entry.hasUpdate -> "Update"
+                        entry.themeType == "sticker" && entry.state == StoreThemeState.DOWNLOADED -> "In Stickers"
+                        entry.themeType == "sticker" -> "Download"
+                        entry.themeType == "font" && isActive -> "Font Active"
+                        entry.themeType == "font" && entry.state == StoreThemeState.DOWNLOADED -> "Apply Font"
+                        entry.themeType == "font" -> "Get Font"
                         entry.state == StoreThemeState.DOWNLOADED && isActive -> "Applied"
                         entry.state == StoreThemeState.DOWNLOADED -> "Apply"
                         entry.state == StoreThemeState.OWNED -> "Download"

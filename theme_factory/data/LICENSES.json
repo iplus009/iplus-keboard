@@ -1,0 +1,97 @@
+{
+  "generated_phase": "Phase 1",
+  "rule": "No third-party asset is bundled unless its license is verified below. Missing sources are BLOCKED, not substituted with proprietary files.",
+  "sources": [
+    {
+      "id": "ui-ux-pro-max",
+      "type": "offline design-intelligence dataset (palette + UX hits)",
+      "used_for": "theme_factory/data/palettes.json",
+      "path": "C:/Users/Ismail/.gemini/config/skills/ui-ux-pro-max/scripts/search.py",
+      "license": "local skill dataset, license not declared in SKILL.md",
+      "status": "VERIFIED_OFFLINE_OUTPUT",
+      "note": "7 queries executed this session; real JSON outputs kept in data/raw/. No palette values invented."
+    },
+    {
+      "id": "unslop",
+      "type": "design guidance skill",
+      "license": "CC-BY-4.0",
+      "credit": "Damir Sokolovsky (@heydamir), https://heydamir.design/unslop",
+      "status": "VERIFIED",
+      "note": "Guidance only. No assets from this skill are bundled into theme archives."
+    },
+    {
+      "id": "ponytail",
+      "type": "coding guidance skill",
+      "license": "MIT",
+      "status": "VERIFIED",
+      "note": "Guidance only."
+    },
+    {
+      "id": "landing-page-design",
+      "type": "UI guidance skill",
+      "license": "not declared in SKILL.md",
+      "status": "VERIFIED_GUIDANCE_ONLY",
+      "note": "Guidance only. Motion curve 0.22,1,0.36,1 adopted for store UI in Phase 2."
+    },
+    {
+      "id": "figma-designer",
+      "type": "design token guidance skill",
+      "license": "not declared in SKILL.md",
+      "status": "VERIFIED_GUIDANCE_ONLY",
+      "note": "Strict radius/stroke scales adopted in theme_factory/src/tokens.py."
+    },
+    {
+      "id": "project_fonts",
+      "type": "fonts bundled with Keybird (java/res/font)",
+      "files": ["doto.ttf", "inter.ttf", "ndot.ttf"],
+      "license": "license file not found in repository",
+      "status": "UNVERIFIED_LICENSE",
+      "note": "Used only for local proof rendering, not newly bundled by the factory."
+    },
+    {
+      "id": "pexels",
+      "type": "stock photo source",
+      "license": "license terms apply per downloaded asset; attribution logged",
+      "status": "BLOCKED",
+      "reason": "PEXELS_API_KEY not set",
+      "fix": "setx PEXELS_API_KEY \"KEY\"",
+      "note": "photo_* families are not generated in Phase 1."
+    },
+    {
+      "id": "pixabay",
+      "type": "stock photo fallback",
+      "license": "license terms apply per downloaded asset; attribution logged",
+      "status": "BLOCKED",
+      "reason": "PIXABAY_API_KEY not set",
+      "fix": "setx PIXABAY_API_KEY \"KEY\""
+    },
+    {
+      "id": "noto_emoji",
+      "type": "sticker art source",
+      "license": "Apache-2.0",
+      "status": "BLOCKED",
+      "reason": "not present locally; no download performed in Phase 1"
+    },
+    {
+      "id": "open_peeps",
+      "type": "sticker art source",
+      "license": "CC0",
+      "status": "BLOCKED",
+      "reason": "not present locally"
+    },
+    {
+      "id": "open_doodles",
+      "type": "sticker art source",
+      "license": "CC0",
+      "status": "BLOCKED",
+      "reason": "not present locally"
+    },
+    {
+      "id": "noto_sans_bengali_ofl",
+      "type": "Bangla OFL font for stickers",
+      "license": "OFL",
+      "status": "BLOCKED",
+      "reason": "not present locally; Nirmala.ttc is Microsoft proprietary and must not be bundled"
+    }
+  ]
+}

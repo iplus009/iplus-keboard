@@ -723,6 +723,10 @@ public class Key implements Comparable<Key> {
 
     @Nonnull
     public final Typeface selectTypeface(final KeyDrawParams params) {
+        if (org.futo.inputmethod.latin.themestore.engine.StoreFontEngine.hasActiveStoreFont()) {
+            return org.futo.inputmethod.latin.themestore.engine.StoreFontEngine.selectTypefaceForLabel(
+                    mLabel, params.mTypeface);
+        }
         switch (mLabelFlags & LABEL_FLAGS_FONT_MASK) {
         case LABEL_FLAGS_FONT_NORMAL:
             return Typeface.DEFAULT;
